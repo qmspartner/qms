@@ -121,6 +121,10 @@ h2 { font-size: 17px; font-weight: 600; margin: 24px 0 8px; }
     position: sticky; top: 20px; align-self: flex-start;
     border-right: 1px solid var(--border);
     padding-right: 18px;
+    /* Egen scrollbar: er listen højere end vinduet, scroller den selv i stedet for
+       at blive skåret af eller forhindre resten af sidebaren i at kunne nås. */
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
 }
 .help-toc-group {
     font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
@@ -139,6 +143,7 @@ h2 { font-size: 17px; font-weight: 600; margin: 24px 0 8px; }
         position: static; width: 100%; flex: none;
         border-right: none; border-bottom: 1px solid var(--border);
         padding: 0 0 12px; margin-bottom: 4px;
+        max-height: none; overflow-y: visible;
     }
 }
 
