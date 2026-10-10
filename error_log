@@ -1,0 +1,15 @@
+[08-Oct-2026 09:36:56 Europe/Copenhagen] PHP Fatal error:  Uncaught PDOException: SQLSTATE[HY093]: Invalid parameter number: number of bound variables does not match number of tokens in /home/qmspartner/public_html/qms/new_case.php:108
+Stack trace:
+#0 /home/qmspartner/public_html/qms/new_case.php(108): PDOStatement->execute(Array)
+#1 {main}
+  thrown in /home/qmspartner/public_html/qms/new_case.php on line 108
+[08-Oct-2026 11:19:40 Europe/Copenhagen] PHP Warning:  Undefined array key "is_authorized_source" in /home/qmspartner/public_html/qms/supplier_detail.php on line 147
+[08-Oct-2026 11:20:22 Europe/Copenhagen] PHP Warning:  Undefined array key "is_authorized_source" in /home/qmspartner/public_html/qms/supplier_detail.php on line 147
+[08-Oct-2026 11:22:06 Europe/Copenhagen] PHP Warning:  Undefined array key "is_authorized_source" in /home/qmspartner/public_html/qms/supplier_detail.php on line 147
+[08-Oct-2026 11:23:27 Europe/Copenhagen] PHP Warning:  Undefined array key "is_authorized_source" in /home/qmspartner/public_html/qms/supplier_detail.php on line 147
+[08-Oct-2026 11:26:16 Europe/Copenhagen] PHP Warning:  Undefined array key "is_authorized_source" in /home/qmspartner/public_html/qms/supplier_detail.php on line 147
+[08-Oct-2026 11:26:20 Europe/Copenhagen] PHP Warning:  Undefined array key "is_authorized_source" in /home/qmspartner/public_html/qms/supplier_detail.php on line 147
+[08-Oct-2026 11:26:31 Europe/Copenhagen] PHP Warning:  Undefined array key "is_authorized_source" in /home/qmspartner/public_html/qms/supplier_detail.php on line 147
+[08-Oct-2026 11:29:18 Europe/Copenhagen] PHP Warning:  Undefined array key "is_authorized_source" in /home/qmspartner/public_html/qms/supplier_detail.php on line 147
+[08-Oct-2026 11:29:21 Europe/Copenhagen] PHP Warning:  Undefined array key "is_authorized_source" in /home/qmspartner/public_html/qms/supplier_detail.php on line 147
+[08-Oct-2026 11:29:33 Europe/Copenhagen] PHP Warning:  Undefined array key "is_authorized_source" in /home/qmspartner/public_html/qms/supplier_detail.php on line 147
