@@ -823,6 +823,12 @@ return [
     'supplier.counterfeit_badge' => '{count} mistænkt(e) del(e)',
 
     'help.toc_title' => 'Spring til afsnit',
+    'help.toc_group.general' => 'Generelt',
+    'help.toc_group.documents' => 'Dokumenter',
+    'help.toc_group.cases' => 'Sager',
+    'help.toc_group.operations' => 'Styring',
+    'help.toc_group.overview_reports' => 'Overblik & rapportering',
+    'help.toc_group.settings_access' => 'Indstillinger & adgang',
 
     'help.section.gqar_role' => 'Din adgang som GQAR',
     'help.gqar_role.p1' => 'Du er logget ind som en ekstern kvalitetsrepræsentant (GQAR). Din adgang er skrivebeskyttet og afgrænset til de kontrakter, du specifikt er tilknyttet.',
@@ -853,6 +859,16 @@ return [
     'help.section.contract_overview' => 'Kontraktoversigt',
     'help.contract_overview.text' => 'Kontraktoversigt samler alt, der er koblet til én bestemt kontrakt, på tværs af moduler: konfigurationsstyrede dokumenter, eksterne audits, kundeunderrettede sager, risici, leverandører og udstyr. Den opdateres automatisk — intet skal udfyldes manuelt.',
     'help.contract_overview.gqar' => 'Din kontraktoversigt viser dokumenter, audits og sager for de kontrakter, du er tilknyttet. Risici, leverandører og udstyr vises ikke, da du ikke har adgang til de moduler.',
+
+    'help.section.templates' => 'Skabelonbibliotek',
+    'help.templates.p1' => 'Skabelonbiblioteket er jeres egne, godkendte master-skabeloner — f.eks. FAI-skabelonen, PFMEA-skabelonen eller en SOP-skabelon — samlet ét sted, så alle medarbejdere arbejder fra den samme, aktuelle version.',
+    'help.templates.p2' => 'En skabelon er teknisk et dokument i en kategori der starter med "Skabelon", og følger derfor jeres almindelige dokumentgodkendelse: en ny version skal godkendes, før den bliver den gældende skabelon.',
+    'help.templates.p3' => 'Hvor der skal udfyldes en skabelon et andet sted i systemet (f.eks. ved en ny FAI), viser systemet automatisk den nyeste godkendte skabelon og beder dig bekræfte, at du har brugt den, før du kan gemme.',
+
+    'help.section.fai' => 'First Article Inspection (FAI)',
+    'help.fai.p1' => 'FAI registreres pr. kontrakt og pr. delnummer, og viser den seneste status (Godkendt / Afvist / Under behandling) samt den tilhørende evidens som en vedhæftet fil.',
+    'help.fai.p2' => 'Der findes kun én aktiv FAI pr. delnummer pr. kontrakt — uploader du en ny for et delnummer der allerede findes, afløser den den forrige automatisk.',
+    'help.fai.p3' => 'Sektionen vises kun hvis den er aktiveret under Systemindstillinger, og er uafhængig af AQAP 2210-softwareleverance-sektionen. Alle roller kan se FAI-status; kun administratorer kan tilføje eller rette den.',
 
     'help.section.reports' => 'Rapporter',
     'help.reports.text' => 'Rapporter viser tendenser over tid, som ikke fremgår andre steder i systemet: gennemsnitlig godkendelsestid for dokumenter, gennemsnitlig tid til sagslukning, andel sager og audits gennemført til tiden, samt antal sager pr. måned. Vælg en periode øverst på siden.',

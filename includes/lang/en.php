@@ -823,6 +823,12 @@ return [
     'supplier.counterfeit_badge' => '{count} suspected part(s)',
 
     'help.toc_title' => 'Jump to section',
+    'help.toc_group.general' => 'General',
+    'help.toc_group.documents' => 'Documents',
+    'help.toc_group.cases' => 'Cases',
+    'help.toc_group.operations' => 'Operations',
+    'help.toc_group.overview_reports' => 'Overview & reporting',
+    'help.toc_group.settings_access' => 'Settings & access',
 
     'help.section.gqar_role' => 'Your access as GQAR',
     'help.gqar_role.p1' => 'You are logged in as an external Government Quality Assurance Representative (GQAR). Your access is read-only and limited to the contracts you are specifically assigned to.',
@@ -853,6 +859,16 @@ return [
     'help.section.contract_overview' => 'Contract overview',
     'help.contract_overview.text' => 'Contract overview gathers everything linked to one specific contract, across modules: configuration-controlled documents, external audits, customer-notified cases, risks, suppliers, and equipment. It updates automatically — nothing needs to be filled in manually.',
     'help.contract_overview.gqar' => 'Your contract overview shows documents, audits, and cases for the contracts you are assigned to. Risks, suppliers, and equipment are not shown, as you do not have access to those modules.',
+
+    'help.section.templates' => 'Template library',
+    'help.templates.p1' => 'The template library holds your own approved master templates — e.g. the FAI template, the PFMEA template, or an SOP template — in one place, so everyone works from the same, current version.',
+    'help.templates.p2' => 'A template is technically a document in a category starting with "Skabelon", and therefore follows your normal document approval flow: a new version must be approved before it becomes the current template.',
+    'help.templates.p3' => 'Wherever a template needs to be filled in elsewhere in the system (e.g. for a new FAI), the system automatically shows the latest approved template and asks you to confirm you used it before you can save.',
+
+    'help.section.fai' => 'First Article Inspection (FAI)',
+    'help.fai.p1' => 'FAI is recorded per contract and per part number, and shows the latest status (Approved / Rejected / In progress) along with its supporting evidence as an attached file.',
+    'help.fai.p2' => 'Only one active FAI exists per part number per contract — uploading a new one for a part number that already has one automatically replaces the previous one.',
+    'help.fai.p3' => 'The section only shows when enabled under System settings, and is independent of the AQAP 2210 software-release section. All roles can see FAI status; only admins can add or edit it.',
 
     'help.section.reports' => 'Reports',
     'help.reports.text' => 'Reports shows trends over time not visible elsewhere in the system: average document approval time, average time to case closure, share of cases and audits completed on time, and cases per month. Choose a period at the top of the page.',
