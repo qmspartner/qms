@@ -745,9 +745,10 @@ function render_header(string $title): void {
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title><?= h($title) ?> - <?= h(t('brand.name')) ?></title>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
-        <link rel="stylesheet" href="css/style.css?v=32">
+        <link rel="stylesheet" href="css/style.css?v=33">
     </head>
     <body>
+    <div class="sticky-header" id="site-header">
     <?php if (is_impersonating()): ?>
         <div class="impersonation-banner">
             <?= h(t('impersonation.banner', ['name' => $user['name'], 'role' => role_label($user['role'])])) ?>
@@ -822,6 +823,22 @@ function render_header(string $title): void {
             </span>
         </nav>
     </header>
+    </div>
+    <script>
+    (function () {
+        // Topmenuen (og evt. "Se som anden bruger"-banneret) er sticky, så den altid
+        // er synlig. Andre elementer (tabelheadere, hjælpesidens indholdsfortegnelse)
+        // skal placere sig under den i stedet for under den, så den reelle højde måles
+        // her og stilles til rådighed som en CSS-variabel.
+        var header = document.getElementById('site-header');
+        if (!header) return;
+        function setHeaderHeight() {
+            document.documentElement.style.setProperty('--header-h', header.offsetHeight + 'px');
+        }
+        setHeaderHeight();
+        window.addEventListener('resize', setHeaderHeight);
+    })();
+    </script>
     <main class="container">
     <?php
 }

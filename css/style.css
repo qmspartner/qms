@@ -14,6 +14,7 @@
     --page-bg: #f6f5f1;
     --risk-high: #9a4a0b;
     --risk-high-bg: #fbe2c7;
+    --header-h: 64px;
 }
 
 * { box-sizing: border-box; }
@@ -23,6 +24,12 @@ body {
     font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
     background: var(--page-bg);
     color: var(--text);
+}
+
+.sticky-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
 }
 
 .impersonation-banner {
@@ -118,12 +125,12 @@ h2 { font-size: 17px; font-weight: 600; margin: 24px 0 8px; }
 .help-layout { display: flex; gap: 32px; align-items: flex-start; }
 .help-toc {
     width: 180px; flex: 0 0 180px;
-    position: sticky; top: 20px; align-self: flex-start;
+    position: sticky; top: calc(var(--header-h, 64px) + 20px); align-self: flex-start;
     border-right: 1px solid var(--border);
     padding-right: 18px;
     /* Egen scrollbar: er listen højere end vinduet, scroller den selv i stedet for
        at blive skåret af eller forhindre resten af sidebaren i at kunne nås. */
-    max-height: calc(100vh - 40px);
+    max-height: calc(100vh - var(--header-h, 64px) - 40px);
     overflow-y: auto;
 }
 .help-toc-group {
@@ -215,7 +222,7 @@ button:hover { opacity: 0.9; }
 .doc-table th {
     color: var(--text-muted); font-weight: 500; font-size: 13px;
     background: var(--surface);
-    position: sticky; top: 16px; z-index: 2;
+    position: sticky; top: calc(var(--header-h, 64px) + 16px); z-index: 2;
 }
 .doc-table th { background: var(--page-bg); }
 
