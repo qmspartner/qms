@@ -382,4 +382,39 @@ render_header(t('help.title'));
     </div>
 </div>
 
+<script>
+(function () {
+    // Sidebarens "sticky"-opførsel aktiveres først når siden er scrollet forbi dens
+    // naturlige placering (under topmenu + sidehoved). En fast vh-baseret højde tager
+    // ikke højde for det, så bunden af listen kan ligge uden for skærmen indtil da.
+    // Her måles den faktiske afstand fra toppen af dokumentet, så højden altid passer —
+    // uanset om "Se som anden bruger"-banneret vises eller ikke.
+    var toc = document.querySelector('.help-toc');
+    if (!toc) return;
+
+    function distanceFromDocumentTop(el) {
+        var top = 0;
+        while (el) {
+            top += el.offsetTop || 0;
+            el = el.offsetParent;
+        }
+        return top;
+    }
+
+    var naturalTop = distanceFromDocumentTop(toc);
+
+    function sizeToc() {
+        if (window.innerWidth <= 720) {
+            toc.style.maxHeight = ''; // lad mobil-CSS'en styre (menuen lægger sig ovenpå indholdet der)
+            return;
+        }
+        var available = window.innerHeight - naturalTop - 20;
+        toc.style.maxHeight = Math.max(available, 160) + 'px';
+    }
+
+    sizeToc();
+    window.addEventListener('resize', sizeToc);
+})();
+</script>
+
 <?php render_footer(); ?>
