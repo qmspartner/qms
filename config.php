@@ -1,5 +1,22 @@
 <?php
 
+// Fejl i produktion må aldrig vises til brugeren (kan lække filstier, SQL og lignende).
+// De logges i stedet til webhotellets normale PHP-fejllog.
+ini_set('display_errors', '0');
+ini_set('log_errors', '1');
+error_reporting(E_ALL);
+
+// Tving HTTPS: hvis forespørgslen ikke allerede er krypteret, send videre til https-udgaven
+// af samme adresse. Tjekker både den almindelige indikator og X-Forwarded-Proto, som nogle
+// webhoteller/proxyer bruger, når krypteringen "afsluttes" før den når PHP.
+$isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+    || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
+if (!$isHttps && php_sapi_name() !== 'cli') {
+    $redirectUrl = 'https://' . ($_SERVER['HTTP_HOST'] ?? '') . ($_SERVER['REQUEST_URI'] ?? '');
+    header('Location: ' . $redirectUrl, true, 301);
+    exit;
+}
+
 // Udfyld disse med oplysningerne fra dit webhotels kontrolpanel (cPanel -> MySQL databases).
 define('DB_HOST', 'localhost');
 define('DB_NAME', 'qmspartner_DB1');
