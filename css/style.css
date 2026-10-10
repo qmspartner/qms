@@ -222,7 +222,7 @@ button:hover { opacity: 0.9; }
 .doc-table th {
     color: var(--text-muted); font-weight: 500; font-size: 13px;
     background: var(--surface);
-    position: sticky; top: calc(var(--header-h, 64px) + 16px); z-index: 2;
+    position: sticky; top: var(--header-h, 64px); z-index: 2;
 }
 .doc-table th { background: var(--page-bg); }
 
