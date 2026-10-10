@@ -696,6 +696,43 @@ function audit_status_label(string $status): string {
     return t('audit_status.' . $status);
 }
 
+// Kompetence- og uddannelsesmodul: status udregnes altid ud fra datoerne i
+// employee_qualifications i stedet for at blive gemt, så den aldrig kan gå i utakt.
+function qualification_status(array $row): string {
+    if (empty($row['obtained_date'])) {
+        return 'planned';
+    }
+    if (empty($row['expiry_date'])) {
+        return 'valid';
+    }
+    $today = new DateTimeImmutable('today');
+    $expiry = new DateTimeImmutable($row['expiry_date']);
+    if ($expiry < $today) {
+        return 'expired';
+    }
+    if ($expiry <= $today->modify('+' . COMPETENCE_DUE_SOON_DAYS . ' days')) {
+        return 'expiring';
+    }
+    return 'valid';
+}
+
+function qualification_status_label(string $status): string {
+    return t('competence.status.' . $status);
+}
+
+function qualification_status_class(string $status): string {
+    return match ($status) {
+        'valid' => 'badge badge-success',
+        'expiring' => 'badge badge-warning',
+        'expired' => 'badge badge-danger',
+        default => 'badge badge-neutral',
+    };
+}
+
+function can_manage_competence(array $user): bool {
+    return $user['role'] === 'admin';
+}
+
 function audit_status_class(string $status): string {
     return match ($status) {
         'Gennemført' => 'badge badge-success',
@@ -745,7 +782,7 @@ function render_header(string $title): void {
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title><?= h($title) ?> - <?= h(t('brand.name')) ?></title>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
-        <link rel="stylesheet" href="css/style.css?v=34">
+        <link rel="stylesheet" href="css/style.css?v=35">
     </head>
     <body>
     <div class="sticky-header" id="site-header">
@@ -805,6 +842,7 @@ function render_header(string $title): void {
                                 <?php if ($showTemplates): ?><a href="templates.php"><?= h(t('nav.templates')) ?></a><?php endif; ?>
                                 <?php if ($isAdmin): ?>
                                     <a href="users.php"><?= h(t('nav.users')) ?></a>
+                                    <a href="competence.php"><?= h(t('nav.competence')) ?></a>
                                     <a href="lists.php"><?= h(t('nav.lists')) ?></a>
                                     <a href="permissions.php"><?= h(t('nav.permissions')) ?></a>
                                     <a href="system_settings.php"><?= h(t('nav.system_settings')) ?></a>

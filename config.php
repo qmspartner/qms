@@ -34,6 +34,10 @@ define('MAX_FILE_SIZE', 10 * 1024 * 1024);
 define('MAIL_FROM', 'noreply@qmspartner.dk'); define('SITE_URL', 'https://qmspartner.dk/qms');
 date_default_timezone_set('Europe/Copenhagen');
 
+// Antal dage før udløb en kvalifikation/kompetence regnes som "udløber snart" (samme
+// tærskel som udstyrs-kalibrering, leverandørevaluering og optegnelsers revisionsdato).
+define('COMPETENCE_DUE_SOON_DAYS', 60);
+
 // Hærdet session-cookie: kun HTTPS, ikke tilgængelig for JavaScript, og ikke sendt med ved
 // tredjeparts-navigation (reducerer både session-hijacking og CSRF-angrebsfladen).
 ini_set('session.use_strict_mode', '1');

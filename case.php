@@ -9,7 +9,8 @@ $id = (int) ($_GET['id'] ?? 0);
 
 $stmt = $db->prepare('
     SELECT c.*, r.name AS reported_by_name, a.name AS assigned_to_name, d.title AS linked_document_title, d.doc_number AS linked_document_number,
-           au.title AS linked_audit_title, sup.name AS linked_supplier_name, cust.name AS customer_name
+           au.title AS linked_audit_title, sup.name AS linked_supplier_name, cust.name AS customer_name,
+           emp.id AS linked_employee_id, emp.name AS linked_employee_name, qual.id AS linked_qualification_id, qual.name AS linked_qualification_name
     FROM cases c
     JOIN users r ON r.id = c.reported_by
     LEFT JOIN users a ON a.id = c.assigned_to
@@ -17,6 +18,9 @@ $stmt = $db->prepare('
     LEFT JOIN audits au ON au.id = c.audit_id
     LEFT JOIN suppliers sup ON sup.id = c.supplier_id
     LEFT JOIN customers cust ON cust.id = c.customer_id
+    LEFT JOIN employee_qualifications eq ON eq.id = c.employee_qualification_id
+    LEFT JOIN employees emp ON emp.id = eq.employee_id
+    LEFT JOIN qualifications qual ON qual.id = eq.qualification_id
     WHERE c.id = ? AND c.organization_id = ?
 ');
 $stmt->execute([$id, $user['organization_id']]);
@@ -53,6 +57,7 @@ if ($canManage && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $requiresNotification = isset($_POST['requires_customer_notification']) ? 1 : 0;
     $contractReference = trim($_POST['contract_reference'] ?? '');
     $customerResponseDate = trim($_POST['customer_response_date'] ?? '');
+    $employeeQualificationId = (int) ($_POST['employee_qualification_id'] ?? 0);
     $allowedStatuses = ['Registreret', 'Under undersøgelse', 'Handling igangsat', 'Lukket'];
     $allowedSeverities = ['', 'Høj', 'Mellem', 'Lav'];
 
@@ -82,15 +87,30 @@ if ($canManage && $_SERVER['REQUEST_METHOD'] === 'POST') {
             $closedAt = $case['closed_at'];
         }
 
+        // Feltet vises kun for admin, så en redaktør/godkender der opdaterer sagen må
+        // ikke utilsigtet nulstille et allerede sat link.
+        $validEmployeeQualificationId = $case['employee_qualification_id'];
+        if ($user['role'] === 'admin') {
+            $validEmployeeQualificationId = null;
+            if ($employeeQualificationId) {
+                $stmt = $db->prepare('SELECT id FROM employee_qualifications WHERE id = ? AND organization_id = ?');
+                $stmt->execute([$employeeQualificationId, $user['organization_id']]);
+                if ($stmt->fetch()) {
+                    $validEmployeeQualificationId = $employeeQualificationId;
+                }
+            }
+        }
+
         $stmt = $db->prepare('
             UPDATE cases
-            SET status = ?, severity = ?, description = ?, root_cause = ?, immediate_action = ?, corrective_action = ?, assigned_to = ?, due_date = ?, requires_customer_notification = ?, contract_reference = ?, customer_response_date = ?, closed_at = ?
+            SET status = ?, severity = ?, description = ?, root_cause = ?, immediate_action = ?, corrective_action = ?, assigned_to = ?, due_date = ?, requires_customer_notification = ?, contract_reference = ?, customer_response_date = ?, closed_at = ?, employee_qualification_id = ?
             WHERE id = ? AND organization_id = ?
         ');
         $stmt->execute([
             $status, $severity ?: null, $description, $rootCause ?: null, $immediateAction ?: null, $correctiveAction ?: null,
             $assignedToId, $dueDate ?: null, $requiresNotification, $requiresNotification ? $contractReference : null,
-            $case['type'] === 'Kundeklage' ? ($customerResponseDate ?: null) : null, $closedAt, $id, $user['organization_id'],
+            $case['type'] === 'Kundeklage' ? ($customerResponseDate ?: null) : null, $closedAt, $validEmployeeQualificationId,
+            $id, $user['organization_id'],
         ]);
 
         $details = 'Status: ' . $status . ($assignedUser ? ' — Tildelt: ' . $assignedUser['name'] : '');
@@ -124,6 +144,17 @@ $logEntries = $stmt->fetchAll();
 $stmt = $db->prepare("SELECT id, name FROM users WHERE organization_id = ? AND active = 1 ORDER BY name");
 $stmt->execute([$user['organization_id']]);
 $orgUsers = $stmt->fetchAll();
+
+$stmt = $db->prepare("
+    SELECT eq.id, emp.name AS employee_name, qual.name AS qualification_name
+    FROM employee_qualifications eq
+    JOIN employees emp ON emp.id = eq.employee_id
+    JOIN qualifications qual ON qual.id = eq.qualification_id
+    WHERE eq.organization_id = ? AND emp.active = 1
+    ORDER BY emp.name, qual.name
+");
+$stmt->execute([$user['organization_id']]);
+$competenceOptions = $stmt->fetchAll();
 
 render_header($case['title']);
 ?>
@@ -190,6 +221,11 @@ render_header($case['title']);
         <?php if ($case['linked_supplier_name']): ?>
             <a class="button button-secondary" href="supplier_detail.php?id=<?= (int)$case['supplier_id'] ?>">
                 <?= h(t('supplier.linked_to_case')) ?>: <?= h($case['linked_supplier_name']) ?>
+            </a>
+        <?php endif; ?>
+        <?php if ($case['linked_employee_name'] && $user['role'] === 'admin'): ?>
+            <a class="button button-secondary" href="employee_qualification.php?employee_id=<?= (int)$case['linked_employee_id'] ?>&qualification_id=<?= (int)$case['linked_qualification_id'] ?>">
+                <?= h(t('case.linked_competence')) ?>: <?= h($case['linked_employee_name']) ?> — <?= h($case['linked_qualification_name']) ?>
             </a>
         <?php endif; ?>
         <?php if ($user['role'] === 'admin'): ?>
@@ -264,6 +300,18 @@ render_header($case['title']);
         <label><?= h(t('case.field.corrective_action')) ?>
             <textarea name="corrective_action" rows="3"><?= h($case['corrective_action'] ?? '') ?></textarea>
         </label>
+        <?php if ($user['role'] === 'admin'): ?>
+        <label><?= h(t('case.field.related_competence')) ?>
+            <select name="employee_qualification_id">
+                <option value=""><?= h(t('case.field.related_competence_none')) ?></option>
+                <?php foreach ($competenceOptions as $opt): ?>
+                    <option value="<?= (int) $opt['id'] ?>" <?= (int)$case['employee_qualification_id'] === (int)$opt['id'] ? 'selected' : '' ?>>
+                        <?= h($opt['employee_name']) ?> — <?= h($opt['qualification_name']) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </label>
+        <?php endif; ?>
         <label style="display:flex; align-items:center; gap:8px; flex-direction:row;">
             <input type="checkbox" name="requires_customer_notification" id="case-notify-checkbox" value="1" <?= $case['requires_customer_notification'] ? 'checked' : '' ?> style="width:auto;" onchange="document.getElementById('case-contract-ref-field-edit').style.display = this.checked ? 'block' : 'none';">
             <?= h(t('case.field.customer_notification')) ?>

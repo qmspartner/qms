@@ -88,8 +88,8 @@ render_header(list_type_label($type));
         <tbody>
         <?php foreach ($items as $item): ?>
             <?php $editFormId = 'edit-' . $item['id']; $toggleFormId = 'toggle-' . $item['id']; ?>
-            <form id="<?= h($editFormId) ?>" method="post"></form>
-            <form id="<?= h($toggleFormId) ?>" method="post"></form>
+            <form id="<?= h($editFormId) ?>" method="post"><?= csrf_field() ?></form>
+            <form id="<?= h($toggleFormId) ?>" method="post"><?= csrf_field() ?></form>
             <tr>
                 <td><input form="<?= h($editFormId) ?>" type="text" name="label_da" value="<?= h($item['label_da']) ?>" style="margin:0;"></td>
                 <?php if (!$isContractList): ?>

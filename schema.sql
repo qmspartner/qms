@@ -454,6 +454,7 @@ CREATE TABLE `cases` (
   `customer_id` int DEFAULT NULL,
   `customer_response_date` date DEFAULT NULL,
   `closed_at` datetime DEFAULT NULL,
+  `employee_qualification_id` int DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `organization_id` (`organization_id`),
   KEY `reported_by` (`reported_by`),
@@ -462,13 +463,15 @@ CREATE TABLE `cases` (
   KEY `fk_cases_audit` (`audit_id`),
   KEY `fk_cases_supplier` (`supplier_id`),
   KEY `fk_cases_customer` (`customer_id`),
+  KEY `fk_cases_employee_qualification` (`employee_qualification_id`),
   CONSTRAINT `cases_ibfk_1` FOREIGN KEY (`organization_id`) REFERENCES `organizations` (`id`),
   CONSTRAINT `cases_ibfk_2` FOREIGN KEY (`reported_by`) REFERENCES `users` (`id`),
   CONSTRAINT `cases_ibfk_3` FOREIGN KEY (`assigned_to`) REFERENCES `users` (`id`),
   CONSTRAINT `cases_ibfk_4` FOREIGN KEY (`linked_document_id`) REFERENCES `documents` (`id`),
   CONSTRAINT `fk_cases_audit` FOREIGN KEY (`audit_id`) REFERENCES `audits` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_cases_customer` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`) ON DELETE SET NULL,
-  CONSTRAINT `fk_cases_supplier` FOREIGN KEY (`supplier_id`) REFERENCES `suppliers` (`id`) ON DELETE SET NULL
+  CONSTRAINT `fk_cases_supplier` FOREIGN KEY (`supplier_id`) REFERENCES `suppliers` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_cases_employee_qualification` FOREIGN KEY (`employee_qualification_id`) REFERENCES `employee_qualifications` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE `case_attachments` (
@@ -652,6 +655,80 @@ CREATE TABLE `software_releases` (
   CONSTRAINT `software_releases_ibfk_1` FOREIGN KEY (`organization_id`) REFERENCES `organizations` (`id`),
   CONSTRAINT `software_releases_ibfk_2` FOREIGN KEY (`linked_document_id`) REFERENCES `documents` (`id`) ON DELETE SET NULL,
   CONSTRAINT `software_releases_ibfk_3` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- --------------------------------------------------------
+-- Kompetence- og uddannelsesmodul: medarbejdere (uafhængigt af login), kvalifikationer
+-- (defineret af admin) og krydset mellem dem (kompetencematricen). En medarbejder kan
+-- højst have én status-række pr. kvalifikation (se UNIQUE KEY på employee_qualifications).
+
+CREATE TABLE `employees` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `organization_id` int NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `title` varchar(255) DEFAULT NULL,
+  `department` varchar(255) DEFAULT NULL,
+  `active` tinyint(1) NOT NULL DEFAULT '1',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `organization_id` (`organization_id`),
+  CONSTRAINT `employees_ibfk_1` FOREIGN KEY (`organization_id`) REFERENCES `organizations` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `qualifications` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `organization_id` int NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `description` text,
+  `validity_months` int DEFAULT NULL,
+  `active` tinyint(1) NOT NULL DEFAULT '1',
+  `sort_order` int NOT NULL DEFAULT '0',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `organization_id` (`organization_id`),
+  CONSTRAINT `qualifications_ibfk_1` FOREIGN KEY (`organization_id`) REFERENCES `organizations` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `employee_qualifications` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `organization_id` int NOT NULL,
+  `employee_id` int NOT NULL,
+  `qualification_id` int NOT NULL,
+  `planned_date` date DEFAULT NULL,
+  `obtained_date` date DEFAULT NULL,
+  `expiry_date` date DEFAULT NULL,
+  `stored_filename` varchar(255) DEFAULT NULL,
+  `original_filename` varchar(255) DEFAULT NULL,
+  `notes` text,
+  `created_by` int NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `employee_qualification` (`employee_id`,`qualification_id`),
+  KEY `organization_id` (`organization_id`),
+  KEY `qualification_id` (`qualification_id`),
+  KEY `created_by` (`created_by`),
+  CONSTRAINT `employee_qualifications_ibfk_1` FOREIGN KEY (`organization_id`) REFERENCES `organizations` (`id`),
+  CONSTRAINT `employee_qualifications_ibfk_2` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `employee_qualifications_ibfk_3` FOREIGN KEY (`qualification_id`) REFERENCES `qualifications` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `employee_qualifications_ibfk_4` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `employee_log` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `organization_id` int NOT NULL,
+  `employee_id` int NOT NULL,
+  `user_id` int NOT NULL,
+  `action` varchar(150) NOT NULL,
+  `details` text,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `organization_id` (`organization_id`),
+  KEY `employee_id` (`employee_id`),
+  KEY `user_id` (`user_id`),
+  CONSTRAINT `employee_log_ibfk_1` FOREIGN KEY (`organization_id`) REFERENCES `organizations` (`id`),
+  CONSTRAINT `employee_log_ibfk_2` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `employee_log_ibfk_3` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------

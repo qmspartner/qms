@@ -109,6 +109,25 @@ if (!$gqar) {
     ");
     $stmt->execute([$user['organization_id']]);
     $supplierStats = $stmt->fetch();
+
+    if ($user['role'] === 'admin') {
+        $stmt = $db->prepare("
+            SELECT eq.obtained_date, eq.expiry_date
+            FROM employee_qualifications eq
+            JOIN employees e ON e.id = eq.employee_id
+            WHERE eq.organization_id = ? AND e.active = 1
+        ");
+        $stmt->execute([$user['organization_id']]);
+        $competenceTotal = 0;
+        $competenceAttention = 0;
+        foreach ($stmt->fetchAll() as $row) {
+            $competenceTotal++;
+            $status = qualification_status($row);
+            if ($status === 'expiring' || $status === 'expired') {
+                $competenceAttention++;
+            }
+        }
+    }
 }
 
 render_header(t('nav.documents'));
@@ -235,6 +254,24 @@ render_header(t('nav.documents'));
             </div>
         </div>
     </a>
+
+    <?php if ($user['role'] === 'admin'): ?>
+    <a href="competence.php" class="module-card">
+        <div class="module-icon module-icon-accent">K</div>
+        <p class="module-title"><?= h(t('home.competence.title')) ?></p>
+        <p class="module-desc"><?= h(t('home.competence.desc')) ?></p>
+        <div class="module-stats">
+            <div>
+                <p class="module-stat-label"><?= h(t('home.competence.total')) ?></p>
+                <p class="module-stat-value"><?= (int) $competenceTotal ?></p>
+            </div>
+            <div>
+                <p class="module-stat-label"><?= h(t('home.competence.attention')) ?></p>
+                <p class="module-stat-value <?= $competenceAttention > 0 ? 'stat-danger' : '' ?>"><?= (int) $competenceAttention ?></p>
+            </div>
+        </div>
+    </a>
+    <?php endif; ?>
     <?php endif; ?>
 </div>
 </div>

@@ -226,6 +226,23 @@ button:hover { opacity: 0.9; }
 }
 .doc-table th { background: var(--page-bg); }
 
+/* Kompetencematrix: venstre kolonne (medarbejdernavn) klæber også, så den altid er synlig
+   ved vandret scroll i en bred matrix. Hjørnecellen skal ligge over begge sticky-akser. */
+.matrix-table th, .matrix-table td { white-space: nowrap; }
+.matrix-table .matrix-row-head {
+    position: sticky; left: 0; z-index: 1;
+    background: var(--surface); border-right: 1px solid var(--border);
+    font-weight: 500;
+}
+.matrix-table tbody tr:hover .matrix-row-head { background: var(--page-bg); }
+.matrix-table .matrix-corner {
+    position: sticky; left: 0; z-index: 3;
+    background: var(--page-bg); border-right: 1px solid var(--border);
+}
+.matrix-table .matrix-col-head { text-align: center; }
+.matrix-table .matrix-cell { text-align: center; padding: 8px 12px; }
+.matrix-table .matrix-cell a { text-decoration: none; }
+
 .th-inner { display: flex; align-items: center; gap: 6px; }
 .th-label {
     flex: 1; min-width: 0;
