@@ -105,14 +105,19 @@ if ($canManage && $_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['effect
     $effectivenessReviewDue = trim($_POST['effectiveness_review_due'] ?? '');
     $allowedStatuses = ['Registreret', 'Under undersøgelse', 'Handling igangsat', 'Lukket'];
     $allowedSeverities = ['', 'Høj', 'Mellem', 'Lav'];
+    // Skærpede krav gælder kun når sagen rent faktisk lukkes her i denne handling.
+    // Sager der allerede var lukket, før disse krav blev indført, røres ikke bagudrettet —
+    // de kan fortsat redigeres (fx skifte ansvarlig) uden at skulle eftervise dokumentation.
+    $isClosingNow = $status === 'Lukket' && $case['status'] !== 'Lukket';
+    $wasAlreadyClosed = $case['status'] === 'Lukket';
 
     if (!in_array($status, $allowedStatuses, true) || !in_array($severity, $allowedSeverities, true) || $description === '') {
         $error = t('case.error.invalid');
-    } elseif ($status === 'Lukket' && $requiresClosureDocumentation && ($rootCause === '' || $correctiveAction === '')) {
+    } elseif ($isClosingNow && $requiresClosureDocumentation && ($rootCause === '' || $correctiveAction === '')) {
         $error = t('case.error.closure_requires_root_cause');
-    } elseif ($correctiveAction !== '' && $preventiveAction === '') {
+    } elseif (!$wasAlreadyClosed && $correctiveAction !== '' && $preventiveAction === '') {
         $error = t('case.error.corrective_requires_preventive');
-    } elseif ($status === 'Lukket' && $requiresClosureDocumentation && $effectivenessReviewDue === '') {
+    } elseif ($isClosingNow && $requiresClosureDocumentation && $effectivenessReviewDue === '') {
         $error = t('case.error.closure_requires_effectiveness_date');
     } elseif ($requiresNotification && $contractReference === '') {
         $error = t('newcase.error.contract_reference_required');
