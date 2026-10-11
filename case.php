@@ -45,6 +45,9 @@ if (is_gqar($user) && (!$case['requires_customer_notification'] || !user_has_con
 $canManage = can_manage_cases($user);
 $error = '';
 $effectivenessError = '';
+// Disse sagstyper skal, ved lukning, have en dokumenteret rodårsag og korrigerende
+// handling samt en planlagt dato for effektivitetstjek af handlingen (ISO 9001 pkt. 10.2).
+$requiresClosureDocumentation = in_array($case['type'], ['Audit fund', 'Afvigelse', 'Kundeklage'], true);
 
 if ($canManage && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['effectiveness_action'])) {
     $effectivenessAction = $_POST['effectiveness_action'];
@@ -103,13 +106,16 @@ if ($canManage && $_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['effect
     $contractReference = trim($_POST['contract_reference'] ?? '');
     $customerResponseDate = trim($_POST['customer_response_date'] ?? '');
     $employeeQualificationId = (int) ($_POST['employee_qualification_id'] ?? 0);
+    $effectivenessReviewDue = trim($_POST['effectiveness_review_due'] ?? '');
     $allowedStatuses = ['Registreret', 'Under undersøgelse', 'Handling igangsat', 'Lukket'];
     $allowedSeverities = ['', 'Høj', 'Mellem', 'Lav'];
 
     if (!in_array($status, $allowedStatuses, true) || !in_array($severity, $allowedSeverities, true) || $description === '') {
         $error = t('case.error.invalid');
-    } elseif ($status === 'Lukket' && $case['type'] === 'Audit fund' && ($rootCause === '' || $correctiveAction === '')) {
+    } elseif ($status === 'Lukket' && $requiresClosureDocumentation && ($rootCause === '' || $correctiveAction === '')) {
         $error = t('case.error.closure_requires_root_cause');
+    } elseif ($status === 'Lukket' && $requiresClosureDocumentation && $effectivenessReviewDue === '') {
+        $error = t('case.error.closure_requires_effectiveness_date');
     } elseif ($requiresNotification && $contractReference === '') {
         $error = t('newcase.error.contract_reference_required');
     } else {
@@ -146,15 +152,21 @@ if ($canManage && $_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['effect
             }
         }
 
+        // Feltet vises kun i formularen for de sagstyper, der kræver effektivitetstjek,
+        // så det ikke utilsigtet nulstilles for en type hvor det sættes via den separate
+        // effektivitetstjek-sektion i stedet.
+        $validEffectivenessReviewDue = $requiresClosureDocumentation ? ($effectivenessReviewDue ?: null) : $case['effectiveness_review_due'];
+
         $stmt = $db->prepare('
             UPDATE cases
-            SET status = ?, severity = ?, description = ?, root_cause = ?, immediate_action = ?, corrective_action = ?, assigned_to = ?, due_date = ?, requires_customer_notification = ?, contract_reference = ?, customer_response_date = ?, closed_at = ?, employee_qualification_id = ?
+            SET status = ?, severity = ?, description = ?, root_cause = ?, immediate_action = ?, corrective_action = ?, assigned_to = ?, due_date = ?, requires_customer_notification = ?, contract_reference = ?, customer_response_date = ?, closed_at = ?, employee_qualification_id = ?, effectiveness_review_due = ?
             WHERE id = ? AND organization_id = ?
         ');
         $stmt->execute([
             $status, $severity ?: null, $description, $rootCause ?: null, $immediateAction ?: null, $correctiveAction ?: null,
             $assignedToId, $dueDate ?: null, $requiresNotification, $requiresNotification ? $contractReference : null,
             $case['type'] === 'Kundeklage' ? ($customerResponseDate ?: null) : null, $closedAt, $validEmployeeQualificationId,
+            $validEffectivenessReviewDue,
             $id, $user['organization_id'],
         ]);
 
@@ -345,6 +357,12 @@ render_header($case['title']);
         <label><?= h(t('case.field.corrective_action')) ?>
             <textarea name="corrective_action" rows="3"><?= h($case['corrective_action'] ?? '') ?></textarea>
         </label>
+        <?php if ($requiresClosureDocumentation): ?>
+            <label><?= h(t('case.field.effectiveness_review_due')) ?>
+                <input type="date" name="effectiveness_review_due" value="<?= h($case['effectiveness_review_due'] ?? '') ?>">
+            </label>
+            <p class="muted" style="margin:-8px 0 16px;"><?= h(t('case.field.closure_requirements_hint')) ?></p>
+        <?php endif; ?>
         <?php if ($user['role'] === 'admin'): ?>
         <label><?= h(t('case.field.related_competence')) ?>
             <select name="employee_qualification_id">

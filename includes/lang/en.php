@@ -290,7 +290,8 @@ return [
     'case.no_log' => 'No events recorded yet.',
     'case.not_found' => 'The case was not found.',
     'case.error.invalid' => 'Invalid values selected.',
-    'case.error.closure_requires_root_cause' => 'An audit finding cannot be closed until the root cause and corrective action are filled in.',
+    'case.error.closure_requires_root_cause' => 'The case cannot be closed until the root cause and corrective action are filled in.',
+    'case.error.closure_requires_effectiveness_date' => 'The case cannot be closed until a date for the effectiveness check of the corrective action has been set.',
 
     'users.title' => 'Users',
     'users.create_title' => 'Create new user',
@@ -1253,4 +1254,7 @@ return [
 
     'tasks.effectiveness_due' => 'Effectiveness check due soon',
     'tasks.effectiveness_overdue' => 'Effectiveness check overdue',
+
+    'case.field.effectiveness_review_due' => 'Effectiveness check date',
+    'case.field.closure_requirements_hint' => 'Root cause, corrective action and an effectiveness check date must be filled in before the case can be closed.',
 ];

@@ -290,7 +290,8 @@ return [
     'case.no_log' => 'Ingen hændelser registreret endnu.',
     'case.not_found' => 'Sagen blev ikke fundet.',
     'case.error.invalid' => 'Ugyldige værdier valgt.',
-    'case.error.closure_requires_root_cause' => 'Et audit fund kan ikke lukkes, før rodårsag og korrigerende handling er udfyldt.',
+    'case.error.closure_requires_root_cause' => 'Sagen kan ikke lukkes, før rodårsag og korrigerende handling er udfyldt.',
+    'case.error.closure_requires_effectiveness_date' => 'Sagen kan ikke lukkes, før der er angivet en dato for effektivitetstjek af den korrigerende handling.',
 
     'users.title' => 'Brugere',
     'users.create_title' => 'Opret ny bruger',
@@ -1253,4 +1254,7 @@ return [
 
     'tasks.effectiveness_due' => 'Effektivitetstjek forfalder snart',
     'tasks.effectiveness_overdue' => 'Effektivitetstjek overskredet',
+
+    'case.field.effectiveness_review_due' => 'Dato for effektivitetstjek',
+    'case.field.closure_requirements_hint' => 'Rodårsag, korrigerende handling og dato for effektivitetstjek skal udfyldes, før sagen kan lukkes.',
 ];
