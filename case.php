@@ -321,32 +321,34 @@ render_header($case['title']);
 <div class="card">
     <form method="post">
     <?= csrf_field() ?>
-        <label><?= h(t('case.field.status')) ?>
-            <select name="status">
-                <?php foreach (['Registreret', 'Under undersøgelse', 'Handling igangsat', 'Lukket'] as $s): ?>
-                    <option value="<?= h($s) ?>" <?= $case['status'] === $s ? 'selected' : '' ?>><?= h(case_status_label($s)) ?></option>
-                <?php endforeach; ?>
-            </select>
-        </label>
-        <label><?= h(t('case.field.severity')) ?>
-            <select name="severity">
-                <option value=""><?= h(t('case.field.severity_none')) ?></option>
-                <?php foreach (['Høj', 'Mellem', 'Lav'] as $s): ?>
-                    <option value="<?= h($s) ?>" <?= $case['severity'] === $s ? 'selected' : '' ?>><?= h(severity_label($s)) ?></option>
-                <?php endforeach; ?>
-            </select>
-        </label>
-        <label><?= h(t('case.field.responsible')) ?>
-            <select name="assigned_to">
-                <option value=""><?= h(t('case.field.responsible_none')) ?></option>
-                <?php foreach ($orgUsers as $u): ?>
-                    <option value="<?= (int) $u['id'] ?>" <?= (int)$case['assigned_to'] === (int)$u['id'] ? 'selected' : '' ?>><?= h($u['name']) ?></option>
-                <?php endforeach; ?>
-            </select>
-        </label>
-        <label><?= h(t('case.field.deadline')) ?>
-            <input type="date" name="due_date" value="<?= h($case['due_date'] ?? '') ?>">
-        </label>
+        <div class="inline-grid-form" style="margin-bottom:14px;">
+            <label><?= h(t('case.field.status')) ?>
+                <select name="status">
+                    <?php foreach (['Registreret', 'Under undersøgelse', 'Handling igangsat', 'Lukket'] as $s): ?>
+                        <option value="<?= h($s) ?>" <?= $case['status'] === $s ? 'selected' : '' ?>><?= h(case_status_label($s)) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
+            <label><?= h(t('case.field.severity')) ?>
+                <select name="severity">
+                    <option value=""><?= h(t('case.field.severity_none')) ?></option>
+                    <?php foreach (['Høj', 'Mellem', 'Lav'] as $s): ?>
+                        <option value="<?= h($s) ?>" <?= $case['severity'] === $s ? 'selected' : '' ?>><?= h(severity_label($s)) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
+            <label><?= h(t('case.field.responsible')) ?>
+                <select name="assigned_to">
+                    <option value=""><?= h(t('case.field.responsible_none')) ?></option>
+                    <?php foreach ($orgUsers as $u): ?>
+                        <option value="<?= (int) $u['id'] ?>" <?= (int)$case['assigned_to'] === (int)$u['id'] ? 'selected' : '' ?>><?= h($u['name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
+            <label><?= h(t('case.field.deadline')) ?>
+                <input type="date" name="due_date" value="<?= h($case['due_date'] ?? '') ?>">
+            </label>
+        </div>
         <label><?= h(t('case.field.description')) ?>
             <textarea name="description" rows="4" required><?= h($case['description']) ?></textarea>
         </label>
