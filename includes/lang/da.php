@@ -270,6 +270,7 @@ return [
     'case.description' => 'Beskrivelse',
     'case.root_cause' => 'Rodårsag',
     'case.corrective_action' => 'Korrigerende handling',
+    'case.preventive_action' => 'Forebyggende handling',
     'case.linked_document' => 'Koblet dokument',
     'case.delete' => 'Slet sag',
     'case.delete_confirm' => 'Er du sikker på, at du vil slette denne sag permanent? Historikken kan ikke gendannes.',
@@ -285,6 +286,8 @@ return [
     'case.field.description' => 'Beskrivelse',
     'case.field.root_cause' => 'Rodårsag',
     'case.field.corrective_action' => 'Korrigerende handling',
+    'case.field.preventive_action' => 'Forebyggende handling',
+    'case.field.preventive_action_hint' => 'Skal udfyldes, så snart der er angivet en korrigerende handling.',
     'case.save' => 'Gem ændringer',
     'case.status_history' => 'Statushistorik',
     'case.no_log' => 'Ingen hændelser registreret endnu.',
@@ -292,6 +295,7 @@ return [
     'case.error.invalid' => 'Ugyldige værdier valgt.',
     'case.error.closure_requires_root_cause' => 'Sagen kan ikke lukkes, før rodårsag og korrigerende handling er udfyldt.',
     'case.error.closure_requires_effectiveness_date' => 'Sagen kan ikke lukkes, før der er angivet en dato for effektivitetstjek af den korrigerende handling.',
+    'case.error.corrective_requires_preventive' => 'Når der er angivet en korrigerende handling, skal den forebyggende handling også udfyldes.',
 
     'users.title' => 'Brugere',
     'users.create_title' => 'Opret ny bruger',
@@ -1256,5 +1260,5 @@ return [
     'tasks.effectiveness_overdue' => 'Effektivitetstjek overskredet',
 
     'case.field.effectiveness_review_due' => 'Dato for effektivitetstjek',
-    'case.field.closure_requirements_hint' => 'Rodårsag, korrigerende handling og dato for effektivitetstjek skal udfyldes, før sagen kan lukkes.',
+    'case.field.closure_requirements_hint' => 'Rodårsag, korrigerende handling, forebyggende handling og dato for effektivitetstjek skal udfyldes, før sagen kan lukkes.',
 ];

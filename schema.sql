@@ -439,6 +439,7 @@ CREATE TABLE `cases` (
   `description` text NOT NULL,
   `root_cause` text,
   `corrective_action` text,
+  `preventive_action` text,
   `status` enum('Registreret','Under undersøgelse','Handling igangsat','Lukket') NOT NULL DEFAULT 'Registreret',
   `reported_by` int NOT NULL,
   `assigned_to` int DEFAULT NULL,

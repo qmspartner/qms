@@ -100,6 +100,7 @@ if ($canManage && $_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['effect
     $rootCause = trim($_POST['root_cause'] ?? '');
     $immediateAction = trim($_POST['immediate_action'] ?? '');
     $correctiveAction = trim($_POST['corrective_action'] ?? '');
+    $preventiveAction = trim($_POST['preventive_action'] ?? '');
     $assignedTo = (int) ($_POST['assigned_to'] ?? 0);
     $dueDate = trim($_POST['due_date'] ?? '');
     $requiresNotification = isset($_POST['requires_customer_notification']) ? 1 : 0;
@@ -114,6 +115,8 @@ if ($canManage && $_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['effect
         $error = t('case.error.invalid');
     } elseif ($status === 'Lukket' && $requiresClosureDocumentation && ($rootCause === '' || $correctiveAction === '')) {
         $error = t('case.error.closure_requires_root_cause');
+    } elseif ($correctiveAction !== '' && $preventiveAction === '') {
+        $error = t('case.error.corrective_requires_preventive');
     } elseif ($status === 'Lukket' && $requiresClosureDocumentation && $effectivenessReviewDue === '') {
         $error = t('case.error.closure_requires_effectiveness_date');
     } elseif ($requiresNotification && $contractReference === '') {
@@ -159,11 +162,11 @@ if ($canManage && $_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['effect
 
         $stmt = $db->prepare('
             UPDATE cases
-            SET status = ?, severity = ?, description = ?, root_cause = ?, immediate_action = ?, corrective_action = ?, assigned_to = ?, due_date = ?, requires_customer_notification = ?, contract_reference = ?, customer_response_date = ?, closed_at = ?, employee_qualification_id = ?, effectiveness_review_due = ?
+            SET status = ?, severity = ?, description = ?, root_cause = ?, immediate_action = ?, corrective_action = ?, preventive_action = ?, assigned_to = ?, due_date = ?, requires_customer_notification = ?, contract_reference = ?, customer_response_date = ?, closed_at = ?, employee_qualification_id = ?, effectiveness_review_due = ?
             WHERE id = ? AND organization_id = ?
         ');
         $stmt->execute([
-            $status, $severity ?: null, $description, $rootCause ?: null, $immediateAction ?: null, $correctiveAction ?: null,
+            $status, $severity ?: null, $description, $rootCause ?: null, $immediateAction ?: null, $correctiveAction ?: null, $preventiveAction ?: null,
             $assignedToId, $dueDate ?: null, $requiresNotification, $requiresNotification ? $contractReference : null,
             $case['type'] === 'Kundeklage' ? ($customerResponseDate ?: null) : null, $closedAt, $validEmployeeQualificationId,
             $validEffectivenessReviewDue,
@@ -260,7 +263,11 @@ render_header($case['title']);
         <?php endif; ?>
         <?php if ($case['corrective_action']): ?>
             <p class="meta-label"><?= h(t('case.corrective_action')) ?></p>
-            <p style="margin:0;"><?= nl2br(h($case['corrective_action'])) ?></p>
+            <p style="margin:0 0 12px;"><?= nl2br(h($case['corrective_action'])) ?></p>
+        <?php endif; ?>
+        <?php if ($case['preventive_action']): ?>
+            <p class="meta-label"><?= h(t('case.preventive_action')) ?></p>
+            <p style="margin:0;"><?= nl2br(h($case['preventive_action'])) ?></p>
         <?php endif; ?>
     </div>
 
@@ -357,6 +364,10 @@ render_header($case['title']);
         <label><?= h(t('case.field.corrective_action')) ?>
             <textarea name="corrective_action" rows="3"><?= h($case['corrective_action'] ?? '') ?></textarea>
         </label>
+        <label><?= h(t('case.field.preventive_action')) ?>
+            <textarea name="preventive_action" rows="3"><?= h($case['preventive_action'] ?? '') ?></textarea>
+        </label>
+        <p class="muted" style="margin:-8px 0 16px;"><?= h(t('case.field.preventive_action_hint')) ?></p>
         <?php if ($requiresClosureDocumentation): ?>
             <label><?= h(t('case.field.effectiveness_review_due')) ?>
                 <input type="date" name="effectiveness_review_due" value="<?= h($case['effectiveness_review_due'] ?? '') ?>">
