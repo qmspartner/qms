@@ -15,6 +15,13 @@
     --risk-high: #9a4a0b;
     --risk-high-bg: #fbe2c7;
     --header-h: 64px;
+    /* Klare signalfarver til kompetencematricens prikker. De almindelige --success/
+       --warning/--danger er dæmpede (designet som tekstfarve oven på en bleg baggrund i
+       badges) og ligger for tæt på hinanden som små ensfarvede prikker, så matricen får
+       sine egne, mere mættede farver. */
+    --matrix-valid: #16a34a;
+    --matrix-expiring: #eab308;
+    --matrix-expired: #dc2626;
 }
 
 * { box-sizing: border-box; }
@@ -289,9 +296,9 @@ button:hover { opacity: 0.9; }
 .matrix-dot {
     display: inline-block; width: 14px; height: 14px; border-radius: 50%;
 }
-.matrix-dot-success { background: var(--success); }
-.matrix-dot-warning { background: var(--warning); }
-.matrix-dot-danger { background: var(--danger); }
+.matrix-dot-success { background: var(--matrix-valid); }
+.matrix-dot-warning { background: var(--matrix-expiring); }
+.matrix-dot-danger { background: var(--matrix-expired); }
 .matrix-dot-neutral { background: var(--text-muted); }
 
 .matrix-legend { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; margin: -4px 0 16px; }

@@ -793,7 +793,7 @@ function render_header(string $title): void {
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title><?= h($title) ?> - <?= h(t('brand.name')) ?></title>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
-        <link rel="stylesheet" href="css/style.css?v=37">
+        <link rel="stylesheet" href="css/style.css?v=38">
     </head>
     <body>
     <div class="sticky-header" id="site-header">
