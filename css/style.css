@@ -226,17 +226,17 @@ button:hover { opacity: 0.9; }
 }
 .doc-table th { background: var(--page-bg); }
 
-/* Kompetencematrix: venstre kolonne (medarbejdernavn) klæber også, så den altid er synlig
-   ved vandret scroll i en bred matrix. Hjørnecellen skal ligge over begge sticky-akser. */
+/* Kompetencematrix: almindelig (ikke-klæbende) tabel. position:sticky på en <th> i en
+   border-collapse:collapse-tabel giver uforudsigelig rendering i flere browsere (rækker
+   kan gengives tomme/duplikerede), så her holder vi det bevidst simpelt i stedet. */
 .matrix-table th, .matrix-table td { white-space: nowrap; }
+.matrix-table th { position: static; }
 .matrix-table .matrix-row-head {
-    position: sticky; left: 0; z-index: 1;
     background: var(--surface); border-right: 1px solid var(--border);
     font-weight: 500;
 }
 .matrix-table tbody tr:hover .matrix-row-head { background: var(--page-bg); }
 .matrix-table .matrix-corner {
-    position: sticky; left: 0; z-index: 3;
     background: var(--page-bg); border-right: 1px solid var(--border);
 }
 .matrix-table .matrix-col-head { text-align: center; }
