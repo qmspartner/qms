@@ -729,6 +729,17 @@ function qualification_status_class(string $status): string {
     };
 }
 
+// Kompakt farvemarkør til kompetencematricen, som en fuld badge ikke skalerer godt i
+// (for lidt plads når der kommer mange kvalifikationer som kolonner).
+function qualification_status_dot_class(string $status): string {
+    return match ($status) {
+        'valid' => 'matrix-dot matrix-dot-success',
+        'expiring' => 'matrix-dot matrix-dot-warning',
+        'expired' => 'matrix-dot matrix-dot-danger',
+        default => 'matrix-dot matrix-dot-neutral',
+    };
+}
+
 function can_manage_competence(array $user): bool {
     return $user['role'] === 'admin';
 }
@@ -782,7 +793,7 @@ function render_header(string $title): void {
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title><?= h($title) ?> - <?= h(t('brand.name')) ?></title>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
-        <link rel="stylesheet" href="css/style.css?v=36">
+        <link rel="stylesheet" href="css/style.css?v=37">
     </head>
     <body>
     <div class="sticky-header" id="site-header">

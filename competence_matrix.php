@@ -52,13 +52,26 @@ render_header(t('competence_matrix.title'));
 <?php elseif (!$qualifications): ?>
     <p class="muted"><?= h(t('competence_matrix.empty_qualifications')) ?> <a href="qualifications.php"><?= h(t('qualifications.title')) ?></a></p>
 <?php else: ?>
-<div class="card" style="overflow-x:auto;">
+<div class="matrix-legend">
+    <?php foreach (['valid', 'expiring', 'expired', 'planned'] as $legendStatus): ?>
+        <span class="matrix-legend-item">
+            <span class="<?= qualification_status_dot_class($legendStatus) ?>"></span>
+            <?= h(qualification_status_label($legendStatus)) ?>
+        </span>
+    <?php endforeach; ?>
+    <span class="matrix-legend-item">
+        <span class="muted">—</span>
+        <?= h(t('competence_matrix.legend.none')) ?>
+    </span>
+</div>
+
+<div class="matrix-scroll">
     <table class="doc-table matrix-table">
         <thead>
         <tr>
             <th class="matrix-corner"><?= h(t('competence_matrix.employee_col')) ?></th>
             <?php foreach ($qualifications as $q): ?>
-                <th class="matrix-col-head"><?= h($q['name']) ?></th>
+                <th class="matrix-col-head"><span class="matrix-col-head-label"><?= h($q['name']) ?></span></th>
             <?php endforeach; ?>
         </tr>
         </thead>
@@ -69,9 +82,10 @@ render_header(t('competence_matrix.title'));
                 <?php foreach ($qualifications as $q): ?>
                     <?php $status = $cells[$e['id']][$q['id']] ?? null; ?>
                     <td class="matrix-cell">
-                        <a href="employee_qualification.php?employee_id=<?= (int) $e['id'] ?>&qualification_id=<?= (int) $q['id'] ?>">
+                        <a href="employee_qualification.php?employee_id=<?= (int) $e['id'] ?>&qualification_id=<?= (int) $q['id'] ?>"
+                           title="<?= h($e['name']) ?> — <?= h($q['name']) ?>: <?= $status ? h(qualification_status_label($status)) : h(t('competence_matrix.legend.none')) ?>">
                             <?php if ($status): ?>
-                                <span class="<?= qualification_status_class($status) ?>"><?= h(qualification_status_label($status)) ?></span>
+                                <span class="<?= qualification_status_dot_class($status) ?>"></span>
                             <?php else: ?>
                                 <span class="muted">—</span>
                             <?php endif; ?>

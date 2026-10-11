@@ -1198,6 +1198,7 @@ return [
     'competence_matrix.stat.total' => 'Tildelinger',
     'competence_matrix.stat.expiring' => 'Udløber snart',
     'competence_matrix.stat.expired' => 'Udløbet',
+    'competence_matrix.legend.none' => 'Ingen tildeling',
 
     'employee_qualification.field.obtained_date' => 'Opnået dato',
     'employee_qualification.field.planned_date' => 'Planlagt dato',

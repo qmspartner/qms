@@ -226,19 +226,76 @@ button:hover { opacity: 0.9; }
 }
 .doc-table th { background: var(--page-bg); }
 
-/* Kompetencematrix: almindelig (ikke-klæbende) tabel. position:sticky på en <th> i en
-   border-collapse:collapse-tabel giver uforudsigelig rendering i flere browsere (rækker
-   kan gengives tomme/duplikerede), så her holder vi det bevidst simpelt i stedet. */
-.matrix-table th, .matrix-table td { white-space: nowrap; }
-.matrix-table th { position: static; }
+/* Kompetencematrix. position:sticky på en <th>/<td> giver uforudsigelig rendering
+   (tomme/duplikerede rækker) i en border-collapse:collapse-tabel i flere browsere, så
+   matricen bruger border-collapse:separate i stedet og tegner sine egne kant-linjer.
+   Boksen omkring tabellen (.matrix-scroll) er selv scroll-beholderen, i begge retninger,
+   og sticky-cellerne klæber til DENS top/venstre kant (top:0/left:0) i stedet for siden
+   — at blande "siden scroller" med "boksen scroller vandret" gav upålidelig sticky-matematik. */
+.matrix-scroll {
+    overflow: auto;
+    max-height: 65vh;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+}
+.matrix-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    border: none;
+    border-radius: 0;
+}
+.matrix-table th, .matrix-table td {
+    white-space: nowrap;
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+}
+.matrix-table th:last-child, .matrix-table td:last-child { border-right: none; }
+
+/* Kolonneoverskrifter (kvalifikationsnavne) klæber til toppen af scroll-boksen og
+   roteres 90 grader så mange kurser kan stå side om side uden at tabellen bliver
+   urimelig bred. */
+.matrix-table .matrix-col-head {
+    position: sticky; top: 0; z-index: 2;
+    background: var(--page-bg);
+    height: 150px;
+    vertical-align: bottom;
+    padding: 8px 4px;
+    text-align: left;
+}
+.matrix-col-head-label {
+    display: inline-block;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    white-space: nowrap;
+    font-weight: 500; font-size: 13px; color: var(--text-muted);
+}
+
+/* Venstre kolonne (medarbejdernavn) klæber til venstre kant af scroll-boksen. */
 .matrix-table .matrix-row-head {
-    background: var(--surface); border-right: 1px solid var(--border);
+    position: sticky; left: 0; z-index: 1;
+    background: var(--surface);
     font-weight: 500;
 }
 .matrix-table tbody tr:hover .matrix-row-head { background: var(--page-bg); }
+
+/* Hjørnecellen klæber i begge retninger og skal ligge over resten. */
 .matrix-table .matrix-corner {
-    background: var(--page-bg); border-right: 1px solid var(--border);
+    position: sticky; top: 0; left: 0; z-index: 3;
+    background: var(--page-bg);
 }
+
+.matrix-table .matrix-cell { text-align: center; padding: 10px; }
+.matrix-table .matrix-cell a { display: inline-flex; text-decoration: none; }
+.matrix-dot {
+    display: inline-block; width: 14px; height: 14px; border-radius: 50%;
+}
+.matrix-dot-success { background: var(--success); }
+.matrix-dot-warning { background: var(--warning); }
+.matrix-dot-danger { background: var(--danger); }
+.matrix-dot-neutral { background: var(--text-muted); }
+
+.matrix-legend { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; margin: -4px 0 16px; }
+.matrix-legend-item { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-muted); }
 .matrix-table .matrix-col-head { text-align: center; }
 .matrix-table .matrix-cell { text-align: center; padding: 8px 12px; }
 .matrix-table .matrix-cell a { text-decoration: none; }

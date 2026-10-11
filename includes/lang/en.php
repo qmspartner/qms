@@ -1198,6 +1198,7 @@ return [
     'competence_matrix.stat.total' => 'Assignments',
     'competence_matrix.stat.expiring' => 'Expiring soon',
     'competence_matrix.stat.expired' => 'Expired',
+    'competence_matrix.legend.none' => 'No assignment',
 
     'employee_qualification.field.obtained_date' => 'Obtained date',
     'employee_qualification.field.planned_date' => 'Planned date',
