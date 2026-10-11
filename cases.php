@@ -70,7 +70,9 @@ $stmt = $db->prepare("
         SUM(due_date IS NOT NULL AND due_date < CURDATE() AND status != 'Lukket') AS overdue_count,
         SUM(requires_customer_notification = 1 AND status != 'Lukket') AS notification_count,
         SUM(type = 'Kundeklage' AND status != 'Lukket') AS complaint_count,
-        SUM(type = 'Mistænkt forfalsket del' AND status != 'Lukket') AS counterfeit_count
+        SUM(type = 'Mistænkt forfalsket del' AND status != 'Lukket') AS counterfeit_count,
+        SUM(status = 'Lukket' AND corrective_action IS NOT NULL AND corrective_action != '' AND effectiveness_result IS NULL AND effectiveness_review_due IS NULL) AS effectiveness_pending_date_count,
+        SUM(status = 'Lukket' AND corrective_action IS NOT NULL AND corrective_action != '' AND effectiveness_result IS NULL AND effectiveness_review_due IS NOT NULL AND effectiveness_review_due <= CURDATE() + INTERVAL " . EFFECTIVENESS_DUE_SOON_DAYS . " DAY) AS effectiveness_due_count
     FROM cases
     WHERE organization_id = ?
 ");
@@ -114,6 +116,8 @@ render_header(t('cases.title'));
     <div class="stat-card"><p class="stat-label"><?= h(t('cases.stat.customer_notification')) ?></p><p class="stat-value stat-danger"><?= (int)($stats['notification_count'] ?? 0) ?></p></div>
     <div class="stat-card"><p class="stat-label"><?= h(t('cases.stat.complaints')) ?></p><p class="stat-value stat-warning"><?= (int)($stats['complaint_count'] ?? 0) ?></p></div>
     <div class="stat-card"><p class="stat-label"><?= h(t('cases.stat.counterfeit')) ?></p><p class="stat-value stat-danger"><?= (int)($stats['counterfeit_count'] ?? 0) ?></p></div>
+    <div class="stat-card"><p class="stat-label"><?= h(t('cases.stat.effectiveness_pending_date')) ?></p><p class="stat-value"><?= (int)($stats['effectiveness_pending_date_count'] ?? 0) ?></p></div>
+    <div class="stat-card"><p class="stat-label"><?= h(t('cases.stat.effectiveness_due')) ?></p><p class="stat-value stat-warning"><?= (int)($stats['effectiveness_due_count'] ?? 0) ?></p></div>
 </div>
 
 <?php render_active_filters($activeChips, clear_all_filters_href(['type', 'severity', 'status'])); ?>
@@ -127,10 +131,12 @@ render_header(t('cases.title'));
         <th><?php render_th_controls(t('cases.table.status'), 'status', $sortCol, $sortDir === 'DESC' ? 'desc' : 'asc', 'status', $caseStatuses, $selectedStatuses, 'case_status_label', t('cases.table.status')); ?></th>
         <th><?php render_th_controls(t('cases.table.responsible'), 'assigned', $sortCol, $sortDir === 'DESC' ? 'desc' : 'asc'); ?></th>
         <th><?php render_th_controls(t('cases.table.deadline'), 'deadline', $sortCol, $sortDir === 'DESC' ? 'desc' : 'asc'); ?></th>
+        <th><?= h(t('cases.table.effectiveness')) ?></th>
     </tr>
     </thead>
     <tbody>
     <?php foreach ($cases as $c): ?>
+        <?php $effStatus = effectiveness_status($c); ?>
         <tr onclick="window.location='case.php?id=<?= (int)$c['id'] ?>'">
             <td>SAG-<?= str_pad((string)$c['id'], 4, '0', STR_PAD_LEFT) ?>: <?= h($c['title']) ?></td>
             <td><?= h(type_label($c['type'])) ?></td>
@@ -138,10 +144,11 @@ render_header(t('cases.title'));
             <td><span class="<?= case_status_class($c['status']) ?>"><?= h(case_status_label($c['status'])) ?></span></td>
             <td><?= h($c['assigned_to_name'] ?? t('cases.unassigned')) ?></td>
             <td><?= format_date($c['due_date']) ?></td>
+            <td><?= $effStatus !== 'none' ? '<span class="' . effectiveness_status_class($effStatus) . '">' . h(effectiveness_status_label($effStatus)) . '</span>' : '<span class="muted">—</span>' ?></td>
         </tr>
     <?php endforeach; ?>
     <?php if (!$cases): ?>
-        <tr><td colspan="6" class="muted"><?= h(t('cases.empty')) ?></td></tr>
+        <tr><td colspan="7" class="muted"><?= h(t('cases.empty')) ?></td></tr>
     <?php endif; ?>
     </tbody>
 </table>

@@ -44,8 +44,53 @@ if (is_gqar($user) && (!$case['requires_customer_notification'] || !user_has_con
 
 $canManage = can_manage_cases($user);
 $error = '';
+$effectivenessError = '';
 
-if ($canManage && $_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($canManage && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['effectiveness_action'])) {
+    $effectivenessAction = $_POST['effectiveness_action'];
+
+    if ($effectivenessAction === 'set_due' && in_array(effectiveness_status($case), ['pending_date', 'planned', 'due_soon', 'overdue'], true)) {
+        $reviewDue = trim($_POST['effectiveness_review_due'] ?? '');
+        if ($reviewDue === '') {
+            $effectivenessError = t('case.effectiveness.error.date_required');
+        } else {
+            $stmt = $db->prepare('UPDATE cases SET effectiveness_review_due = ? WHERE id = ? AND organization_id = ?');
+            $stmt->execute([$reviewDue, $id, $user['organization_id']]);
+            log_case_action($id, t('case.effectiveness.log.date_set'), format_date($reviewDue));
+            header('Location: case.php?id=' . $id);
+            exit;
+        }
+    } elseif ($effectivenessAction === 'record_result' && in_array(effectiveness_status($case), ['planned', 'due_soon', 'overdue'], true)) {
+        $result = $_POST['effectiveness_result'] ?? '';
+        $notes = trim($_POST['effectiveness_notes'] ?? '');
+        if (!in_array($result, ['Effektiv', 'Ikke effektiv'], true)) {
+            $effectivenessError = t('case.effectiveness.error.result_required');
+        } elseif ($result === 'Effektiv') {
+            $stmt = $db->prepare('UPDATE cases SET effectiveness_result = ?, effectiveness_reviewed_at = CURDATE(), effectiveness_notes = ? WHERE id = ? AND organization_id = ?');
+            $stmt->execute([$result, $notes ?: null, $id, $user['organization_id']]);
+            log_case_action($id, t('case.effectiveness.log.effective'), $notes);
+            header('Location: case.php?id=' . $id);
+            exit;
+        } else {
+            // Ikke effektiv: sagen genåbnes og fortsætter i samme historik (case_log),
+            // og effektivitetstjek-felterne nulstilles så en ny tjek-cyklus kan starte,
+            // når sagen lukkes igen efter en justeret/ny korrigerende handling.
+            $stmt = $db->prepare("
+                UPDATE cases
+                SET status = 'Handling igangsat', closed_at = NULL,
+                    effectiveness_review_due = NULL, effectiveness_result = NULL,
+                    effectiveness_reviewed_at = NULL, effectiveness_notes = NULL
+                WHERE id = ? AND organization_id = ?
+            ");
+            $stmt->execute([$id, $user['organization_id']]);
+            log_case_action($id, t('case.effectiveness.log.ineffective'), $notes);
+            header('Location: case.php?id=' . $id);
+            exit;
+        }
+    }
+}
+
+if ($canManage && $_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['effectiveness_action'])) {
     $status = $_POST['status'] ?? '';
     $severity = $_POST['severity'] ?? '';
     $description = trim($_POST['description'] ?? '');
@@ -328,6 +373,66 @@ render_header($case['title']);
         </div>
         <button type="submit"><?= h(t('case.save')) ?></button>
     </form>
+</div>
+<?php endif; ?>
+
+<?php $effStatus = effectiveness_status($case); ?>
+<?php if ($effStatus !== 'none'): ?>
+<h2><?= h(t('case.effectiveness.title')) ?></h2>
+<div class="card">
+    <p class="muted" style="margin-top:0;"><?= h(t('case.effectiveness.intro')) ?></p>
+
+    <?php if ($effectivenessError): ?><p class="alert alert-danger"><?= h($effectivenessError) ?></p><?php endif; ?>
+
+    <div class="meta-grid">
+        <div><p class="meta-label"><?= h(t('case.effectiveness.status_label')) ?></p>
+            <p><span class="<?= effectiveness_status_class($effStatus) ?>"><?= h(effectiveness_status_label($effStatus)) ?></span></p></div>
+        <?php if ($case['effectiveness_review_due']): ?>
+            <div><p class="meta-label"><?= h(t('case.effectiveness.due_date_label')) ?></p><p><?= format_date($case['effectiveness_review_due']) ?></p></div>
+        <?php endif; ?>
+        <?php if ($case['effectiveness_reviewed_at']): ?>
+            <div><p class="meta-label"><?= h(t('case.effectiveness.reviewed_at_label')) ?></p><p><?= format_date($case['effectiveness_reviewed_at']) ?></p></div>
+        <?php endif; ?>
+    </div>
+    <?php if ($case['effectiveness_notes']): ?>
+        <p class="meta-label"><?= h(t('case.effectiveness.notes_label')) ?></p>
+        <p style="margin:0 0 12px;"><?= nl2br(h($case['effectiveness_notes'])) ?></p>
+    <?php endif; ?>
+
+    <?php if ($canManage && $effStatus === 'pending_date'): ?>
+        <form method="post" style="margin-top:12px;">
+            <?= csrf_field() ?>
+            <input type="hidden" name="effectiveness_action" value="set_due">
+            <label><?= h(t('case.effectiveness.set_date_label')) ?>
+                <input type="date" name="effectiveness_review_due" required>
+            </label>
+            <button type="submit"><?= h(t('case.effectiveness.set_date_button')) ?></button>
+        </form>
+    <?php elseif ($canManage && in_array($effStatus, ['planned', 'due_soon', 'overdue'], true)): ?>
+        <form method="post" style="margin-top:12px; border-top:0.5px solid var(--border); padding-top:12px;">
+            <?= csrf_field() ?>
+            <input type="hidden" name="effectiveness_action" value="set_due">
+            <label><?= h(t('case.effectiveness.due_date_label')) ?>
+                <input type="date" name="effectiveness_review_due" value="<?= h($case['effectiveness_review_due']) ?>" required>
+            </label>
+            <button type="submit" class="button-secondary"><?= h(t('case.effectiveness.set_date_button')) ?></button>
+        </form>
+        <form method="post" style="margin-top:12px; border-top:0.5px solid var(--border); padding-top:12px;">
+            <?= csrf_field() ?>
+            <input type="hidden" name="effectiveness_action" value="record_result">
+            <label><?= h(t('case.effectiveness.result_label')) ?>
+                <select name="effectiveness_result" required>
+                    <option value=""><?= h(t('case.effectiveness.result_choose')) ?></option>
+                    <option value="Effektiv"><?= h(t('case.effectiveness.result_effective')) ?></option>
+                    <option value="Ikke effektiv"><?= h(t('case.effectiveness.result_ineffective')) ?></option>
+                </select>
+            </label>
+            <label><?= h(t('case.effectiveness.notes_label')) ?>
+                <textarea name="effectiveness_notes" rows="3"></textarea>
+            </label>
+            <button type="submit"><?= h(t('case.effectiveness.record_button')) ?></button>
+        </form>
+    <?php endif; ?>
 </div>
 <?php endif; ?>
 

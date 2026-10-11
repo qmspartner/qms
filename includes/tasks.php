@@ -49,6 +49,27 @@ function get_my_tasks(array $user): array {
     }
 
     $stmt = $db->prepare("
+        SELECT id, title, effectiveness_review_due, assigned_to, reported_by
+        FROM cases
+        WHERE organization_id = ? AND status = 'Lukket' AND corrective_action IS NOT NULL AND corrective_action != ''
+            AND effectiveness_result IS NULL AND effectiveness_review_due IS NOT NULL
+            AND effectiveness_review_due <= CURDATE() + INTERVAL " . EFFECTIVENESS_DUE_SOON_DAYS . " DAY
+            AND COALESCE(assigned_to, reported_by) = ?
+    ");
+    $stmt->execute([$orgId, $userId]);
+    foreach ($stmt->fetchAll() as $case) {
+        $overdue = $case['effectiveness_review_due'] < date('Y-m-d');
+        $tasks[] = [
+            'urgency' => $overdue ? 'danger' : 'warning',
+            'icon' => $overdue ? 'ti-alert-triangle' : 'ti-calendar-event',
+            'label' => $overdue ? t('tasks.effectiveness_overdue') : t('tasks.effectiveness_due'),
+            'title' => $case['title'],
+            'link' => 'case.php?id=' . $case['id'],
+            'sort' => $overdue ? 0 : 2,
+        ];
+    }
+
+    $stmt = $db->prepare("
         SELECT id, title, doc_number
         FROM documents
         WHERE owner_id = ? AND organization_id = ? AND status = 'Godkendt'

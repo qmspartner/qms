@@ -38,6 +38,10 @@ date_default_timezone_set('Europe/Copenhagen');
 // tærskel som udstyrs-kalibrering, leverandørevaluering og optegnelsers revisionsdato).
 define('COMPETENCE_DUE_SOON_DAYS', 60);
 
+// Antal dage før en planlagt effektivitetstjek-dato for en korrigerende handling
+// regnes som "forfalder snart" (samme tærskel som resten af systemets due-soon-vinduer).
+define('EFFECTIVENESS_DUE_SOON_DAYS', 60);
+
 // Hærdet session-cookie: kun HTTPS, ikke tilgængelig for JavaScript, og ikke sendt med ved
 // tredjeparts-navigation (reducerer både session-hijacking og CSRF-angrebsfladen).
 ini_set('session.use_strict_mode', '1');

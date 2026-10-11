@@ -774,6 +774,49 @@ function case_status_class(string $status): string {
     };
 }
 
+// Effektivitetstjek af korrigerende handlinger (ISO 9001 pkt. 10.2): status udregnes
+// altid ud fra sagens felter i stedet for at blive gemt separat, så den aldrig kan
+// gå i utakt (samme princip som qualification_status() for kompetencematricen).
+// 'none'         - sagen er ikke lukket, eller der er ingen korrigerende handling at tjekke
+// 'pending_date' - lukket med korrigerende handling, men sagsbehandler har ikke sat en tjek-dato endnu
+// 'planned'      - tjek-dato sat, ligger længere ude end due-soon-vinduet
+// 'due_soon'     - tjek-dato nærmer sig
+// 'overdue'      - tjek-dato er overskredet uden registreret resultat
+// 'effective'    - tjekket er udført og handlingen var effektiv
+function effectiveness_status(array $case): string {
+    if ($case['status'] !== 'Lukket' || empty($case['corrective_action'])) {
+        return 'none';
+    }
+    if (($case['effectiveness_result'] ?? null) === 'Effektiv') {
+        return 'effective';
+    }
+    if (empty($case['effectiveness_review_due'])) {
+        return 'pending_date';
+    }
+    $today = new DateTimeImmutable('today');
+    $due = new DateTimeImmutable($case['effectiveness_review_due']);
+    if ($due < $today) {
+        return 'overdue';
+    }
+    if ($due <= $today->modify('+' . EFFECTIVENESS_DUE_SOON_DAYS . ' days')) {
+        return 'due_soon';
+    }
+    return 'planned';
+}
+
+function effectiveness_status_label(string $status): string {
+    return t('effectiveness.status.' . $status);
+}
+
+function effectiveness_status_class(string $status): string {
+    return match ($status) {
+        'effective' => 'badge badge-success',
+        'due_soon' => 'badge badge-warning',
+        'overdue' => 'badge badge-danger',
+        default => 'badge badge-neutral',
+    };
+}
+
 function severity_class(?string $severity): string {
     return match ($severity) {
         'Høj' => 'badge badge-danger',
