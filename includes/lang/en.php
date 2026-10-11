@@ -1222,10 +1222,6 @@ return [
     'home.competence.total' => 'Assignments',
     'home.competence.attention' => 'Needs attention',
 
-    'case.field.related_competence' => 'Related competence gap',
-    'case.field.related_competence_none' => 'None selected',
-    'case.linked_competence' => 'Related to competence gap',
-
     'effectiveness.status.none' => '—',
     'effectiveness.status.pending_date' => 'Date not set',
     'effectiveness.status.planned' => 'Planned',

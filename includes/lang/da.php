@@ -1222,10 +1222,6 @@ return [
     'home.competence.total' => 'Tildelinger',
     'home.competence.attention' => 'Kræver opmærksomhed',
 
-    'case.field.related_competence' => 'Relateret kompetencemangel',
-    'case.field.related_competence_none' => 'Ingen valgt',
-    'case.linked_competence' => 'Relateret til kompetencemangel',
-
     'effectiveness.status.none' => '—',
     'effectiveness.status.pending_date' => 'Dato ikke sat',
     'effectiveness.status.planned' => 'Planlagt',

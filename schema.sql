@@ -455,7 +455,6 @@ CREATE TABLE `cases` (
   `customer_id` int DEFAULT NULL,
   `customer_response_date` date DEFAULT NULL,
   `closed_at` datetime DEFAULT NULL,
-  `employee_qualification_id` int DEFAULT NULL,
   `effectiveness_review_due` date DEFAULT NULL,
   `effectiveness_result` enum('Effektiv','Ikke effektiv') DEFAULT NULL,
   `effectiveness_reviewed_at` date DEFAULT NULL,
@@ -468,15 +467,13 @@ CREATE TABLE `cases` (
   KEY `fk_cases_audit` (`audit_id`),
   KEY `fk_cases_supplier` (`supplier_id`),
   KEY `fk_cases_customer` (`customer_id`),
-  KEY `fk_cases_employee_qualification` (`employee_qualification_id`),
   CONSTRAINT `cases_ibfk_1` FOREIGN KEY (`organization_id`) REFERENCES `organizations` (`id`),
   CONSTRAINT `cases_ibfk_2` FOREIGN KEY (`reported_by`) REFERENCES `users` (`id`),
   CONSTRAINT `cases_ibfk_3` FOREIGN KEY (`assigned_to`) REFERENCES `users` (`id`),
   CONSTRAINT `cases_ibfk_4` FOREIGN KEY (`linked_document_id`) REFERENCES `documents` (`id`),
   CONSTRAINT `fk_cases_audit` FOREIGN KEY (`audit_id`) REFERENCES `audits` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_cases_customer` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`) ON DELETE SET NULL,
-  CONSTRAINT `fk_cases_supplier` FOREIGN KEY (`supplier_id`) REFERENCES `suppliers` (`id`) ON DELETE SET NULL,
-  CONSTRAINT `fk_cases_employee_qualification` FOREIGN KEY (`employee_qualification_id`) REFERENCES `employee_qualifications` (`id`) ON DELETE SET NULL
+  CONSTRAINT `fk_cases_supplier` FOREIGN KEY (`supplier_id`) REFERENCES `suppliers` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE `case_attachments` (
