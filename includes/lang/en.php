@@ -183,6 +183,9 @@ return [
     'doc.reject_required' => 'You must provide a reason to reject.',
     'doc.reject_error_banner' => 'You must provide a reason to reject a version.',
     'doc.not_found' => 'The document was not found.',
+    'doc.rename_save' => 'Rename',
+    'doc.error.title_required' => 'The title cannot be empty.',
+    'doc.log.renamed' => 'Renamed',
 
     'status.Kladde' => 'Draft',
     'status.Til godkendelse' => 'Pending approval',

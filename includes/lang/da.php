@@ -183,6 +183,9 @@ return [
     'doc.reject_required' => 'Du skal angive en begrundelse for at kunne afvise.',
     'doc.reject_error_banner' => 'Du skal angive en begrundelse for at kunne afvise en version.',
     'doc.not_found' => 'Dokumentet blev ikke fundet.',
+    'doc.rename_save' => 'Omdøb',
+    'doc.error.title_required' => 'Titlen må ikke være tom.',
+    'doc.log.renamed' => 'Omdøbt',
 
     'status.Kladde' => 'Kladde',
     'status.Til godkendelse' => 'Til godkendelse',

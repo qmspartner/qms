@@ -26,6 +26,21 @@ if (is_gqar($user) && (!$doc['is_configuration_item'] || $doc['status'] !== 'God
     exit;
 }
 
+$renameError = '';
+if ($user['role'] === 'admin' && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'rename') {
+    $newTitle = trim($_POST['title'] ?? '');
+    if ($newTitle === '') {
+        $renameError = t('doc.error.title_required');
+    } else {
+        $stmt = $db->prepare('UPDATE documents SET title = ? WHERE id = ? AND organization_id = ?');
+        $stmt->execute([$newTitle, $id, $user['organization_id']]);
+        if ($newTitle !== $doc['title']) {
+            log_action($id, null, t('doc.log.renamed'), $doc['title'] . ' → ' . $newTitle);
+        }
+        $doc['title'] = $newTitle;
+    }
+}
+
 $rejectError = ($_GET['error'] ?? '') === 'reason_required';
 $configApprovalError = ($_GET['error'] ?? '') === 'config_approval_restricted';
 
@@ -64,11 +79,25 @@ render_header($doc['title']);
 <?php if ($configApprovalError): ?>
     <p class="alert alert-danger"><?= h(t('doc.config_approval_restricted')) ?></p>
 <?php endif; ?>
+<?php if ($renameError): ?>
+    <p class="alert alert-danger"><?= h($renameError) ?></p>
+<?php endif; ?>
 
 <div class="card">
     <div class="doc-header">
         <div>
-            <h1><?= h($doc['title']) ?></h1>
+            <?php if ($user['role'] === 'admin'): ?>
+                <form method="post" class="inline-grid-form" style="margin-bottom:6px; max-width:520px;">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="action" value="rename">
+                    <label style="margin-bottom:0;">
+                        <input type="text" name="title" value="<?= h($doc['title']) ?>" style="font-size:20px; font-weight:600; padding:6px 10px;">
+                    </label>
+                    <button type="submit" class="button-small button-secondary" style="align-self:center;"><?= h(t('doc.rename_save')) ?></button>
+                </form>
+            <?php else: ?>
+                <h1><?= h($doc['title']) ?></h1>
+            <?php endif; ?>
             <p class="muted"><?= h($doc['doc_number']) ?> &middot; <?= h(category_label($doc['category'])) ?><?= $doc['iso_clause'] ? ' &middot; ' . h($doc['iso_clause']) : '' ?></p>
         </div>
         <span class="<?= status_badge_class($doc['status']) ?>"><?= h(status_label($doc['status'])) ?></span>
