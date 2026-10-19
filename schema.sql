@@ -100,12 +100,9 @@ CREATE TABLE `list_items` (
   `active` tinyint(1) NOT NULL DEFAULT '1',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `prefix` varchar(20) DEFAULT NULL,
-  `template_category_id` int DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `organization_id` (`organization_id`),
-  KEY `fk_list_items_template_category` (`template_category_id`),
-  CONSTRAINT `list_items_ibfk_1` FOREIGN KEY (`organization_id`) REFERENCES `organizations` (`id`),
-  CONSTRAINT `fk_list_items_template_category` FOREIGN KEY (`template_category_id`) REFERENCES `list_items` (`id`)
+  CONSTRAINT `list_items_ibfk_1` FOREIGN KEY (`organization_id`) REFERENCES `organizations` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
@@ -215,6 +212,7 @@ CREATE TABLE `documents` (
   `doc_number` varchar(30) NOT NULL,
   `title` varchar(255) NOT NULL,
   `category` varchar(100) NOT NULL,
+  `is_template` tinyint(1) NOT NULL DEFAULT '0',
   `iso_clause` varchar(60) DEFAULT NULL,
   `owner_id` int NOT NULL,
   `status` enum('Kladde','Til godkendelse','Godkendt','Udgået') NOT NULL DEFAULT 'Kladde',

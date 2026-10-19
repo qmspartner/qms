@@ -27,7 +27,7 @@ $error = '';
 $doneCount = null;
 // Leverance-kvalitetsplan kræver sin egen quality_plan_details-række og oprettes
 // via new_quality_plan.php — udelukkes derfor fra bulk-import, ligesom konfigurationsstyrede dokumenter.
-$allowedCategories = array_values(array_diff(document_category_selectable_values(), ['Leverance-kvalitetsplan']));
+$allowedCategories = array_values(array_diff(list_active_values('document_category'), ['Leverance-kvalitetsplan']));
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['cancel'])) {
     docimport_cleanup_tmpdir($_SESSION['docimport_tmpdir'] ?? null);

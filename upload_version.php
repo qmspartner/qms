@@ -38,6 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $originalIssueDate = trim($_POST['original_issue_date'] ?? '');
     $section = trim($_POST['section'] ?? '');
     $operation = trim($_POST['operation'] ?? '');
+    $isTemplate = (!$existingDoc && isset($_POST['is_template'])) ? 1 : 0;
 
     $file = $_FILES['file'] ?? null;
 
@@ -50,10 +51,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $categoryPrefix = !$existingDoc ? document_category_prefix($category) : null;
     $usesStructuredId = !$existingDoc && !$isImported && $categoryPrefix;
 
-    // Hvis den valgte kategori har en tilknyttet skabelon, og en godkendt skabelon findes,
-    // skal brugeren bekræfte at have brugt den, før dokumentet kan oprettes.
-    $linkedTemplateCategory = !$existingDoc ? document_category_template_category($category) : null;
-    $currentTemplateDoc = $linkedTemplateCategory ? get_latest_template_document($linkedTemplateCategory) : null;
+    // Hvis der allerede findes en godkendt skabelon i den valgte kategori, skal
+    // brugeren bekræfte at have brugt den, før dokumentet kan oprettes.
+    $currentTemplateDoc = !$existingDoc ? get_latest_template_document($category) : null;
     $templateConfirmed = isset($_POST['template_confirmed']);
 
     if ($existingDoc) {
@@ -104,11 +104,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $docId = $existingDoc['id'];
                     } else {
                         $stmt = $db->prepare('
-                            INSERT INTO documents (organization_id, doc_number, title, category, iso_clause, owner_id, status, is_configuration_item, baseline_reference, section, operation, is_imported, original_issue_date)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            INSERT INTO documents (organization_id, doc_number, title, category, is_template, iso_clause, owner_id, status, is_configuration_item, baseline_reference, section, operation, is_imported, original_issue_date)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         ');
                         $stmt->execute([
-                            $user['organization_id'], $docNumber, $title, $category, $isoClause ?: null, $user['id'], 'Til godkendelse',
+                            $user['organization_id'], $docNumber, $title, $category, $isTemplate, $isoClause ?: null, $user['id'], 'Til godkendelse',
                             $isConfigItem, $isConfigItem ? ($baselineRef ?: null) : null,
                             $usesStructuredId ? $section : null, $usesStructuredId ? $operation : null,
                             $isImported, ($isImported && $originalIssueDate !== '') ? $originalIssueDate : null,
@@ -146,7 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 render_header($existingDoc ? t('upload.title_new_version') : t('upload.title_new'));
-$categories = document_category_selectable_values();
+$categories = list_active_values('document_category');
 ?>
 <div class="card login-card">
     <h1><?= $existingDoc ? h(t('upload.title_version_of')) . ' ' . h($existingDoc['title']) : h(t('upload.title_new')) ?></h1>
@@ -172,6 +172,14 @@ $categories = document_category_selectable_values();
                 </label>
 
                 <div id="template-nudge-box" style="display:none; background:#f6f6f6; border-radius:6px; padding:10px 12px; margin-bottom:14px;"></div>
+
+                <label style="display:flex; align-items:flex-start; gap:10px; background:#eef4ff; border:1px solid #c3d6fb; border-radius:8px; padding:12px 14px; margin-bottom:14px; flex-direction:row; font-weight:400;">
+                    <input type="checkbox" name="is_template" id="is_template" value="1" style="width:auto; margin-top:2px;">
+                    <span style="font-size:13.5px;">
+                        <strong><?= h(t('upload.field.is_template')) ?></strong><br>
+                        <span class="muted" style="font-size:12px;"><?= h(t('upload.field.is_template_help')) ?></span>
+                    </span>
+                </label>
 
                 <label style="display:flex; align-items:center; gap:8px; flex-direction:row;">
                     <input type="checkbox" name="is_imported" id="is_imported" value="1" style="width:auto;" onchange="updateIdFields();">
@@ -278,21 +286,16 @@ function updateTemplateNudge() {
 
     box.style.display = 'block';
 
-    if (info.title) {
-        const version = info.version ? ' v' + info.version : '';
-        box.innerHTML =
-            '<div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">' +
-            '<span style="font-size:13px;"><strong><?= h(t('upload.template_box.title')) ?></strong> ' +
-            info.title.replace(/</g, '&lt;') + version + '</span>' +
-            '<a href="download_template.php?version_id=' + info.versionId + '" class="button-secondary" style="padding:5px 10px; font-size:12px;" target="_blank"><?= h(t('upload.template_box.download')) ?></a>' +
-            '</div>' +
-            '<label style="display:flex; align-items:flex-start; gap:8px; margin-top:10px; font-weight:400; font-size:12.5px;">' +
-            '<input type="checkbox" name="template_confirmed" value="1" required style="width:auto; margin-top:2px;">' +
-            '<span><?= h(t('upload.template_box.confirm_label')) ?></span></label>';
-    } else {
-        box.innerHTML = '<p class="muted" style="font-size:12px; margin:0;"><?= h(t('upload.template_box.missing')) ?> ' +
-            info.templateCategory.replace(/</g, '&lt;') + '</p>';
-    }
+    const version = info.version ? ' v' + info.version : '';
+    box.innerHTML =
+        '<div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">' +
+        '<span style="font-size:13px;"><strong><?= h(t('upload.template_box.title')) ?></strong> ' +
+        info.title.replace(/</g, '&lt;') + version + '</span>' +
+        '<a href="download_template.php?version_id=' + info.versionId + '" class="button-secondary" style="padding:5px 10px; font-size:12px;" target="_blank"><?= h(t('upload.template_box.download')) ?></a>' +
+        '</div>' +
+        '<label style="display:flex; align-items:flex-start; gap:8px; margin-top:10px; font-weight:400; font-size:12.5px;">' +
+        '<input type="checkbox" name="template_confirmed" value="1" required style="width:auto; margin-top:2px;">' +
+        '<span><?= h(t('upload.template_box.confirm_label')) ?></span></label>';
 }
 
 function updatePreview() {

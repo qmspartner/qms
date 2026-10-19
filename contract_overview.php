@@ -64,7 +64,7 @@ if ($selectedContract !== '') {
         $stmt->execute([$user['organization_id'], $selectedContract]);
         $faiRecords = $stmt->fetchAll();
     }
-    $faiTemplate = ($isAdmin && organization_has_fai()) ? get_latest_template_document(FAI_TEMPLATE_CATEGORY) : null;
+    $faiTemplate = ($isAdmin && organization_has_fai()) ? get_latest_template_document(FAI_CATEGORY) : null;
 
     if (!$isGqar) {
         $stmt = $db->prepare('SELECT * FROM risks WHERE organization_id = ? AND contract_reference = ? ORDER BY (probability * consequence) DESC');
@@ -319,7 +319,7 @@ render_header(t('contractoverview.title'));
                         </div>
                     <?php else: ?>
                         <p class="muted" style="font-size:12px; margin-top:0;">
-                            <?= h(t('contractoverview.fai.template_box.missing', ['category' => FAI_TEMPLATE_CATEGORY])) ?>
+                            <?= h(t('contractoverview.fai.template_box.missing')) ?>
                             <?php if (has_permission($user, 'templates')): ?><a href="templates.php"><?= h(t('templates.title')) ?></a><?php endif; ?>
                         </p>
                     <?php endif; ?>

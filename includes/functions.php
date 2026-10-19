@@ -67,13 +67,15 @@ function organization_delivers_software(): bool {
     return $cache[$orgId];
 }
 
-// Konventionen bag Skabelonbiblioteket: en dokumentkategori hvis danske label
-// starter med "Skabelon" (fx "Skabelon - FAI", "Skabelon - PFMEA") behandles som
-// et skabelonbibliotek-emne, ikke et almindeligt styret dokument. Admin opretter
-// kategorierne selv under Lister.
-const TEMPLATE_CATEGORY_PREFIX = 'Skabelon';
-const FAI_TEMPLATE_CATEGORY = 'Skabelon - FAI';
+// Skabelonbiblioteket: et dokument er en skabelon, hvis documents.is_template = 1
+// - uanset hvilken almindelig dokumentkategori (fx "Procedure") det ligger i.
+// FAI_CATEGORY er den rigtige dokumentkategori, FAI-skabelonen (og alle andre
+// FAI-dokumenter) ligger i.
+const FAI_CATEGORY = 'FAI';
 
+// Den nyeste godkendte skabelon (is_template = 1) i en given dokumentkategori,
+// eller null hvis der ikke findes en. Bruges både til "opret nyt dokument"-nudgen
+// og til FAI-skabelonboksen i kontraktoverblikket.
 function get_latest_template_document(string $category): ?array {
     $user = current_user();
     $orgId = $user['organization_id'] ?? 0;
@@ -85,7 +87,7 @@ function get_latest_template_document(string $category): ?array {
         SELECT d.*, v.version_number, v.approved_at, v.original_approval_date, v.stored_filename, v.original_filename
         FROM documents d
         LEFT JOIN document_versions v ON v.id = d.current_version_id
-        WHERE d.organization_id = ? AND d.category = ? AND d.status = 'Godkendt'
+        WHERE d.organization_id = ? AND d.category = ? AND d.is_template = 1 AND d.status = 'Godkendt'
         ORDER BY d.id DESC
         LIMIT 1
     ");
@@ -382,69 +384,34 @@ function list_type_label(string $listType): string {
     return t('lists.type.' . $listType);
 }
 
-// En dokumentkategori hvis label starter med "Skabelon" er et skabelonbibliotek-emne,
-// ikke en almindelig dokumenttype man kan oprette dokumenter direkte i (se TEMPLATE_CATEGORY_PREFIX).
-function is_template_category_label(string $labelDa): bool {
-    return str_starts_with(trim($labelDa), TEMPLATE_CATEGORY_PREFIX);
-}
-
-// De almindelige dokumentkategorier en bruger kan vælge, når de opretter et nyt
-// dokument - skabelonkategorier er bevidst udeladt, da de ikke er en dokumenttype.
-function document_category_selectable_values(): array {
-    return array_values(array_filter(
-        list_active_values('document_category'),
-        fn($label) => !is_template_category_label($label)
-    ));
-}
-
-// De aktive skabelonkategorier i biblioteket, til brug i admin-dropdown når en
-// almindelig kategori skal knyttes til sin tilhørende skabelon.
-function list_template_categories(): array {
-    $user = current_user();
-    $orgId = $user['organization_id'] ?? 0;
-    $items = get_list_items_cached('document_category', $orgId);
-    return array_values(array_filter(
-        $items,
-        fn($i) => (int) $i['active'] === 1 && is_template_category_label($i['label_da'])
-    ));
-}
-
-// Den skabelonkategori (label_da), der er knyttet til en given almindelig
-// dokumentkategori via list_items.template_category_id - eller null hvis ingen.
-function document_category_template_category(string $category): ?string {
-    $user = current_user();
-    $orgId = $user['organization_id'] ?? 0;
-    $items = get_list_items_cached('document_category', $orgId);
-    $byId = [];
-    foreach ($items as $item) {
-        $byId[$item['id']] = $item;
-    }
-    foreach ($items as $item) {
-        if ($item['label_da'] === $category && !empty($item['template_category_id'])) {
-            $linked = $byId[$item['template_category_id']] ?? null;
-            return $linked ? $linked['label_da'] : null;
-        }
-    }
-    return null;
-}
-
-// Til brug ved oprettelse af nye dokumenter: for hver vælgbar dokumentkategori
-// med en tilknyttet skabelon, den nyeste godkendte skabelons titel/version/download-id
-// (eller null-felter hvis kategorien er knyttet, men ingen skabelon er godkendt endnu).
+// Til brug ved oprettelse af nye dokumenter: for hver dokumentkategori med
+// mindst én godkendt skabelon (is_template = 1), dens titel/version/download-id
+// - bruges til at vise og foreslå den rette skabelon, når man opretter et nyt
+// dokument i samme kategori.
 function document_category_template_info_map(): array {
+    $user = current_user();
+    $orgId = $user['organization_id'] ?? 0;
+    if (!$orgId) {
+        return [];
+    }
+    $db = get_db();
+    $stmt = $db->prepare("
+        SELECT d.category, d.title, v.version_number, d.current_version_id
+        FROM documents d
+        LEFT JOIN document_versions v ON v.id = d.current_version_id
+        WHERE d.organization_id = ? AND d.is_template = 1 AND d.status = 'Godkendt'
+        ORDER BY d.category, d.id DESC
+    ");
+    $stmt->execute([$orgId]);
     $map = [];
-    foreach (document_category_selectable_values() as $category) {
-        $templateCategory = document_category_template_category($category);
-        if ($templateCategory === null) {
-            continue;
+    foreach ($stmt->fetchAll() as $row) {
+        if (!isset($map[$row['category']])) {
+            $map[$row['category']] = [
+                'title' => $row['title'],
+                'version' => $row['version_number'],
+                'versionId' => (int) $row['current_version_id'],
+            ];
         }
-        $tpl = get_latest_template_document($templateCategory);
-        $map[$category] = [
-            'templateCategory' => $templateCategory,
-            'title' => $tpl ? $tpl['title'] : null,
-            'version' => $tpl ? $tpl['version_number'] : null,
-            'versionId' => $tpl ? (int) $tpl['current_version_id'] : null,
-        ];
     }
     return $map;
 }

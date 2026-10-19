@@ -375,6 +375,7 @@ button:hover { opacity: 0.9; }
 .badge-neutral { background: var(--page-bg); color: var(--text-muted); }
 .badge-info { background: var(--accent-bg); color: var(--accent); }
 .badge-risk-high { background: var(--risk-high-bg); color: var(--risk-high); }
+.template-badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; background: #e7e2fb; color: #5b3fc4; vertical-align: middle; }
 
 .risk-matrix { border-collapse: collapse; }
 .risk-matrix td {

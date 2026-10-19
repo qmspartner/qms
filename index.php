@@ -10,6 +10,7 @@ $db = get_db();
 $search = trim($_GET['q'] ?? '');
 $selectedCategories = array_values(array_filter((array) ($_GET['category'] ?? [])));
 $selectedStatuses = array_values(array_filter((array) ($_GET['status'] ?? [])));
+$showTemplates = ($_GET['show_templates'] ?? '') === '1';
 
 $sortColumns = [
     'title' => 'd.title',
@@ -46,6 +47,9 @@ if (is_gqar($user)) {
     $sql .= " AND d.is_configuration_item = 1 AND d.status = 'Godkendt' AND {$clause}";
     $params = array_merge($params, $clauseParams);
 }
+if (!$showTemplates) {
+    $sql .= ' AND d.is_template = 0';
+}
 $sql .= ' ORDER BY ' . $sortColumns[$sortCol] . ' ' . $sortDir;
 
 $stmt = $db->prepare($sql);
@@ -63,7 +67,7 @@ $stmt = $db->prepare("
 $stmt->execute([$user['organization_id']]);
 $stats = $stmt->fetch();
 
-$categories = document_category_selectable_values();
+$categories = list_active_values('document_category');
 $statuses = ['Kladde', 'Til godkendelse', 'Godkendt', 'Udgået'];
 
 $activeChips = [];
@@ -104,6 +108,12 @@ render_header(t('documents.title'));
     <button type="submit"><?= h(t('documents.search.submit')) ?></button>
 </form>
 
+<p style="margin:4px 0 0;">
+    <a href="<?= h(basename($_SERVER['PHP_SELF']) . '?' . query_merge(['show_templates' => $showTemplates ? null : '1'])) ?>" style="font-size:13px; text-decoration:none;">
+        <?= $showTemplates ? h(t('documents.hide_templates')) : h(t('documents.show_templates')) ?>
+    </a>
+</p>
+
 <?php render_active_filters($activeChips, clear_all_filters_href(['q', 'category', 'status'])); ?>
 
 <table class="doc-table">
@@ -120,7 +130,7 @@ render_header(t('documents.title'));
     <tbody>
     <?php foreach ($documents as $doc): ?>
         <tr onclick="window.location='document.php?id=<?= (int)$doc['id'] ?>'">
-            <td><?= h($doc['title']) ?></td>
+            <td><?= h($doc['title']) ?><?php if ($doc['is_template']): ?> <span class="template-badge"><?= h(t('doc.template_badge')) ?></span><?php endif; ?></td>
             <td><?= h($doc['doc_number']) ?></td>
             <td><?= h(category_label($doc['category'])) ?></td>
             <td><?= h($doc['owner_name']) ?></td>

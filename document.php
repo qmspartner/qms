@@ -29,15 +29,20 @@ if (is_gqar($user) && (!$doc['is_configuration_item'] || $doc['status'] !== 'God
 $renameError = '';
 if ($user['role'] === 'admin' && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'rename') {
     $newTitle = trim($_POST['title'] ?? '');
+    $newIsTemplate = isset($_POST['is_template']) ? 1 : 0;
     if ($newTitle === '') {
         $renameError = t('doc.error.title_required');
     } else {
-        $stmt = $db->prepare('UPDATE documents SET title = ? WHERE id = ? AND organization_id = ?');
-        $stmt->execute([$newTitle, $id, $user['organization_id']]);
+        $stmt = $db->prepare('UPDATE documents SET title = ?, is_template = ? WHERE id = ? AND organization_id = ?');
+        $stmt->execute([$newTitle, $newIsTemplate, $id, $user['organization_id']]);
         if ($newTitle !== $doc['title']) {
             log_action($id, null, t('doc.log.renamed'), $doc['title'] . ' → ' . $newTitle);
         }
+        if ($newIsTemplate !== (int) $doc['is_template']) {
+            log_action($id, null, $newIsTemplate ? t('doc.log.marked_template') : t('doc.log.unmarked_template'));
+        }
         $doc['title'] = $newTitle;
+        $doc['is_template'] = $newIsTemplate;
     }
 }
 
@@ -87,16 +92,20 @@ render_header($doc['title']);
     <div class="doc-header">
         <div>
             <?php if ($user['role'] === 'admin'): ?>
-                <form method="post" class="inline-grid-form" style="margin-bottom:6px; max-width:520px;">
+                <form method="post" class="inline-grid-form" style="margin-bottom:6px; max-width:620px;">
                     <?= csrf_field() ?>
                     <input type="hidden" name="action" value="rename">
                     <label style="margin-bottom:0;">
                         <input type="text" name="title" value="<?= h($doc['title']) ?>" style="font-size:20px; font-weight:600; padding:6px 10px;">
                     </label>
+                    <label style="display:flex; align-items:center; gap:6px; font-size:12.5px; font-weight:400; margin:0;">
+                        <input type="checkbox" name="is_template" value="1" style="width:auto;" <?= $doc['is_template'] ? 'checked' : '' ?>>
+                        <?= h(t('doc.field.is_template')) ?>
+                    </label>
                     <button type="submit" class="button-small button-secondary" style="align-self:center;"><?= h(t('doc.rename_save')) ?></button>
                 </form>
             <?php else: ?>
-                <h1><?= h($doc['title']) ?></h1>
+                <h1><?= h($doc['title']) ?><?php if ($doc['is_template']): ?> <span class="template-badge"><?= h(t('doc.template_badge')) ?></span><?php endif; ?></h1>
             <?php endif; ?>
             <p class="muted"><?= h($doc['doc_number']) ?> &middot; <?= h(category_label($doc['category'])) ?><?= $doc['iso_clause'] ? ' &middot; ' . h($doc['iso_clause']) : '' ?></p>
         </div>

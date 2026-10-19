@@ -6,13 +6,13 @@ $user = require_permission('templates', 'view');
 $db = get_db();
 
 $versionId = (int) ($_GET['version_id'] ?? 0);
-$stmt = $db->prepare("
+$stmt = $db->prepare('
     SELECT v.*
     FROM document_versions v
     JOIN documents d ON d.id = v.document_id
-    WHERE v.id = ? AND d.organization_id = ? AND d.category LIKE ?
-");
-$stmt->execute([$versionId, $user['organization_id'], TEMPLATE_CATEGORY_PREFIX . '%']);
+    WHERE v.id = ? AND d.organization_id = ? AND d.is_template = 1
+');
+$stmt->execute([$versionId, $user['organization_id']]);
 $version = $stmt->fetch();
 
 if (!$version) {

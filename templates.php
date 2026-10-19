@@ -9,16 +9,25 @@ $stmt = $db->prepare("
     SELECT d.*, v.version_number, v.approved_at, v.original_approval_date, v.stored_filename, v.original_filename
     FROM documents d
     LEFT JOIN document_versions v ON v.id = d.current_version_id
-    WHERE d.organization_id = ? AND d.category LIKE ?
+    WHERE d.organization_id = ? AND d.is_template = 1
     ORDER BY d.category, d.title
 ");
-$stmt->execute([$user['organization_id'], TEMPLATE_CATEGORY_PREFIX . '%']);
+$stmt->execute([$user['organization_id']]);
 $rows = $stmt->fetchAll();
 
 $grouped = [];
 foreach ($rows as $row) {
     $grouped[$row['category']][] = $row;
 }
+
+// Vis også de aktive dokumentkategorier, der endnu ikke har en skabelon, så
+// det er tydeligt, hvor der mangler en.
+foreach (list_active_values('document_category') as $cat) {
+    if (!isset($grouped[$cat])) {
+        $grouped[$cat] = [];
+    }
+}
+uksort($grouped, fn($a, $b) => strcasecmp(category_label($a), category_label($b)));
 
 // Oprettelse af en ny skabelon foregår via den almindelige dokument-upload og
 // styres derfor af dokument-modulets egen opret-rettighed, ikke af "Skabelonbibliotek"
@@ -44,6 +53,9 @@ render_header(t('templates.title'));
 <?php else: ?>
     <?php foreach ($grouped as $category => $docs): ?>
         <h2><?= h(category_label($category)) ?></h2>
+        <?php if (!$docs): ?>
+            <p class="muted" style="margin:0 0 20px;"><?= h(t('templates.category_empty')) ?><?php if ($canAdd): ?> <a href="upload_version.php?category=<?= urlencode($category) ?>"><?= h(t('templates.add')) ?></a><?php endif; ?></p>
+        <?php else: ?>
         <div class="card" style="margin-bottom:20px;">
             <table class="doc-table">
                 <thead>
@@ -75,6 +87,7 @@ render_header(t('templates.title'));
                 </tbody>
             </table>
         </div>
+        <?php endif; ?>
     <?php endforeach; ?>
 <?php endif; ?>
 
