@@ -214,6 +214,11 @@ return [
     'upload.error.save_failed' => 'Filen kunne ikke gemmes på serveren. Tjek mappe-rettigheder på uploads/.',
     'upload.error.generic' => 'Der opstod en fejl. Prøv igen.',
     'upload.error.invalid_approver' => 'Vælg en gyldig godkender.',
+    'upload.error.template_confirmation_required' => 'Bekræft at du har brugt den viste skabelon, før dokumentet kan oprettes.',
+    'upload.template_box.title' => 'Tilhørende skabelon:',
+    'upload.template_box.download' => 'Download skabelon',
+    'upload.template_box.missing' => 'Ingen godkendt skabelon fundet endnu for denne dokumenttype. Opret og godkend den i skabelonbiblioteket under kategorien',
+    'upload.template_box.confirm_label' => 'Jeg bekræfter, at dette dokument er udarbejdet på baggrund af den viste skabelon. Skal markeres, før dokumentet kan oprettes.',
 
     'cases.title' => 'Sagsregister',
     'cases.register' => 'Registrer sag',
@@ -780,6 +785,8 @@ return [
     'lists.sort_order' => 'Rækkefølge',
     'lists.col.prefix' => 'Præfiks',
     'lists.field.prefix' => 'Præfiks (fx SOP)',
+    'lists.col.template_category' => 'Tilhørende skabelon',
+    'lists.template_category.none' => 'Ingen',
 
     'upload.field.is_imported' => 'Importeret dokument (har allerede et ID)',
     'upload.field.original_issue_date' => 'Oprindelig udstedelsesdato (valgfrit)',

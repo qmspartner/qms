@@ -23,6 +23,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $labelDa = trim($_POST['label_da'] ?? '');
         $labelEn = $isContractList ? $labelDa : trim($_POST['label_en'] ?? '');
         $prefix = $isDocumentCategoryList ? (trim($_POST['prefix'] ?? '') ?: null) : null;
+        $templateCategoryId = ($isDocumentCategoryList && !is_template_category_label($labelDa))
+            ? ((int) ($_POST['template_category_id'] ?? 0) ?: null) : null;
         if ($labelDa === '' || $labelEn === '') {
             $error = t('lists.error.required');
         } else {
@@ -35,8 +37,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->execute([$user['organization_id'], $type]);
                 $nextOrder = (int) $stmt->fetch()['next_order'];
 
-                $stmt = $db->prepare('INSERT INTO list_items (organization_id, list_type, label_da, label_en, sort_order, prefix) VALUES (?, ?, ?, ?, ?, ?)');
-                $stmt->execute([$user['organization_id'], $type, $labelDa, $labelEn, $nextOrder, $prefix]);
+                $stmt = $db->prepare('INSERT INTO list_items (organization_id, list_type, label_da, label_en, sort_order, prefix, template_category_id) VALUES (?, ?, ?, ?, ?, ?, ?)');
+                $stmt->execute([$user['organization_id'], $type, $labelDa, $labelEn, $nextOrder, $prefix, $templateCategoryId]);
             }
         }
     } elseif ($action === 'save') {
@@ -45,11 +47,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $labelEn = $isContractList ? $labelDa : trim($_POST['label_en'] ?? '');
         $sortOrder = (int) ($_POST['sort_order'] ?? 0);
         $prefix = $isDocumentCategoryList ? (trim($_POST['prefix'] ?? '') ?: null) : null;
+        $templateCategoryId = ($isDocumentCategoryList && !is_template_category_label($labelDa))
+            ? ((int) ($_POST['template_category_id'] ?? 0) ?: null) : null;
         if ($labelDa === '' || $labelEn === '') {
             $error = t('lists.error.required');
         } else {
-            $stmt = $db->prepare('UPDATE list_items SET label_da = ?, label_en = ?, sort_order = ?, prefix = ? WHERE id = ? AND organization_id = ? AND list_type = ?');
-            $stmt->execute([$labelDa, $labelEn, $sortOrder, $prefix, $itemId, $user['organization_id'], $type]);
+            $stmt = $db->prepare('UPDATE list_items SET label_da = ?, label_en = ?, sort_order = ?, prefix = ?, template_category_id = ? WHERE id = ? AND organization_id = ? AND list_type = ?');
+            $stmt->execute([$labelDa, $labelEn, $sortOrder, $prefix, $templateCategoryId, $itemId, $user['organization_id'], $type]);
         }
     } elseif ($action === 'toggle') {
         $itemId = (int) ($_POST['item_id'] ?? 0);
@@ -67,6 +71,8 @@ $stmt = $db->prepare('SELECT * FROM list_items WHERE organization_id = ? AND lis
 $stmt->execute([$user['organization_id'], $type]);
 $items = $stmt->fetchAll();
 
+$templateCategoryOptions = $isDocumentCategoryList ? list_template_categories() : [];
+
 render_header(list_type_label($type));
 ?>
 <p class="breadcrumb"><a href="lists.php"><?= h(t('lists.title')) ?></a> &raquo; <?= h(list_type_label($type)) ?></p>
@@ -79,7 +85,10 @@ render_header(list_type_label($type));
         <tr>
             <th><?= h(t('lists.col.da')) ?></th>
             <?php if (!$isContractList): ?><th><?= h(t('lists.col.en')) ?></th><?php endif; ?>
-            <?php if ($isDocumentCategoryList): ?><th style="width:100px;"><?= h(t('lists.col.prefix')) ?></th><?php endif; ?>
+            <?php if ($isDocumentCategoryList): ?>
+                <th style="width:100px;"><?= h(t('lists.col.prefix')) ?></th>
+                <th style="width:180px;"><?= h(t('lists.col.template_category')) ?></th>
+            <?php endif; ?>
             <th style="width:70px;"><?= h(t('lists.sort_order')) ?></th>
             <th style="width:100px;"><?= h(t('lists.col.status')) ?></th>
             <th style="width:160px;"></th>
@@ -99,6 +108,18 @@ render_header(list_type_label($type));
                 <?php endif; ?>
                 <?php if ($isDocumentCategoryList): ?>
                     <td><input form="<?= h($editFormId) ?>" type="text" name="prefix" value="<?= h($item['prefix'] ?? '') ?>" placeholder="fx SOP" style="margin:0;"></td>
+                    <td>
+                        <?php if (is_template_category_label($item['label_da'])): ?>
+                            <span class="muted">&mdash;</span>
+                        <?php else: ?>
+                            <select form="<?= h($editFormId) ?>" name="template_category_id" style="margin:0;">
+                                <option value=""><?= h(t('lists.template_category.none')) ?></option>
+                                <?php foreach ($templateCategoryOptions as $opt): ?>
+                                    <option value="<?= (int) $opt['id'] ?>" <?= ((int) ($item['template_category_id'] ?? 0) === (int) $opt['id']) ? 'selected' : '' ?>><?= h($opt['label_da']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        <?php endif; ?>
+                    </td>
                 <?php endif; ?>
                 <td><input form="<?= h($editFormId) ?>" type="number" name="sort_order" value="<?= (int) $item['sort_order'] ?>" style="margin:0; width:60px;"></td>
                 <td><span class="<?= $item['active'] ? 'badge badge-success' : 'badge badge-neutral' ?>"><?= $item['active'] ? h(t('lists.status.active')) : h(t('lists.status.inactive')) ?></span></td>
@@ -128,6 +149,12 @@ render_header(list_type_label($type));
         <?php endif; ?>
         <?php if ($isDocumentCategoryList): ?>
             <input type="text" name="prefix" placeholder="<?= h(t('lists.field.prefix')) ?>">
+            <select name="template_category_id">
+                <option value=""><?= h(t('lists.template_category.none')) ?></option>
+                <?php foreach ($templateCategoryOptions as $opt): ?>
+                    <option value="<?= (int) $opt['id'] ?>"><?= h($opt['label_da']) ?></option>
+                <?php endforeach; ?>
+            </select>
         <?php endif; ?>
         <button type="submit"><?= h(t('lists.add_button')) ?></button>
     </form>

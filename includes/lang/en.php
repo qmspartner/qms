@@ -214,6 +214,11 @@ return [
     'upload.error.save_failed' => 'The file could not be saved on the server. Check folder permissions on uploads/.',
     'upload.error.generic' => 'Something went wrong. Please try again.',
     'upload.error.invalid_approver' => 'Choose a valid approver.',
+    'upload.error.template_confirmation_required' => 'Confirm that you used the template shown before the document can be created.',
+    'upload.template_box.title' => 'Linked template:',
+    'upload.template_box.download' => 'Download template',
+    'upload.template_box.missing' => 'No approved template found yet for this document type. Create and approve it in the template library under the category',
+    'upload.template_box.confirm_label' => 'I confirm this document was prepared based on the template shown. Must be checked before the document can be created.',
 
     'cases.title' => 'Case register',
     'cases.register' => 'Register case',
@@ -780,6 +785,8 @@ return [
     'lists.sort_order' => 'Order',
     'lists.col.prefix' => 'Prefix',
     'lists.field.prefix' => 'Prefix (e.g. SOP)',
+    'lists.col.template_category' => 'Linked template',
+    'lists.template_category.none' => 'None',
 
     'upload.field.is_imported' => 'Imported document (already has an ID)',
     'upload.field.original_issue_date' => 'Original issue date (optional)',
