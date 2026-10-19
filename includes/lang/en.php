@@ -785,7 +785,7 @@ return [
     'lists.sort_order' => 'Order',
     'lists.col.prefix' => 'Prefix',
     'lists.field.prefix' => 'Prefix (e.g. SOP)',
-    'lists.col.template_category' => 'Linked template',
+    'lists.col.template_category' => 'Template',
     'lists.template_category.none' => 'None',
 
     'upload.field.is_imported' => 'Imported document (already has an ID)',

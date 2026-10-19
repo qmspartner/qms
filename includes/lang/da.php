@@ -785,7 +785,7 @@ return [
     'lists.sort_order' => 'Rækkefølge',
     'lists.col.prefix' => 'Præfiks',
     'lists.field.prefix' => 'Præfiks (fx SOP)',
-    'lists.col.template_category' => 'Tilhørende skabelon',
+    'lists.col.template_category' => 'Skabelon',
     'lists.template_category.none' => 'Ingen',
 
     'upload.field.is_imported' => 'Importeret dokument (har allerede et ID)',

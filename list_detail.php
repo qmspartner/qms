@@ -79,19 +79,28 @@ render_header(list_type_label($type));
 
 <?php if ($error): ?><p class="alert alert-danger"><?= h($error) ?></p><?php endif; ?>
 
+<?php if ($isDocumentCategoryList): ?>
+<style>
+.list-detail-table th, .list-detail-table td { padding: 6px 8px; font-size: 13px; }
+.list-detail-table input[type="text"], .list-detail-table input[type="number"], .list-detail-table select { margin: 0; width: 100%; font-size: 13px; padding: 4px 6px; box-sizing: border-box; }
+.list-detail-table .button-small { padding: 4px 8px; font-size: 12px; }
+.list-detail-table td[data-actions] { display: flex; gap: 4px; }
+</style>
+<?php endif; ?>
+
 <div class="card">
-    <table class="doc-table">
+    <table class="doc-table<?= $isDocumentCategoryList ? ' list-detail-table' : '' ?>">
         <thead>
         <tr>
             <th><?= h(t('lists.col.da')) ?></th>
             <?php if (!$isContractList): ?><th><?= h(t('lists.col.en')) ?></th><?php endif; ?>
             <?php if ($isDocumentCategoryList): ?>
-                <th style="width:100px;"><?= h(t('lists.col.prefix')) ?></th>
-                <th style="width:180px;"><?= h(t('lists.col.template_category')) ?></th>
+                <th style="width:60px;"><?= h(t('lists.col.prefix')) ?></th>
+                <th style="width:130px;"><?= h(t('lists.col.template_category')) ?></th>
             <?php endif; ?>
-            <th style="width:70px;"><?= h(t('lists.sort_order')) ?></th>
-            <th style="width:100px;"><?= h(t('lists.col.status')) ?></th>
-            <th style="width:160px;"></th>
+            <th style="width:50px;"><?= h(t('lists.sort_order')) ?></th>
+            <th style="width:80px;"><?= h(t('lists.col.status')) ?></th>
+            <th style="width:120px;"></th>
         </tr>
         </thead>
         <tbody>
@@ -107,12 +116,12 @@ render_header(list_type_label($type));
                     <input form="<?= h($editFormId) ?>" type="hidden" name="label_en" value="<?= h($item['label_da']) ?>">
                 <?php endif; ?>
                 <?php if ($isDocumentCategoryList): ?>
-                    <td><input form="<?= h($editFormId) ?>" type="text" name="prefix" value="<?= h($item['prefix'] ?? '') ?>" placeholder="fx SOP" style="margin:0;"></td>
+                    <td><input form="<?= h($editFormId) ?>" type="text" name="prefix" value="<?= h($item['prefix'] ?? '') ?>" placeholder="fx SOP"></td>
                     <td>
                         <?php if (is_template_category_label($item['label_da'])): ?>
                             <span class="muted">&mdash;</span>
                         <?php else: ?>
-                            <select form="<?= h($editFormId) ?>" name="template_category_id" style="margin:0;">
+                            <select form="<?= h($editFormId) ?>" name="template_category_id">
                                 <option value=""><?= h(t('lists.template_category.none')) ?></option>
                                 <?php foreach ($templateCategoryOptions as $opt): ?>
                                     <option value="<?= (int) $opt['id'] ?>" <?= ((int) ($item['template_category_id'] ?? 0) === (int) $opt['id']) ? 'selected' : '' ?>><?= h($opt['label_da']) ?></option>
@@ -123,7 +132,7 @@ render_header(list_type_label($type));
                 <?php endif; ?>
                 <td><input form="<?= h($editFormId) ?>" type="number" name="sort_order" value="<?= (int) $item['sort_order'] ?>" style="margin:0; width:60px;"></td>
                 <td><span class="<?= $item['active'] ? 'badge badge-success' : 'badge badge-neutral' ?>"><?= $item['active'] ? h(t('lists.status.active')) : h(t('lists.status.inactive')) ?></span></td>
-                <td style="display:flex; gap:6px;">
+                <td data-actions style="display:flex; gap:6px;">
                     <input form="<?= h($editFormId) ?>" type="hidden" name="action" value="save">
                     <input form="<?= h($editFormId) ?>" type="hidden" name="item_id" value="<?= (int) $item['id'] ?>">
                     <button form="<?= h($editFormId) ?>" type="submit" class="button-small"><?= h(t('lists.action.save')) ?></button>
