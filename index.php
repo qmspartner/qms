@@ -63,7 +63,7 @@ $stmt = $db->prepare("
 $stmt->execute([$user['organization_id']]);
 $stats = $stmt->fetch();
 
-$categories = list_active_values('document_category');
+$categories = document_category_selectable_values();
 $statuses = ['Kladde', 'Til godkendelse', 'Godkendt', 'Udgået'];
 
 $activeChips = [];
