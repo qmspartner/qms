@@ -53,7 +53,7 @@ render_header(t('customers.title'));
             <td><?= h($c['name']) ?></td>
             <td><?= h($c['contact_person'] ?: '—') ?></td>
             <td><?= h($c['email'] ?: '—') ?></td>
-            <td><?= h($c['phone'] ?: '—') ?></td>
+            <td class="nowrap"><?= h($c['phone'] ?: '—') ?></td>
             <?php if (can_manage_customers($user)): ?>
                 <td><a href="edit_customer.php?id=<?= (int) $c['id'] ?>"><?= h(t('customers.edit')) ?></a></td>
             <?php endif; ?>

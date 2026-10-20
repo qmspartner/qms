@@ -278,6 +278,7 @@ button:hover { opacity: 0.9; }
 .button-danger { background: var(--danger); color: #fff; border-color: var(--danger); }
 
 .doc-table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; }
+.nowrap { white-space: nowrap; }
 .doc-table th, .doc-table td { padding: 10px 14px; text-align: left; font-size: 14px; border-bottom: 1px solid var(--border); }
 .doc-table tbody tr:hover { background: var(--page-bg); cursor: pointer; }
 .doc-table th {
