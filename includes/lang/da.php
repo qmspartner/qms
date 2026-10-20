@@ -227,7 +227,7 @@ return [
     'upload.error.invalid_approver' => 'Vælg en gyldig godkender.',
     'upload.error.template_confirmation_required' => 'Bekræft at du har brugt den viste skabelon, før dokumentet kan oprettes.',
     'upload.field.is_template' => 'Markér dette dokument som skabelon',
-    'upload.field.is_template_help' => 'Dokumentet vises i Skabelonbiblioteket og foreslås automatisk, når andre opretter et nyt dokument i samme kategori. Kun den nyeste godkendte udgave er den aktive skabelon ad gangen.',
+    'upload.field.is_template_help' => 'Dokumentet vises i Skabelonbiblioteket og foreslås automatisk, når andre opretter et nyt dokument i samme kategori. Kun den nyeste godkendte udgave er den aktive skabelon ad gangen. Dokument-ID\'et får altid præfikset TMP, uanset kategoriens eget præfiks.',
     'upload.template_box.title' => 'Skabelon:',
     'upload.template_box.download' => 'Download skabelon',
     'upload.template_box.confirm_label' => 'Jeg bekræfter, at dette dokument er udarbejdet på baggrund af den viste skabelon. Skal markeres, før dokumentet kan oprettes.',
@@ -919,7 +919,7 @@ return [
 
     'help.tip_aria' => 'Hjælp',
     'help.tip.config_item' => 'Markér dette, hvis dokumentet er en del af en kontrakts konfigurationsstyring (fx en AQAP-leverance). Det kræver en kontraktreference, og kun Administrator kan derefter godkende nye versioner.',
-    'help.tip.doc_id_fields' => 'Har dokumentkategorien et fast præfiks, bygges dokument-ID\'et automatisk som PRÆFIKS-AFSNIT-OPERATION ud fra det, du skriver her. ID\'et låses permanent, når dokumentet er oprettet.',
+    'help.tip.doc_id_fields' => 'Har dokumentkategorien et fast præfiks, bygges dokument-ID\'et automatisk som PRÆFIKS-AFSNIT-OPERATION ud fra det, du skriver her. Er dokumentet markeret som skabelon, bruges altid præfikset TMP i stedet. ID\'et låses permanent, når dokumentet er oprettet.',
     'help.tip.contract_overview' => 'En levende, automatisk opdateret oversigt over alt, der er koblet til denne kontrakt: dokumenter, audits, sager, risici, leverandører og udstyr. Intet udfyldes manuelt her.',
     'help.tip.software_releases' => 'Sporbarhedsbeviser der kobler en leveret software-release til ekstern build- og testdokumentation (fx GitHub/CI). Selve kildekoden og build-historikken forbliver i jeres udviklingsværktøjer — kun registreres det her manuelt, som bevis for AQAP 2210.',
     'help.tip.fai' => 'First Article Inspection: registrering af at det første eksemplar af en del er efterprøvet mod alle krav på tegningen, før seriefremstilling. Selve karakteristik-tabellen ligger i det uploadede bilag. Der er kun én aktiv FAI pr. delnummer - en ny upload for samme delnummer afløser den forrige.',

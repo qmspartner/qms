@@ -227,7 +227,7 @@ return [
     'upload.error.invalid_approver' => 'Choose a valid approver.',
     'upload.error.template_confirmation_required' => 'Confirm that you used the template shown before the document can be created.',
     'upload.field.is_template' => 'Mark this document as a template',
-    'upload.field.is_template_help' => 'The document is shown in the Template Library and suggested automatically when others create a new document in the same category. Only the newest approved version is the active template at any time.',
+    'upload.field.is_template_help' => 'The document is shown in the Template Library and suggested automatically when others create a new document in the same category. Only the newest approved version is the active template at any time. The document ID always gets the prefix TMP, regardless of the category\'s own prefix.',
     'upload.template_box.title' => 'Template:',
     'upload.template_box.download' => 'Download template',
     'upload.template_box.confirm_label' => 'I confirm this document was prepared based on the template shown. Must be checked before the document can be created.',
@@ -919,7 +919,7 @@ return [
 
     'help.tip_aria' => 'Help',
     'help.tip.config_item' => 'Check this if the document is part of a contract\'s configuration management (e.g. an AQAP deliverable). It requires a contract reference, and only Administrator can then approve new versions.',
-    'help.tip.doc_id_fields' => 'If the document category has a fixed prefix, the document ID is built automatically as PREFIX-SECTION-OPERATION from what you enter here. The ID is locked permanently once the document is created.',
+    'help.tip.doc_id_fields' => 'If the document category has a fixed prefix, the document ID is built automatically as PREFIX-SECTION-OPERATION from what you enter here. If the document is marked as a template, the prefix TMP is always used instead. The ID is locked permanently once the document is created.',
     'help.tip.contract_overview' => 'A live, automatically updated overview of everything linked to this contract: documents, audits, cases, risks, suppliers and equipment. Nothing here is entered manually.',
     'help.tip.software_releases' => 'Traceability evidence linking a delivered software release to external build and test documentation (e.g. GitHub/CI). The source code and build history itself stays in your development tools — only this record is kept here manually, as evidence for AQAP 2210.',
     'help.tip.fai' => 'First Article Inspection: records that the first example of a part has been verified against all requirements on the drawing, before serial production. The characteristic table itself lives in the uploaded attachment. There is only one active FAI per part number - a new upload for the same part number replaces the previous one.',

@@ -48,8 +48,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $selectedApprover = $stmt->fetch();
 
     // Beregn dokument-ID (kun relevant for nye dokumenter — ID'et er låst for eksisterende)
+    // Skabeloner får altid præfikset TMP, uanset kategoriens eget præfiks (eller mangel på samme)
     $categoryPrefix = !$existingDoc ? document_category_prefix($category) : null;
-    $usesStructuredId = !$existingDoc && !$isImported && $categoryPrefix;
+    $effectivePrefix = $isTemplate ? 'TMP' : $categoryPrefix;
+    $usesStructuredId = !$existingDoc && !$isImported && $effectivePrefix;
 
     // Hvis der allerede findes en godkendt skabelon i den valgte kategori, skal
     // brugeren bekræfte at have brugt den, før dokumentet kan oprettes.
@@ -59,7 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($existingDoc) {
         $docNumber = $existingDoc['doc_number'];
     } elseif ($usesStructuredId) {
-        $docNumber = $categoryPrefix . '-' . $section . '-' . $operation;
+        $docNumber = $effectivePrefix . '-' . $section . '-' . $operation;
     } else {
         $docNumber = $manualDocNumber;
     }
@@ -174,7 +176,7 @@ $categories = list_active_values('document_category');
                 <div id="template-nudge-box" style="display:none; background:#f6f6f6; border-radius:6px; padding:10px 12px; margin-bottom:14px;"></div>
 
                 <label style="display:flex; align-items:flex-start; gap:10px; background:#eef4ff; border:1px solid #c3d6fb; border-radius:8px; padding:12px 14px; margin-bottom:14px; flex-direction:row; font-weight:400;">
-                    <input type="checkbox" name="is_template" id="is_template" value="1" style="width:auto; margin-top:2px;">
+                    <input type="checkbox" name="is_template" id="is_template" value="1" style="width:auto; margin-top:2px;" onchange="updateIdFields();">
                     <span style="font-size:13.5px;">
                         <strong><?= h(t('upload.field.is_template')) ?></strong><br>
                         <span class="muted" style="font-size:12px;"><?= h(t('upload.field.is_template_help')) ?></span>
@@ -256,8 +258,9 @@ const templateInfo = <?= json_encode(document_category_template_info_map()) ?>;
 
 function updateIdFields() {
     const imported = document.getElementById('is_imported').checked;
+    const isTemplate = document.getElementById('is_template').checked;
     const category = document.getElementById('category-select').value;
-    const prefix = categoryPrefixes[category] || null;
+    const prefix = isTemplate ? 'TMP' : (categoryPrefixes[category] || null);
     const useStructured = !imported && !!prefix;
 
     document.getElementById('imported-date-field').style.display = imported ? 'block' : 'none';
@@ -299,8 +302,9 @@ function updateTemplateNudge() {
 }
 
 function updatePreview() {
+    const isTemplate = document.getElementById('is_template').checked;
     const category = document.getElementById('category-select').value;
-    const prefix = categoryPrefixes[category] || '';
+    const prefix = isTemplate ? 'TMP' : (categoryPrefixes[category] || '');
     const section = document.getElementById('section_input').value || '…';
     const operation = document.getElementById('operation_input').value || '…';
     document.getElementById('id-preview').textContent = prefix + '-' + section + '-' + operation;
