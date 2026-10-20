@@ -899,7 +899,7 @@ function render_header(string $title): void {
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title><?= h($title) ?> - <?= h(t('brand.name')) ?></title>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
-        <link rel="stylesheet" href="css/style.css?v=39">
+        <link rel="stylesheet" href="css/style.css?v=40">
     </head>
     <body>
     <?php if (is_impersonating()): ?>
@@ -953,36 +953,43 @@ function render_header(string $title): void {
                 <p class="sidebar-group-label"><?= h(t('nav.overview')) ?></p>
                 <a href="contract_overview.php" class="sidebar-link<?= $isCurrent('contract_overview.php') ?>"><?= nav_icon('contract') ?><span><?= h(t('nav.contract_overview')) ?></span></a>
                 <a href="reports.php" class="sidebar-link<?= $isCurrent('reports.php') ?>"><?= nav_icon('reports') ?><span><?= h(t('nav.reports')) ?></span></a>
-                <?php $showCustomers = has_permission($user, 'customers'); $showTemplates = has_permission($user, 'templates'); $isAdmin = $user['role'] === 'admin'; ?>
-                <?php if ($showCustomers || $showTemplates || $isAdmin): ?>
-                    <p class="sidebar-group-label"><?= h(t('nav.settings')) ?></p>
-                    <?php if ($showCustomers): ?><a href="customers.php" class="sidebar-link<?= $isCurrent('customers.php') ?>"><?= nav_icon('customers') ?><span><?= h(t('nav.customers')) ?></span></a><?php endif; ?>
-                    <?php if ($showTemplates): ?><a href="templates.php" class="sidebar-link<?= $isCurrent('templates.php') ?>"><?= nav_icon('templates') ?><span><?= h(t('nav.templates')) ?></span></a><?php endif; ?>
-                    <?php if ($isAdmin): ?>
-                        <a href="users.php" class="sidebar-link<?= $isCurrent('users.php') ?>"><?= nav_icon('users') ?><span><?= h(t('nav.users')) ?></span></a>
-                        <a href="competence.php" class="sidebar-link<?= $isCurrent('competence.php') ?>"><?= nav_icon('competence') ?><span><?= h(t('nav.competence')) ?></span></a>
-                        <a href="lists.php" class="sidebar-link<?= $isCurrent('lists.php') ?>"><?= nav_icon('lists') ?><span><?= h(t('nav.lists')) ?></span></a>
-                        <a href="permissions.php" class="sidebar-link<?= $isCurrent('permissions.php') ?>"><?= nav_icon('permissions') ?><span><?= h(t('nav.permissions')) ?></span></a>
-                        <a href="system_settings.php" class="sidebar-link<?= $isCurrent('system_settings.php') ?>"><?= nav_icon('system_settings') ?><span><?= h(t('nav.system_settings')) ?></span></a>
-                    <?php endif; ?>
-                <?php endif; ?>
             <?php endif; ?>
         </nav>
-        <div class="sidebar-bottom">
-            <a href="help.php" class="sidebar-link<?= $isCurrent('help.php') ?>"><?= nav_icon('help') ?><span><?= h(t('nav.help')) ?></span></a>
-            <a href="logout.php" class="sidebar-link"><?= nav_icon('logout') ?><span><?= h(t('nav.logout')) ?></span></a>
-            <div class="sidebar-user">
-                <span class="user-tag"><?= h($user['name']) ?> (<?= h(role_label($user['role'])) ?>)</span>
-                <span class="lang-switch">
-                    <?php foreach (AVAILABLE_LANGUAGES as $code => $label): ?>
-                        <a href="lang.php?lang=<?= h($code) ?>" class="<?= current_language() === $code ? 'lang-active' : '' ?>" aria-label="<?= h($label) ?>" title="<?= h($label) ?>" style="display:inline-flex; align-items:center; padding:2px;"><?= language_flag_svg($code) ?></a>
-                    <?php endforeach; ?>
-                </span>
-            </div>
-        </div>
     </aside>
     <?php endif; ?>
     <div class="app-main">
+    <?php if ($user): ?>
+    <div class="content-topbar">
+        <?php if (!is_gqar($user)): ?>
+            <?php $showCustomers = has_permission($user, 'customers'); $showTemplates = has_permission($user, 'templates'); $isAdmin = $user['role'] === 'admin'; ?>
+            <?php if ($showCustomers || $showTemplates || $isAdmin): ?>
+                <details class="nav-dropdown">
+                    <summary class="content-topbar-item"><?= nav_icon('system_settings') ?><span><?= h(t('nav.settings')) ?></span> <i class="ti ti-chevron-down"></i></summary>
+                    <div class="nav-dropdown-menu">
+                        <?php if ($showCustomers): ?><a href="customers.php"><?= nav_icon('customers') ?><span><?= h(t('nav.customers')) ?></span></a><?php endif; ?>
+                        <?php if ($showTemplates): ?><a href="templates.php"><?= nav_icon('templates') ?><span><?= h(t('nav.templates')) ?></span></a><?php endif; ?>
+                        <?php if ($isAdmin): ?>
+                            <a href="users.php"><?= nav_icon('users') ?><span><?= h(t('nav.users')) ?></span></a>
+                            <a href="competence.php"><?= nav_icon('competence') ?><span><?= h(t('nav.competence')) ?></span></a>
+                            <a href="lists.php"><?= nav_icon('lists') ?><span><?= h(t('nav.lists')) ?></span></a>
+                            <a href="permissions.php"><?= nav_icon('permissions') ?><span><?= h(t('nav.permissions')) ?></span></a>
+                            <a href="system_settings.php"><?= nav_icon('system_settings') ?><span><?= h(t('nav.system_settings')) ?></span></a>
+                        <?php endif; ?>
+                    </div>
+                </details>
+            <?php endif; ?>
+        <?php endif; ?>
+        <a href="help.php" class="content-topbar-item"><?= nav_icon('help') ?><span><?= h(t('nav.help')) ?></span></a>
+        <span class="content-topbar-divider"></span>
+        <span class="user-tag"><?= h($user['name']) ?> (<?= h(role_label($user['role'])) ?>)</span>
+        <span class="lang-switch">
+            <?php foreach (AVAILABLE_LANGUAGES as $code => $label): ?>
+                <a href="lang.php?lang=<?= h($code) ?>" class="<?= current_language() === $code ? 'lang-active' : '' ?>" aria-label="<?= h($label) ?>" title="<?= h($label) ?>" style="display:inline-flex; align-items:center; padding:2px;"><?= language_flag_svg($code) ?></a>
+            <?php endforeach; ?>
+        </span>
+        <a href="logout.php" class="content-topbar-item content-topbar-logout"><?= nav_icon('logout') ?><span><?= h(t('nav.logout')) ?></span></a>
+    </div>
+    <?php endif; ?>
     <main class="container">
     <?php
 }

@@ -93,8 +93,24 @@ body {
     font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
     color: var(--text-muted); margin: 14px 0 3px; padding: 0 10px;
 }
-.sidebar-bottom { margin-top: auto; padding-top: 10px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 1px; }
-.sidebar-user { padding: 10px 10px 2px; display: flex; flex-direction: column; gap: 6px; }
+
+/* Topbjælke over selve indholdet: indstillinger, hjælp, bruger, sprog og log ud —
+   de kontorelaterede ting, som ikke er del af den primære navigation i sidebaren. */
+.content-topbar {
+    display: flex; align-items: center; justify-content: flex-end; gap: 4px;
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 10px 24px;
+    position: sticky; top: 0; z-index: 5;
+}
+.content-topbar-item {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 13.5px; color: var(--text-muted);
+    padding: 7px 10px; border-radius: 7px; text-decoration: none;
+}
+.content-topbar-item:hover { background: var(--page-bg); }
+.content-topbar-logout:hover { color: var(--danger); background: var(--danger-bg); }
+.content-topbar-divider { width: 1px; height: 22px; background: var(--border); margin: 0 6px; }
+.content-topbar .nav-dropdown-menu a { display: flex; align-items: center; gap: 8px; }
 
 @media (max-width: 760px) {
     .app-shell { flex-direction: column; }
@@ -102,8 +118,8 @@ body {
     .sidebar-nav { flex-direction: row; flex-wrap: wrap; }
     .sidebar-link span { display: none; }
     .sidebar-group-label { display: none; }
-    .sidebar-bottom { flex-direction: row; flex-wrap: wrap; margin-top: 8px; }
-    .sidebar-user { flex-direction: row; align-items: center; flex-wrap: wrap; }
+    .content-topbar { flex-wrap: wrap; justify-content: flex-start; row-gap: 6px; position: static; }
+    .content-topbar-item span { display: none; }
 }
 
 .nav-dropdown { position: relative; }
