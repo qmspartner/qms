@@ -14,7 +14,7 @@
     --page-bg: #f6f5f1;
     --risk-high: #9a4a0b;
     --risk-high-bg: #fbe2c7;
-    --header-h: 64px;
+    --sidebar-w: 236px;
     /* Klare signalfarver til kompetencematricens prikker. De almindelige --success/
        --warning/--danger er dæmpede (designet som tekstfarve oven på en bleg baggrund i
        badges) og ligger for tæt på hinanden som små ensfarvede prikker, så matricen får
@@ -33,12 +33,6 @@ body {
     color: var(--text);
 }
 
-.sticky-header {
-    position: sticky;
-    top: 0;
-    z-index: 100;
-}
-
 .impersonation-banner {
     background: var(--warning-bg);
     color: var(--warning);
@@ -55,18 +49,62 @@ body {
     font-weight: 600;
 }
 
-.topbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
+/* Topbjælke for ikke-indloggede sider (login, nulstil kodeord m.v.) — ingen
+   sidebar at vise, da der ikke er nogen navigation at vise endnu. */
+.guest-topbar {
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--surface); border-bottom: 1px solid var(--border);
     padding: 12px 24px;
 }
-.topbar .brand { display: flex; align-items: center; text-decoration: none; }
-.topbar .brand-logo { height: 40px; width: auto; display: block; }
-.topbar nav { display: flex; align-items: center; gap: 16px; }
-.topbar nav a { color: var(--accent); text-decoration: none; font-size: 14px; }
+.guest-brand { display: flex; align-items: center; text-decoration: none; }
+.guest-brand-logo { height: 40px; width: auto; display: block; }
+
+/* Overordnet layout: fast venstre sidebar + scrollende hovedindhold. */
+.app-shell { display: flex; align-items: stretch; min-height: 100vh; }
+.app-main { flex: 1; min-width: 0; }
+
+.sidebar {
+    width: var(--sidebar-w);
+    flex-shrink: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    padding: 18px 12px;
+    display: flex;
+    flex-direction: column;
+}
+.sidebar-brand { display: block; padding: 4px 10px 18px; }
+.sidebar-brand-logo { height: 34px; width: auto; display: block; }
+.sidebar-nav { display: flex; flex-direction: column; gap: 1px; }
+.sidebar-link {
+    display: flex; align-items: center; gap: 11px;
+    padding: 8px 10px; border-radius: 7px;
+    font-size: 13.5px; color: var(--text);
+    text-decoration: none;
+}
+.sidebar-link svg { flex-shrink: 0; color: var(--text-muted); }
+.sidebar-link:hover { background: var(--page-bg); }
+.sidebar-link-active { background: var(--accent-bg); color: var(--accent); font-weight: 600; }
+.sidebar-link-active svg { color: var(--accent); }
+.sidebar-group-label {
+    font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--text-muted); margin: 14px 0 3px; padding: 0 10px;
+}
+.sidebar-bottom { margin-top: auto; padding-top: 10px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 1px; }
+.sidebar-user { padding: 10px 10px 2px; display: flex; flex-direction: column; gap: 6px; }
+
+@media (max-width: 760px) {
+    .app-shell { flex-direction: column; }
+    .sidebar { width: 100%; height: auto; position: static; border-right: none; border-bottom: 1px solid var(--border); }
+    .sidebar-nav { flex-direction: row; flex-wrap: wrap; }
+    .sidebar-link span { display: none; }
+    .sidebar-group-label { display: none; }
+    .sidebar-bottom { flex-direction: row; flex-wrap: wrap; margin-top: 8px; }
+    .sidebar-user { flex-direction: row; align-items: center; flex-wrap: wrap; }
+}
 
 .nav-dropdown { position: relative; }
 .nav-dropdown summary {
@@ -132,12 +170,12 @@ h2 { font-size: 17px; font-weight: 600; margin: 24px 0 8px; }
 .help-layout { display: flex; gap: 32px; align-items: flex-start; }
 .help-toc {
     width: 180px; flex: 0 0 180px;
-    position: sticky; top: calc(var(--header-h, 64px) + 20px); align-self: flex-start;
+    position: sticky; top: 20px; align-self: flex-start;
     border-right: 1px solid var(--border);
     padding-right: 18px;
     /* Egen scrollbar: er listen højere end vinduet, scroller den selv i stedet for
        at blive skåret af eller forhindre resten af sidebaren i at kunne nås. */
-    max-height: calc(100vh - var(--header-h, 64px) - 40px);
+    max-height: calc(100vh - 40px);
     overflow-y: auto;
 }
 .help-toc-group {
@@ -229,7 +267,7 @@ button:hover { opacity: 0.9; }
 .doc-table th {
     color: var(--text-muted); font-weight: 500; font-size: 13px;
     background: var(--surface);
-    position: sticky; top: var(--header-h, 64px); z-index: 2;
+    position: sticky; top: 0; z-index: 2;
 }
 .doc-table th { background: var(--page-bg); }
 
@@ -457,9 +495,45 @@ button:hover { opacity: 0.9; }
 .alert-danger { background: var(--danger-bg); color: var(--danger); }
 .alert-success { background: var(--success-bg); color: var(--success); }
 
-.welcome-header { padding-bottom: 1.25rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); }
+.welcome-header {
+    padding-bottom: 1.25rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border);
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+}
 .welcome-title { font-size: 22px; font-weight: 600; margin: 0 0 4px; }
 .welcome-subtitle { font-size: 13px; color: var(--text-secondary); margin: 0; }
+.welcome-badges { display: flex; gap: 8px; flex-wrap: wrap; }
+.welcome-badge {
+    border: 1px solid var(--border); color: var(--text-muted); background: var(--page-bg);
+    font-size: 11.5px; font-weight: 600; letter-spacing: 0.02em;
+    padding: 5px 11px; border-radius: 7px;
+}
+
+/* Forside: "Udestående" (tværgående tal, der ikke er lukket) og "Alle moduler" (fuldt overblik). */
+.section-heading { font-size: 14px; font-weight: 700; margin: 0 0 3px; }
+.section-subheading { font-size: 12.5px; color: var(--text-muted); margin: 0 0 14px; }
+
+.attn-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 30px; }
+.attn-row {
+    display: flex; align-items: center; gap: 14px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 13px 16px; text-decoration: none; color: var(--text);
+}
+.attn-row:hover { border-color: var(--accent); }
+.attn-row svg { flex-shrink: 0; }
+.attn-title { margin: 0; font-size: 13.5px; font-weight: 600; }
+.attn-sub { margin: 1px 0 0; font-size: 12px; color: var(--text-muted); }
+.attn-badge {
+    font-size: 13px; font-weight: 700; padding: 3px 11px; border-radius: 999px;
+    min-width: 26px; text-align: center; flex-shrink: 0;
+}
+.attn-badge-warning { background: var(--warning-bg); color: var(--warning); }
+.attn-badge-danger { background: var(--danger-bg); color: var(--danger); }
+
+.mini-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.mini-card { background: var(--surface); border: 1px solid var(--border); border-radius: 9px; padding: 13px 15px; text-decoration: none; color: var(--text); display: block; }
+.mini-card:hover { border-color: var(--accent); }
+.mini-label { font-size: 12px; color: var(--text-muted); margin: 0 0 6px; }
+.mini-val { font-size: 17px; font-weight: 700; margin: 0; font-variant-numeric: tabular-nums; }
 
 .module-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
 .module-card {

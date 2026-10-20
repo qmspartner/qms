@@ -130,150 +130,105 @@ if (!$gqar) {
     }
 }
 
+// Opbygning af "Udestående" (tal, der endnu ikke er lukket, tværs over moduler)
+// og "Alle moduler" (fuldt overblik). Samme underliggende tal som før, nu vist
+// som en prioriteret liste + en kompakt oversigt i stedet for 8 ens store kort.
+$modules = [
+    [
+        'href' => 'index.php', 'icon' => 'documents', 'title' => t('home.documents.title'),
+        'attn_label' => t('home.documents.pending'), 'attn_value' => (int) ($docStats['pending'] ?? 0), 'attn_severity' => 'warning',
+        'total_label' => t('home.documents.approved'), 'total_value' => (int) ($docStats['approved'] ?? 0),
+    ],
+    [
+        'href' => 'cases.php', 'icon' => 'cases', 'title' => t('home.cases.title'),
+        'attn_label' => t('home.cases.overdue'), 'attn_value' => (int) ($caseStats['overdue_count'] ?? 0), 'attn_severity' => 'danger',
+        'total_label' => t('home.cases.open'), 'total_value' => (int) ($caseStats['open_count'] ?? 0),
+    ],
+];
+if (!$gqar) {
+    $modules[] = [
+        'href' => 'records.php', 'icon' => 'records', 'title' => t('home.records.title'),
+        'attn_label' => t('home.records.due_soon'), 'attn_value' => (int) ($recordStats['due_soon'] ?? 0), 'attn_severity' => 'warning',
+        'total_label' => t('home.records.total'), 'total_value' => (int) ($recordStats['total'] ?? 0),
+    ];
+}
+$modules[] = [
+    'href' => 'audits.php', 'icon' => 'audits', 'title' => t('home.audits.title'),
+    'attn_label' => t('home.audits.findings'), 'attn_value' => (int) ($auditFindingStats['open_findings'] ?? 0), 'attn_severity' => 'warning',
+    'total_label' => t('home.audits.planned'), 'total_value' => (int) ($auditPlannedStats['planned_this_year'] ?? 0),
+];
+if (!$gqar) {
+    $modules[] = [
+        'href' => 'equipment.php', 'icon' => 'equipment', 'title' => t('home.equipment.title'),
+        'attn_label' => t('home.equipment.due_soon'), 'attn_value' => (int) ($equipmentStats['due_soon'] ?? 0), 'attn_severity' => 'warning',
+        'total_label' => t('home.equipment.total'), 'total_value' => (int) ($equipmentStats['total'] ?? 0),
+    ];
+    $modules[] = [
+        'href' => 'risks.php', 'icon' => 'risks', 'title' => t('home.risks.title'),
+        'attn_label' => t('home.risks.high_critical'), 'attn_value' => (int) ($riskStats['high_critical'] ?? 0), 'attn_severity' => 'danger',
+        'total_label' => t('home.risks.total'), 'total_value' => (int) ($riskStats['total'] ?? 0),
+    ];
+    $modules[] = [
+        'href' => 'suppliers.php', 'icon' => 'suppliers', 'title' => t('home.suppliers.title'),
+        'attn_label' => t('home.suppliers.due_soon'), 'attn_value' => (int) ($supplierStats['due_soon'] ?? 0), 'attn_severity' => 'warning',
+        'total_label' => t('home.suppliers.total'), 'total_value' => (int) ($supplierStats['total'] ?? 0),
+    ];
+    if ($user['role'] === 'admin') {
+        $modules[] = [
+            'href' => 'competence.php', 'icon' => 'competence', 'title' => t('home.competence.title'),
+            'attn_label' => t('home.competence.attention'), 'attn_value' => (int) $competenceAttention, 'attn_severity' => 'danger',
+            'total_label' => t('home.competence.total'), 'total_value' => (int) $competenceTotal,
+        ];
+    }
+}
+$outstanding = array_values(array_filter($modules, fn ($m) => $m['attn_value'] > 0));
+
 render_header(t('nav.documents'));
 ?>
 <div class="welcome-header">
-    <h1 class="welcome-title"><?= h(greeting_for_time()) ?>, <?= h(explode(' ', $user['name'])[0]) ?></h1>
-    <p class="welcome-subtitle"><?= h(role_label($user['role'])) ?> · <?= h(format_long_date()) ?></p>
+    <div>
+        <h1 class="welcome-title"><?= h(greeting_for_time()) ?>, <?= h(explode(' ', $user['name'])[0]) ?></h1>
+        <p class="welcome-subtitle"><?= h(role_label($user['role'])) ?> · <?= h(format_long_date()) ?></p>
+    </div>
+    <div class="welcome-badges">
+        <span class="welcome-badge">ISO 9001</span>
+        <span class="welcome-badge">AQAP 2110</span>
+    </div>
 </div>
 
 <div class="page-layout">
 <div>
-<div class="module-grid">
-    <a href="index.php" class="module-card">
-        <div class="module-icon module-icon-accent">D</div>
-        <p class="module-title"><?= h(t('home.documents.title')) ?></p>
-        <p class="module-desc"><?= h(t('home.documents.desc')) ?></p>
-        <div class="module-stats">
-            <div>
-                <p class="module-stat-label"><?= h(t('home.documents.approved')) ?></p>
-                <p class="module-stat-value"><?= (int) ($docStats['approved'] ?? 0) ?></p>
-            </div>
-            <div>
-                <p class="module-stat-label"><?= h(t('home.documents.pending')) ?></p>
-                <p class="module-stat-value stat-warning"><?= (int) ($docStats['pending'] ?? 0) ?></p>
-            </div>
-        </div>
-    </a>
 
-    <a href="cases.php" class="module-card">
-        <div class="module-icon module-icon-danger">S</div>
-        <p class="module-title"><?= h(t('home.cases.title')) ?></p>
-        <p class="module-desc"><?= h(t('home.cases.desc')) ?></p>
-        <div class="module-stats">
-            <div>
-                <p class="module-stat-label"><?= h(t('home.cases.open')) ?></p>
-                <p class="module-stat-value"><?= (int) ($caseStats['open_count'] ?? 0) ?></p>
-            </div>
-            <div>
-                <p class="module-stat-label"><?= h(t('home.cases.overdue')) ?></p>
-                <p class="module-stat-value stat-danger"><?= (int) ($caseStats['overdue_count'] ?? 0) ?></p>
-            </div>
-        </div>
-    </a>
+<h2 class="section-heading"><?= h(t('home.outstanding.title')) ?></h2>
+<p class="section-subheading"><?= h(t('home.outstanding.subtitle')) ?></p>
+<?php if (!$outstanding): ?>
+    <p class="muted" style="margin:0 0 30px;"><?= h(t('home.outstanding.empty')) ?></p>
+<?php else: ?>
+    <div class="attn-list">
+        <?php foreach ($outstanding as $m): ?>
+            <a href="<?= h($m['href']) ?>" class="attn-row">
+                <?= nav_icon($m['icon']) ?>
+                <div style="flex:1; min-width:0;">
+                    <p class="attn-title"><?= h($m['title']) ?></p>
+                    <p class="attn-sub"><?= h($m['attn_label']) ?></p>
+                </div>
+                <span class="attn-badge attn-badge-<?= h($m['attn_severity']) ?>"><?= (int) $m['attn_value'] ?></span>
+            </a>
+        <?php endforeach; ?>
+    </div>
+<?php endif; ?>
 
-    <?php if (!$gqar): ?>
-    <a href="records.php" class="module-card">
-        <div class="module-icon module-icon-success">O</div>
-        <p class="module-title"><?= h(t('home.records.title')) ?></p>
-        <p class="module-desc"><?= h(t('home.records.desc')) ?></p>
-        <div class="module-stats">
-            <div>
-                <p class="module-stat-label"><?= h(t('home.records.total')) ?></p>
-                <p class="module-stat-value"><?= (int) ($recordStats['total'] ?? 0) ?></p>
-            </div>
-            <div>
-                <p class="module-stat-label"><?= h(t('home.records.due_soon')) ?></p>
-                <p class="module-stat-value stat-warning"><?= (int) ($recordStats['due_soon'] ?? 0) ?></p>
-            </div>
-        </div>
-    </a>
-    <?php endif; ?>
-
-    <a href="audits.php" class="module-card">
-        <div class="module-icon module-icon-accent">A</div>
-        <p class="module-title"><?= h(t('home.audits.title')) ?></p>
-        <p class="module-desc"><?= h(t('home.audits.desc')) ?></p>
-        <div class="module-stats">
-            <div>
-                <p class="module-stat-label"><?= h(t('home.audits.planned')) ?></p>
-                <p class="module-stat-value"><?= (int) ($auditPlannedStats['planned_this_year'] ?? 0) ?></p>
-            </div>
-            <div>
-                <p class="module-stat-label"><?= h(t('home.audits.findings')) ?></p>
-                <p class="module-stat-value stat-warning"><?= (int) ($auditFindingStats['open_findings'] ?? 0) ?></p>
-            </div>
-        </div>
-    </a>
-
-    <?php if (!$gqar): ?>
-    <a href="equipment.php" class="module-card">
-        <div class="module-icon module-icon-danger">U</div>
-        <p class="module-title"><?= h(t('home.equipment.title')) ?></p>
-        <p class="module-desc"><?= h(t('home.equipment.desc')) ?></p>
-        <div class="module-stats">
-            <div>
-                <p class="module-stat-label"><?= h(t('home.equipment.total')) ?></p>
-                <p class="module-stat-value"><?= (int) ($equipmentStats['total'] ?? 0) ?></p>
-            </div>
-            <div>
-                <p class="module-stat-label"><?= h(t('home.equipment.due_soon')) ?></p>
-                <p class="module-stat-value stat-warning"><?= (int) ($equipmentStats['due_soon'] ?? 0) ?></p>
-            </div>
-        </div>
-    </a>
-
-    <a href="risks.php" class="module-card">
-        <div class="module-icon module-icon-accent">R</div>
-        <p class="module-title"><?= h(t('home.risks.title')) ?></p>
-        <p class="module-desc"><?= h(t('home.risks.desc')) ?></p>
-        <div class="module-stats">
-            <div>
-                <p class="module-stat-label"><?= h(t('home.risks.total')) ?></p>
-                <p class="module-stat-value"><?= (int) ($riskStats['total'] ?? 0) ?></p>
-            </div>
-            <div>
-                <p class="module-stat-label"><?= h(t('home.risks.high_critical')) ?></p>
-                <p class="module-stat-value stat-danger"><?= (int) ($riskStats['high_critical'] ?? 0) ?></p>
-            </div>
-        </div>
-    </a>
-
-    <a href="suppliers.php" class="module-card">
-        <div class="module-icon module-icon-success">L</div>
-        <p class="module-title"><?= h(t('home.suppliers.title')) ?></p>
-        <p class="module-desc"><?= h(t('home.suppliers.desc')) ?></p>
-        <div class="module-stats">
-            <div>
-                <p class="module-stat-label"><?= h(t('home.suppliers.total')) ?></p>
-                <p class="module-stat-value"><?= (int) ($supplierStats['total'] ?? 0) ?></p>
-            </div>
-            <div>
-                <p class="module-stat-label"><?= h(t('home.suppliers.due_soon')) ?></p>
-                <p class="module-stat-value stat-warning"><?= (int) ($supplierStats['due_soon'] ?? 0) ?></p>
-            </div>
-        </div>
-    </a>
-
-    <?php if ($user['role'] === 'admin'): ?>
-    <a href="competence.php" class="module-card">
-        <div class="module-icon module-icon-accent">K</div>
-        <p class="module-title"><?= h(t('home.competence.title')) ?></p>
-        <p class="module-desc"><?= h(t('home.competence.desc')) ?></p>
-        <div class="module-stats">
-            <div>
-                <p class="module-stat-label"><?= h(t('home.competence.total')) ?></p>
-                <p class="module-stat-value"><?= (int) $competenceTotal ?></p>
-            </div>
-            <div>
-                <p class="module-stat-label"><?= h(t('home.competence.attention')) ?></p>
-                <p class="module-stat-value <?= $competenceAttention > 0 ? 'stat-danger' : '' ?>"><?= (int) $competenceAttention ?></p>
-            </div>
-        </div>
-    </a>
-    <?php endif; ?>
-    <?php endif; ?>
+<h2 class="section-heading"><?= h(t('home.all_modules.title')) ?></h2>
+<p class="section-subheading"><?= h(t('home.all_modules.subtitle')) ?></p>
+<div class="mini-grid">
+    <?php foreach ($modules as $m): ?>
+        <a href="<?= h($m['href']) ?>" class="mini-card">
+            <p class="mini-label"><?= h($m['title']) ?> — <?= h($m['total_label']) ?></p>
+            <p class="mini-val"><?= (int) $m['total_value'] ?></p>
+        </a>
+    <?php endforeach; ?>
 </div>
+
 </div>
 <?php render_task_panel($myTasks); ?>
 </div>

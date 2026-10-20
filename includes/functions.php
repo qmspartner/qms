@@ -860,8 +860,37 @@ function severity_class(?string $severity): string {
     };
 }
 
+// Simple, faste streg-ikoner til sidebar-navigationen. Rene SVG-strenge (ikke
+// brugerdata), så de outputtes direkte uden h().
+function nav_icon(string $key): string {
+    $icons = [
+        'documents' => '<path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6"/>',
+        'cases' => '<path d="M10.3 3.9 1.9 18a2 2 0 0 0 1.7 3h16.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+        'records' => '<rect x="2.5" y="4" width="19" height="5" rx="1"/><path d="M4 9v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9"/><path d="M10 13h4"/>',
+        'audits' => '<rect x="6" y="3" width="12" height="18" rx="2"/><path d="M9 3v2a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V3"/><path d="m9 13 2 2 4-4"/>',
+        'equipment' => '<path d="M14.7 6.3a4 4 0 0 1-5.4 5.4L4 17l3 3 5.3-5.3a4 4 0 0 1 5.4-5.4l-2.7 2.7-2-2Z"/>',
+        'risks' => '<path d="M12 2 3 6v6c0 5 4 8.5 9 10 5-1.5 9-5 9-10V6l-9-4Z"/><path d="M12 8v4"/><path d="M12 16h.01"/>',
+        'suppliers' => '<rect x="1" y="9" width="13" height="8" rx="1"/><path d="M14 11h4l4 3v3h-2"/><circle cx="6" cy="19" r="1.6"/><circle cx="17" cy="19" r="1.6"/>',
+        'reports' => '<path d="M4 20V10M12 20V4M20 20v-7"/>',
+        'contract' => '<path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="m8.5 15 2 2 4-4.5"/>',
+        'customers' => '<path d="M3 21V9l9-5 9 5v12"/><path d="M9 21v-6h6v6"/>',
+        'templates' => '<rect x="4" y="3" width="13" height="13" rx="1.5"/><path d="M20 8v11a2 2 0 0 1-2 2H7"/>',
+        'users' => '<circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6"/>',
+        'competence' => '<path d="M12 3 2 8l10 5 10-5-10-5Z"/><path d="M6 10.5V15c0 1.5 3 3 6 3s6-1.5 6-3v-4.5"/>',
+        'lists' => '<path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r="1.3"/><circle cx="3.5" cy="12" r="1.3"/><circle cx="3.5" cy="18" r="1.3"/>',
+        'permissions' => '<path d="M12 2 4 5v6c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10V5l-8-3Z"/><circle cx="12" cy="11" r="2"/><path d="M12 13v3"/>',
+        'system_settings' => '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/>',
+        'help' => '<circle cx="12" cy="12" r="9.5"/><path d="M9.5 9.2a2.5 2.5 0 1 1 3.9 2.4c-.8.5-1.4.9-1.4 2"/><path d="M12 17h.01"/>',
+        'logout' => '<path d="M9 21H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3"/><path d="M15 16.5 20 12l-5-4.5"/><path d="M20 12H9"/>',
+    ];
+    $path = $icons[$key] ?? '';
+    return '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' . $path . '</svg>';
+}
+
 function render_header(string $title): void {
     $user = current_user();
+    $currentScript = basename((string) ($_SERVER['SCRIPT_NAME'] ?? ''));
+    $isCurrent = fn (string $script): string => $currentScript === $script ? ' sidebar-link-active' : '';
     ?>
     <!DOCTYPE html>
     <html lang="<?= h(current_language()) ?>">
@@ -870,101 +899,90 @@ function render_header(string $title): void {
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title><?= h($title) ?> - <?= h(t('brand.name')) ?></title>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
-        <link rel="stylesheet" href="css/style.css?v=38">
+        <link rel="stylesheet" href="css/style.css?v=39">
     </head>
     <body>
-    <div class="sticky-header" id="site-header">
     <?php if (is_impersonating()): ?>
         <div class="impersonation-banner">
             <?= h(t('impersonation.banner', ['name' => $user['name'], 'role' => role_label($user['role'])])) ?>
             <a href="stop_impersonation.php"><?= h(t('impersonation.exit')) ?></a>
         </div>
     <?php endif; ?>
-    <header class="topbar">
-        <a href="<?= $user ? 'home.php' : 'login.php' ?>" class="brand">
-            <img src="css/logo.png?v=2" alt="QMSPartner - Quality Management System" class="brand-logo">
+    <?php if (!$user): ?>
+    <div class="guest-topbar">
+        <a href="login.php" class="guest-brand">
+            <img src="css/logo.png?v=2" alt="QMSPartner - Quality Management System" class="guest-brand-logo">
         </a>
-        <nav>
-            <?php if ($user): ?>
-                <span class="user-tag"><?= h($user['name']) ?> (<?= h(role_label($user['role'])) ?>)</span>
-                <?php if (is_gqar($user)): ?>
-                    <a href="index.php"><?= h(t('nav.documents')) ?></a>
-                    <a href="cases.php"><?= h(t('nav.cases')) ?></a>
-                    <a href="audits.php"><?= h(t('nav.audits')) ?></a>
-                    <a href="contract_overview.php"><?= h(t('nav.contract_overview')) ?></a>
-                <?php else: ?>
-                    <?php if (has_permission($user, 'documents')): ?><a href="index.php"><?= h(t('nav.documents')) ?></a><?php endif; ?>
-                    <?php if (has_permission($user, 'cases')): ?><a href="cases.php"><?= h(t('nav.cases')) ?></a><?php endif; ?>
-                    <?php
-                        $showAudits = has_permission($user, 'audits');
-                        $showRecords = has_permission($user, 'records');
-                        $showEquipment = has_permission($user, 'equipment');
-                        $showRisks = has_permission($user, 'risks');
-                        $showSuppliers = has_permission($user, 'suppliers');
-                    ?>
-                    <?php if ($showAudits || $showRecords || $showEquipment || $showRisks || $showSuppliers): ?>
-                        <details class="nav-dropdown">
-                            <summary><?= h(t('nav.operations')) ?> <i class="ti ti-chevron-down"></i></summary>
-                            <div class="nav-dropdown-menu">
-                                <?php if ($showAudits): ?><a href="audits.php"><?= h(t('nav.audits')) ?></a><?php endif; ?>
-                                <?php if ($showRecords): ?><a href="records.php"><?= h(t('nav.records')) ?></a><?php endif; ?>
-                                <?php if ($showEquipment): ?><a href="equipment.php"><?= h(t('nav.equipment')) ?></a><?php endif; ?>
-                                <?php if ($showRisks): ?><a href="risks.php"><?= h(t('nav.risks')) ?></a><?php endif; ?>
-                                <?php if ($showSuppliers): ?><a href="suppliers.php"><?= h(t('nav.suppliers')) ?></a><?php endif; ?>
-                            </div>
-                        </details>
-                    <?php endif; ?>
-                    <details class="nav-dropdown">
-                        <summary><?= h(t('nav.overview')) ?> <i class="ti ti-chevron-down"></i></summary>
-                        <div class="nav-dropdown-menu">
-                            <a href="contract_overview.php"><?= h(t('nav.contract_overview')) ?></a>
-                            <a href="reports.php"><?= h(t('nav.reports')) ?></a>
-                        </div>
-                    </details>
-                    <?php $showCustomers = has_permission($user, 'customers'); $showTemplates = has_permission($user, 'templates'); $isAdmin = $user['role'] === 'admin'; ?>
-                    <?php if ($showCustomers || $showTemplates || $isAdmin): ?>
-                        <details class="nav-dropdown">
-                            <summary><?= h(t('nav.settings')) ?> <i class="ti ti-chevron-down"></i></summary>
-                            <div class="nav-dropdown-menu">
-                                <?php if ($showCustomers): ?><a href="customers.php"><?= h(t('nav.customers')) ?></a><?php endif; ?>
-                                <?php if ($showTemplates): ?><a href="templates.php"><?= h(t('nav.templates')) ?></a><?php endif; ?>
-                                <?php if ($isAdmin): ?>
-                                    <a href="users.php"><?= h(t('nav.users')) ?></a>
-                                    <a href="competence.php"><?= h(t('nav.competence')) ?></a>
-                                    <a href="lists.php"><?= h(t('nav.lists')) ?></a>
-                                    <a href="permissions.php"><?= h(t('nav.permissions')) ?></a>
-                                    <a href="system_settings.php"><?= h(t('nav.system_settings')) ?></a>
-                                <?php endif; ?>
-                            </div>
-                        </details>
+        <span class="lang-switch">
+            <?php foreach (AVAILABLE_LANGUAGES as $code => $label): ?>
+                <a href="lang.php?lang=<?= h($code) ?>" class="<?= current_language() === $code ? 'lang-active' : '' ?>" aria-label="<?= h($label) ?>" title="<?= h($label) ?>" style="display:inline-flex; align-items:center; padding:2px;"><?= language_flag_svg($code) ?></a>
+            <?php endforeach; ?>
+        </span>
+    </div>
+    <?php endif; ?>
+    <div class="app-shell">
+    <?php if ($user): ?>
+    <aside class="sidebar">
+        <a href="home.php" class="sidebar-brand">
+            <img src="css/logo.png?v=2" alt="QMSPartner - Quality Management System" class="sidebar-brand-logo">
+        </a>
+        <nav class="sidebar-nav">
+            <?php if (is_gqar($user)): ?>
+                <a href="index.php" class="sidebar-link<?= $isCurrent('index.php') ?>"><?= nav_icon('documents') ?><span><?= h(t('nav.documents')) ?></span></a>
+                <a href="cases.php" class="sidebar-link<?= $isCurrent('cases.php') ?>"><?= nav_icon('cases') ?><span><?= h(t('nav.cases')) ?></span></a>
+                <a href="audits.php" class="sidebar-link<?= $isCurrent('audits.php') ?>"><?= nav_icon('audits') ?><span><?= h(t('nav.audits')) ?></span></a>
+                <a href="contract_overview.php" class="sidebar-link<?= $isCurrent('contract_overview.php') ?>"><?= nav_icon('contract') ?><span><?= h(t('nav.contract_overview')) ?></span></a>
+            <?php else: ?>
+                <?php if (has_permission($user, 'documents')): ?><a href="index.php" class="sidebar-link<?= $isCurrent('index.php') ?>"><?= nav_icon('documents') ?><span><?= h(t('nav.documents')) ?></span></a><?php endif; ?>
+                <?php if (has_permission($user, 'cases')): ?><a href="cases.php" class="sidebar-link<?= $isCurrent('cases.php') ?>"><?= nav_icon('cases') ?><span><?= h(t('nav.cases')) ?></span></a><?php endif; ?>
+                <?php
+                    $showAudits = has_permission($user, 'audits');
+                    $showRecords = has_permission($user, 'records');
+                    $showEquipment = has_permission($user, 'equipment');
+                    $showRisks = has_permission($user, 'risks');
+                    $showSuppliers = has_permission($user, 'suppliers');
+                ?>
+                <?php if ($showAudits || $showRecords || $showEquipment || $showRisks || $showSuppliers): ?>
+                    <p class="sidebar-group-label"><?= h(t('nav.operations')) ?></p>
+                    <?php if ($showAudits): ?><a href="audits.php" class="sidebar-link<?= $isCurrent('audits.php') ?>"><?= nav_icon('audits') ?><span><?= h(t('nav.audits')) ?></span></a><?php endif; ?>
+                    <?php if ($showRecords): ?><a href="records.php" class="sidebar-link<?= $isCurrent('records.php') ?>"><?= nav_icon('records') ?><span><?= h(t('nav.records')) ?></span></a><?php endif; ?>
+                    <?php if ($showEquipment): ?><a href="equipment.php" class="sidebar-link<?= $isCurrent('equipment.php') ?>"><?= nav_icon('equipment') ?><span><?= h(t('nav.equipment')) ?></span></a><?php endif; ?>
+                    <?php if ($showRisks): ?><a href="risks.php" class="sidebar-link<?= $isCurrent('risks.php') ?>"><?= nav_icon('risks') ?><span><?= h(t('nav.risks')) ?></span></a><?php endif; ?>
+                    <?php if ($showSuppliers): ?><a href="suppliers.php" class="sidebar-link<?= $isCurrent('suppliers.php') ?>"><?= nav_icon('suppliers') ?><span><?= h(t('nav.suppliers')) ?></span></a><?php endif; ?>
+                <?php endif; ?>
+                <p class="sidebar-group-label"><?= h(t('nav.overview')) ?></p>
+                <a href="contract_overview.php" class="sidebar-link<?= $isCurrent('contract_overview.php') ?>"><?= nav_icon('contract') ?><span><?= h(t('nav.contract_overview')) ?></span></a>
+                <a href="reports.php" class="sidebar-link<?= $isCurrent('reports.php') ?>"><?= nav_icon('reports') ?><span><?= h(t('nav.reports')) ?></span></a>
+                <?php $showCustomers = has_permission($user, 'customers'); $showTemplates = has_permission($user, 'templates'); $isAdmin = $user['role'] === 'admin'; ?>
+                <?php if ($showCustomers || $showTemplates || $isAdmin): ?>
+                    <p class="sidebar-group-label"><?= h(t('nav.settings')) ?></p>
+                    <?php if ($showCustomers): ?><a href="customers.php" class="sidebar-link<?= $isCurrent('customers.php') ?>"><?= nav_icon('customers') ?><span><?= h(t('nav.customers')) ?></span></a><?php endif; ?>
+                    <?php if ($showTemplates): ?><a href="templates.php" class="sidebar-link<?= $isCurrent('templates.php') ?>"><?= nav_icon('templates') ?><span><?= h(t('nav.templates')) ?></span></a><?php endif; ?>
+                    <?php if ($isAdmin): ?>
+                        <a href="users.php" class="sidebar-link<?= $isCurrent('users.php') ?>"><?= nav_icon('users') ?><span><?= h(t('nav.users')) ?></span></a>
+                        <a href="competence.php" class="sidebar-link<?= $isCurrent('competence.php') ?>"><?= nav_icon('competence') ?><span><?= h(t('nav.competence')) ?></span></a>
+                        <a href="lists.php" class="sidebar-link<?= $isCurrent('lists.php') ?>"><?= nav_icon('lists') ?><span><?= h(t('nav.lists')) ?></span></a>
+                        <a href="permissions.php" class="sidebar-link<?= $isCurrent('permissions.php') ?>"><?= nav_icon('permissions') ?><span><?= h(t('nav.permissions')) ?></span></a>
+                        <a href="system_settings.php" class="sidebar-link<?= $isCurrent('system_settings.php') ?>"><?= nav_icon('system_settings') ?><span><?= h(t('nav.system_settings')) ?></span></a>
                     <?php endif; ?>
                 <?php endif; ?>
-                <a href="help.php"><?= h(t('nav.help')) ?></a>
-                <a href="logout.php"><?= h(t('nav.logout')) ?></a>
             <?php endif; ?>
-            <span class="lang-switch">
-                <?php foreach (AVAILABLE_LANGUAGES as $code => $label): ?>
-                    <a href="lang.php?lang=<?= h($code) ?>" class="<?= current_language() === $code ? 'lang-active' : '' ?>" aria-label="<?= h($label) ?>" title="<?= h($label) ?>" style="display:inline-flex; align-items:center; padding:2px;"><?= language_flag_svg($code) ?></a>
-                <?php endforeach; ?>
-            </span>
         </nav>
-    </header>
-    </div>
-    <script>
-    (function () {
-        // Topmenuen (og evt. "Se som anden bruger"-banneret) er sticky, så den altid
-        // er synlig. Andre elementer (tabelheadere, hjælpesidens indholdsfortegnelse)
-        // skal placere sig under den i stedet for under den, så den reelle højde måles
-        // her og stilles til rådighed som en CSS-variabel.
-        var header = document.getElementById('site-header');
-        if (!header) return;
-        function setHeaderHeight() {
-            document.documentElement.style.setProperty('--header-h', header.offsetHeight + 'px');
-        }
-        setHeaderHeight();
-        window.addEventListener('resize', setHeaderHeight);
-    })();
-    </script>
+        <div class="sidebar-bottom">
+            <a href="help.php" class="sidebar-link<?= $isCurrent('help.php') ?>"><?= nav_icon('help') ?><span><?= h(t('nav.help')) ?></span></a>
+            <a href="logout.php" class="sidebar-link"><?= nav_icon('logout') ?><span><?= h(t('nav.logout')) ?></span></a>
+            <div class="sidebar-user">
+                <span class="user-tag"><?= h($user['name']) ?> (<?= h(role_label($user['role'])) ?>)</span>
+                <span class="lang-switch">
+                    <?php foreach (AVAILABLE_LANGUAGES as $code => $label): ?>
+                        <a href="lang.php?lang=<?= h($code) ?>" class="<?= current_language() === $code ? 'lang-active' : '' ?>" aria-label="<?= h($label) ?>" title="<?= h($label) ?>" style="display:inline-flex; align-items:center; padding:2px;"><?= language_flag_svg($code) ?></a>
+                    <?php endforeach; ?>
+                </span>
+            </div>
+        </div>
+    </aside>
+    <?php endif; ?>
+    <div class="app-main">
     <main class="container">
     <?php
 }
@@ -972,6 +990,8 @@ function render_header(string $title): void {
 function render_footer(): void {
     ?>
     </main>
+    </div>
+    </div>
     <script>
     document.addEventListener('click', function (e) {
         document.querySelectorAll('.nav-dropdown[open], .help-tip[open]').forEach(function (el) {

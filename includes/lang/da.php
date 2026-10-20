@@ -59,6 +59,11 @@ return [
 
     'home.welcome' => 'Velkommen tilbage, {name}',
     'home.subtitle' => 'Vælg hvor du vil starte',
+    'home.outstanding.title' => 'Udestående',
+    'home.outstanding.subtitle' => 'Samlede tal pr. område, der endnu ikke er lukket',
+    'home.outstanding.empty' => 'Intet udestående lige nu.',
+    'home.all_modules.title' => 'Alle moduler',
+    'home.all_modules.subtitle' => 'Fuldt overblik over tal pr. område',
     'home.documents.title' => 'Dokumenter',
     'home.documents.desc' => 'Procedurer, arbejdsinstruktioner og politikker med versionsstyring og godkendelse.',
     'home.documents.approved' => 'Godkendte',
