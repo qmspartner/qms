@@ -459,12 +459,12 @@ button:hover { opacity: 0.9; }
     border: 1px solid var(--border); border-radius: 6px; font-size: 13px; font-family: inherit;
 }
 .records-nav-group-label {
-    font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
-    color: var(--text-muted); margin: 22px 0 7px; padding: 10px 8px 0; border-top: 1px solid var(--border);
+    font-size: 13px; font-weight: 700; text-transform: none; letter-spacing: normal;
+    color: var(--text); margin: 20px 0 8px; padding: 0 8px 5px; border-bottom: 2px solid var(--text);
 }
-.records-nav-group-label:first-of-type { margin-top: 10px; padding-top: 0; border-top: none; }
+.records-nav-group-label:first-of-type { margin-top: 8px; }
 .records-nav-link {
-    display: block; margin-left: 8px; padding: 6px 8px; border-radius: 6px; font-size: 13.5px;
+    display: block; margin-left: 4px; padding: 6px 8px; border-radius: 6px; font-size: 13.5px;
     font-weight: 400; color: var(--text); text-decoration: none; border-left: 2px solid transparent;
 }
 .records-nav-link:hover { background: var(--page-bg); }
