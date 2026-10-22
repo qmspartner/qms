@@ -51,12 +51,9 @@ $stmt = $db->prepare('
 $stmt->execute([$user['organization_id']]);
 $stats = $stmt->fetch();
 
-$types = list_active_values('record_type');
-
-$activeChips = [];
-foreach ($selectedTypes as $val) {
-    $activeChips[] = ['label' => t('records.table.type') . ': ' . record_type_label($val), 'href' => remove_array_filter_href('type', $selectedTypes, $val)];
-}
+$navGroups = record_type_nav_groups($selectedTypes);
+$allHref = basename($_SERVER['PHP_SELF']) . '?' . query_merge(['type' => null]);
+$allActive = !$selectedTypes;
 
 render_header(t('records.title'));
 ?>
@@ -70,20 +67,32 @@ render_header(t('records.title'));
 <div></div>
 </div>
 
-<div class="page-layout">
+<div class="records-layout">
+<nav class="records-nav">
+    <input type="text" class="records-nav-search" placeholder="<?= h(t('records.nav.search_placeholder')) ?>" oninput="filterRecordsNav(this.value)">
+    <a class="records-nav-link records-nav-all <?= $allActive ? 'records-nav-link-active' : '' ?>" href="<?= h($allHref) ?>"><?= h(t('records.nav.all')) ?></a>
+    <?php foreach ($navGroups as $group): ?>
+        <div class="records-nav-group" data-group>
+            <div class="records-nav-group-label"><?= h($group['label']) ?></div>
+            <?php foreach ($group['items'] as $item): ?>
+                <a class="records-nav-link <?= $item['active'] ? 'records-nav-link-active' : '' ?>" href="<?= h($item['href']) ?>" data-nav-label="<?= h(mb_strtolower($item['label'])) ?>"><?= h($item['label']) ?></a>
+            <?php endforeach; ?>
+        </div>
+    <?php endforeach; ?>
+    <div class="records-nav-empty" data-nav-empty><?= h(t('records.nav.no_match')) ?></div>
+</nav>
+
 <div>
 <div class="stat-grid">
     <div class="stat-card"><p class="stat-label"><?= h(t('records.stat.total')) ?></p><p class="stat-value"><?= (int)($stats['total'] ?? 0) ?></p></div>
     <div class="stat-card"><p class="stat-label"><?= h(t('records.stat.due_soon')) ?></p><p class="stat-value stat-warning"><?= (int)($stats['due_soon'] ?? 0) ?></p></div>
 </div>
 
-<?php render_active_filters($activeChips, clear_all_filters_href(['type'])); ?>
-
 <table class="doc-table">
     <thead>
     <tr>
         <th><?php render_th_controls(t('records.table.record'), 'title', $sortCol, $sortDir === 'DESC' ? 'desc' : 'asc'); ?></th>
-        <th><?php render_th_controls(t('records.table.type'), 'type', $sortCol, $sortDir === 'DESC' ? 'desc' : 'asc', 'type', $types, $selectedTypes, 'record_type_label', t('records.table.type')); ?></th>
+        <th><?php render_th_controls(t('records.table.type'), 'type', $sortCol, $sortDir === 'DESC' ? 'desc' : 'asc'); ?></th>
         <th><?php render_th_controls(t('records.table.owner'), 'owner_name', $sortCol, $sortDir === 'DESC' ? 'desc' : 'asc'); ?></th>
         <th><?php render_th_controls(t('records.table.last_updated'), 'last_updated_at', $sortCol, $sortDir === 'DESC' ? 'desc' : 'asc'); ?></th>
         <th><?php render_th_controls(t('records.table.next_update'), 'next_update_date', $sortCol, $sortDir === 'DESC' ? 'desc' : 'asc'); ?></th>
@@ -107,5 +116,24 @@ render_header(t('records.title'));
 </div>
 <?php render_task_panel($myTasks); ?>
 </div>
+
+<script>
+function filterRecordsNav(query) {
+    var q = query.trim().toLowerCase();
+    var groups = document.querySelectorAll('.records-nav [data-group]');
+    var anyVisible = false;
+    groups.forEach(function (group) {
+        var links = group.querySelectorAll('[data-nav-label]');
+        var groupHasMatch = false;
+        links.forEach(function (link) {
+            var match = !q || link.getAttribute('data-nav-label').indexOf(q) !== -1;
+            link.style.display = match ? '' : 'none';
+            if (match) { groupHasMatch = true; anyVisible = true; }
+        });
+        group.style.display = groupHasMatch ? '' : 'none';
+    });
+    document.querySelector('[data-nav-empty]').style.display = (q && !anyVisible) ? 'block' : 'none';
+}
+</script>
 
 <?php render_footer(); ?>

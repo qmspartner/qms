@@ -790,6 +790,52 @@ function record_type_label(string $type): string {
     return list_value_label('record_type', $type);
 }
 
+function record_type_group(string $type): string {
+    return match ($type) {
+        'Kompetencematrix', 'Træningsbevis' => 'records.group.competence',
+        'Kalibreringsbevis' => 'records.group.equipment',
+        'Mødereferat' => 'records.group.meetings',
+        default => 'records.group.other',
+    };
+}
+
+/**
+ * Bygger den grupperede, søgbare navigation i venstre side af Optegnelser.
+ * Grupperne er faste i koden (se record_type_group) — en type uden en kendt
+ * gruppe lander automatisk i "Andet", så den ikke forsvinder fra oversigten.
+ */
+function record_type_nav_groups(array $selectedTypes): array {
+    $allTypes = list_active_values('record_type');
+
+    $byGroup = [];
+    foreach ($allTypes as $type) {
+        $groupKey = record_type_group($type);
+        $byGroup[$groupKey][] = $type;
+    }
+
+    // Fast, meningsfuld rækkefølge på grupperne; "Andet" ligger altid sidst.
+    $groupOrder = ['records.group.meetings', 'records.group.competence', 'records.group.equipment', 'records.group.other'];
+
+    $groups = [];
+    foreach ($groupOrder as $groupKey) {
+        if (empty($byGroup[$groupKey])) {
+            continue;
+        }
+        $items = [];
+        foreach ($byGroup[$groupKey] as $type) {
+            $items[] = [
+                'value' => $type,
+                'label' => record_type_label($type),
+                'active' => in_array($type, $selectedTypes, true),
+                'href' => basename($_SERVER['PHP_SELF']) . '?' . query_merge(['type' => [$type]]),
+            ];
+        }
+        $groups[] = ['label' => t($groupKey), 'items' => $items];
+    }
+
+    return $groups;
+}
+
 function record_type_defaults(string $type): array {
     return match ($type) {
         'Kompetencematrix' => ['retention' => 3, 'months' => 3],
@@ -899,7 +945,7 @@ function render_header(string $title): void {
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title><?= h($title) ?> - <?= h(t('brand.name')) ?></title>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
-        <link rel="stylesheet" href="css/style.css?v=41">
+        <link rel="stylesheet" href="css/style.css?v=42">
     </head>
     <body>
     <?php if (is_impersonating()): ?>

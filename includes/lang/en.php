@@ -380,6 +380,13 @@ return [
     'records.table.last_updated' => 'Last updated',
     'records.table.next_update' => 'Next update',
     'records.empty' => 'No records registered yet.',
+    'records.nav.all' => 'All records',
+    'records.nav.search_placeholder' => 'Search type…',
+    'records.nav.no_match' => 'No types match your search.',
+    'records.group.meetings' => 'Meetings & management',
+    'records.group.competence' => 'Competence & training',
+    'records.group.equipment' => 'Calibration & equipment',
+    'records.group.other' => 'Other',
 
     'record_type.Kompetencematrix' => 'Competence matrix',
     'record_type.Kalibreringsbevis' => 'Calibration certificate',

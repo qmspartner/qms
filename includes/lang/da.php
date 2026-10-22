@@ -380,6 +380,13 @@ return [
     'records.table.last_updated' => 'Sidst opdateret',
     'records.table.next_update' => 'Næste opdatering',
     'records.empty' => 'Ingen optegnelser registreret endnu.',
+    'records.nav.all' => 'Alle optegnelser',
+    'records.nav.search_placeholder' => 'Søg type…',
+    'records.nav.no_match' => 'Ingen typer matcher søgningen.',
+    'records.group.meetings' => 'Møder & ledelse',
+    'records.group.competence' => 'Kompetence & træning',
+    'records.group.equipment' => 'Kalibrering & udstyr',
+    'records.group.other' => 'Andet',
 
     'record_type.Kompetencematrix' => 'Kompetencematrix',
     'record_type.Kalibreringsbevis' => 'Kalibreringsbevis',
