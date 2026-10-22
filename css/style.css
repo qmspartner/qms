@@ -459,17 +459,23 @@ button:hover { opacity: 0.9; }
     border: 1px solid var(--border); border-radius: 6px; font-size: 13px; font-family: inherit;
 }
 .records-nav-group-label {
-    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em;
-    color: var(--text-muted); margin: 14px 0 3px; padding: 0 8px;
+    font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+    color: var(--text-muted); margin: 22px 0 7px; padding: 10px 8px 0; border-top: 1px solid var(--border);
 }
-.records-nav-group-label:first-of-type { margin-top: 2px; }
+.records-nav-group-label:first-of-type { margin-top: 10px; padding-top: 0; border-top: none; }
 .records-nav-link {
-    display: block; padding: 7px 8px; border-radius: 6px; font-size: 13.5px;
-    color: var(--text); text-decoration: none;
+    display: block; margin-left: 8px; padding: 6px 8px; border-radius: 6px; font-size: 13.5px;
+    font-weight: 400; color: var(--text); text-decoration: none; border-left: 2px solid transparent;
 }
 .records-nav-link:hover { background: var(--page-bg); }
-.records-nav-link-active { background: var(--accent-bg); color: var(--accent); font-weight: 600; }
-.records-nav-all { font-weight: 600; margin-bottom: 4px; }
+.records-nav-link-active { background: var(--accent-bg); color: var(--accent); font-weight: 600; border-left-color: var(--accent); }
+.records-nav-all {
+    display: block; font-weight: 700; font-size: 14px; padding: 7px 8px; border-radius: 6px;
+    color: var(--text); text-decoration: none; margin-bottom: 10px; padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+}
+.records-nav-all:hover { background: var(--page-bg); }
+.records-nav-all.records-nav-link-active { background: var(--accent-bg); color: var(--accent); }
 .records-nav-empty { padding: 8px 8px; font-size: 12px; color: var(--text-muted); display: none; }
 .task-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; position: sticky; top: 16px; }
 .task-panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; }
