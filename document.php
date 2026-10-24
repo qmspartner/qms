@@ -30,20 +30,36 @@ $renameError = '';
 if ($user['role'] === 'admin' && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'rename') {
     $newTitle = trim($_POST['title'] ?? '');
     $newIsTemplate = isset($_POST['is_template']) ? 1 : 0;
+    $newRequiresAck = isset($_POST['requires_acknowledgment']) ? 1 : 0;
     if ($newTitle === '') {
         $renameError = t('doc.error.title_required');
     } else {
-        $stmt = $db->prepare('UPDATE documents SET title = ?, is_template = ? WHERE id = ? AND organization_id = ?');
-        $stmt->execute([$newTitle, $newIsTemplate, $id, $user['organization_id']]);
+        $stmt = $db->prepare('UPDATE documents SET title = ?, is_template = ?, requires_acknowledgment = ? WHERE id = ? AND organization_id = ?');
+        $stmt->execute([$newTitle, $newIsTemplate, $newRequiresAck, $id, $user['organization_id']]);
         if ($newTitle !== $doc['title']) {
             log_action($id, null, t('doc.log.renamed'), $doc['title'] . ' → ' . $newTitle);
         }
         if ($newIsTemplate !== (int) $doc['is_template']) {
             log_action($id, null, $newIsTemplate ? t('doc.log.marked_template') : t('doc.log.unmarked_template'));
         }
+        if ($newRequiresAck !== (int) $doc['requires_acknowledgment']) {
+            log_action($id, null, $newRequiresAck ? t('doc.log.ack_required_on') : t('doc.log.ack_required_off'));
+        }
         $doc['title'] = $newTitle;
         $doc['is_template'] = $newIsTemplate;
+        $doc['requires_acknowledgment'] = $newRequiresAck;
     }
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'acknowledge' && $doc['requires_acknowledgment'] && $doc['current_version_id']) {
+    $stmt = $db->prepare('
+        INSERT IGNORE INTO document_acknowledgments (organization_id, document_id, version_id, user_id, acknowledged_by, method)
+        VALUES (?, ?, ?, ?, ?, \'self\')
+    ');
+    $stmt->execute([$user['organization_id'], $id, $doc['current_version_id'], $user['id'], $user['id']]);
+    log_action($id, (int) $doc['current_version_id'], t('doc.log.acknowledged'));
+    header('Location: document.php?id=' . $id);
+    exit;
 }
 
 $rejectError = ($_GET['error'] ?? '') === 'reason_required';
@@ -74,6 +90,39 @@ $logEntries = $stmt->fetchAll();
 $canApprove = can_approve_documents($user) && (!$doc['is_configuration_item'] || $user['role'] === 'admin');
 $canEdit = can_edit_documents($user);
 
+$myAcknowledgment = null;
+$ackOverview = null;
+if ($doc['requires_acknowledgment'] && $doc['current_version_id']) {
+    $stmt = $db->prepare('SELECT * FROM document_acknowledgments WHERE version_id = ? AND user_id = ?');
+    $stmt->execute([(int) $doc['current_version_id'], $user['id']]);
+    $myAcknowledgment = $stmt->fetch();
+
+    if ($canEdit) {
+        $stmt = $db->prepare("
+            SELECT u.name, da.created_at
+            FROM users u
+            LEFT JOIN document_acknowledgments da ON da.version_id = ? AND da.user_id = u.id
+            WHERE u.organization_id = ? AND u.active = 1
+            ORDER BY (da.id IS NULL) DESC, u.name
+        ");
+        $stmt->execute([(int) $doc['current_version_id'], $user['organization_id']]);
+        $userAckRows = $stmt->fetchAll();
+
+        $stmt = $db->prepare("
+            SELECT e.name, m.name AS manager_name, da.created_at, da.context_note
+            FROM employees e
+            LEFT JOIN users m ON m.id = e.manager_user_id
+            LEFT JOIN document_acknowledgments da ON da.version_id = ? AND da.employee_id = e.id
+            WHERE e.organization_id = ? AND e.active = 1 AND e.manager_user_id IS NOT NULL
+            ORDER BY (da.id IS NULL) DESC, e.name
+        ");
+        $stmt->execute([(int) $doc['current_version_id'], $user['organization_id']]);
+        $employeeAckRows = $stmt->fetchAll();
+
+        $ackOverview = ['users' => $userAckRows, 'employees' => $employeeAckRows];
+    }
+}
+
 render_header($doc['title']);
 ?>
 <p class="breadcrumb"><a href="index.php"><?= h(t('nav.documents')) ?></a> &raquo; <?= h(category_label($doc['category'])) ?> &raquo; <?= h($doc['doc_number']) ?></p>
@@ -101,6 +150,10 @@ render_header($doc['title']);
                     <label style="display:flex; align-items:center; gap:6px; font-size:12.5px; font-weight:400; margin:0;">
                         <input type="checkbox" name="is_template" value="1" style="width:auto;" <?= $doc['is_template'] ? 'checked' : '' ?>>
                         <?= h(t('doc.field.is_template')) ?>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:6px; font-size:12.5px; font-weight:400; margin:0;">
+                        <input type="checkbox" name="requires_acknowledgment" value="1" style="width:auto;" <?= $doc['requires_acknowledgment'] ? 'checked' : '' ?>>
+                        <?= h(t('doc.field.requires_acknowledgment')) ?>
                     </label>
                     <button type="submit" class="button-small button-secondary" style="align-self:center;"><?= h(t('doc.rename_save')) ?></button>
                 </form>
@@ -149,6 +202,65 @@ render_header($doc['title']);
         <?php endif; ?>
     </div>
 </div>
+
+<?php if ($doc['requires_acknowledgment'] && $doc['current_version_id']): ?>
+<h2><?= h(t('doc.acknowledge.title')) ?></h2>
+<div class="card">
+    <?php if ($myAcknowledgment): ?>
+        <p><span class="badge badge-success"><?= h(t('doc.acknowledge.confirmed')) ?></span>
+            <span class="muted"> — <?= h($myAcknowledgment['created_at']) ?></span></p>
+    <?php else: ?>
+        <p class="muted"><?= h(t('doc.acknowledge.intro')) ?></p>
+        <form method="post" class="inline-form">
+    <?= csrf_field() ?>
+            <input type="hidden" name="action" value="acknowledge">
+            <button type="submit"><?= h(t('doc.acknowledge.button')) ?></button>
+        </form>
+    <?php endif; ?>
+
+    <?php if ($ackOverview): ?>
+        <h3 style="margin-top:18px; font-size:14px;"><?= h(t('doc.acknowledge.overview_title')) ?></h3>
+        <table class="doc-table">
+            <thead><tr>
+                <th><?= h(t('doc.acknowledge.col.name')) ?></th>
+                <th><?= h(t('doc.acknowledge.col.status')) ?></th>
+                <th><?= h(t('doc.acknowledge.col.note')) ?></th>
+            </tr></thead>
+            <tbody>
+            <?php foreach ($ackOverview['users'] as $row): ?>
+                <tr>
+                    <td><?= h($row['name']) ?></td>
+                    <td>
+                        <?php if ($row['created_at']): ?>
+                            <span class="badge badge-success"><?= h(t('doc.acknowledge.confirmed')) ?></span> <span class="muted"><?= h(format_date($row['created_at'])) ?></span>
+                        <?php else: ?>
+                            <span class="badge badge-neutral"><?= h(t('doc.acknowledge.pending')) ?></span>
+                        <?php endif; ?>
+                    </td>
+                    <td class="muted">—</td>
+                </tr>
+            <?php endforeach; ?>
+            <?php foreach ($ackOverview['employees'] as $row): ?>
+                <tr>
+                    <td><?= h($row['name']) ?> <span class="muted" style="font-size:12px;">(<?= h(t('doc.acknowledge.via_manager')) ?> <?= h($row['manager_name']) ?>)</span></td>
+                    <td>
+                        <?php if ($row['created_at']): ?>
+                            <span class="badge badge-success"><?= h(t('doc.acknowledge.confirmed')) ?></span> <span class="muted"><?= h(format_date($row['created_at'])) ?></span>
+                        <?php else: ?>
+                            <span class="badge badge-neutral"><?= h(t('doc.acknowledge.pending')) ?></span>
+                        <?php endif; ?>
+                    </td>
+                    <td class="muted"><?= $row['context_note'] ? h($row['context_note']) : '—' ?></td>
+                </tr>
+            <?php endforeach; ?>
+            <?php if (!$ackOverview['users'] && !$ackOverview['employees']): ?>
+                <tr><td colspan="3" class="muted"><?= h(t('doc.acknowledge.overview_empty')) ?></td></tr>
+            <?php endif; ?>
+            </tbody>
+        </table>
+    <?php endif; ?>
+</div>
+<?php endif; ?>
 
 <h2><?= h(t('doc.version_history')) ?></h2>
 <div class="card">

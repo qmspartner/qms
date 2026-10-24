@@ -111,6 +111,48 @@ function get_my_tasks(array $user): array {
         ];
     }
 
+    $stmt = $db->prepare("
+        SELECT d.id, d.doc_number, d.title
+        FROM documents d
+        WHERE d.organization_id = ? AND d.requires_acknowledgment = 1 AND d.status = 'Godkendt' AND d.current_version_id IS NOT NULL
+            AND NOT EXISTS (
+                SELECT 1 FROM document_acknowledgments da WHERE da.version_id = d.current_version_id AND da.user_id = ?
+            )
+    ");
+    $stmt->execute([$orgId, $userId]);
+    foreach ($stmt->fetchAll() as $doc) {
+        $tasks[] = [
+            'urgency' => 'neutral',
+            'icon' => 'ti-file-text',
+            'label' => t('tasks.doc_acknowledgment_pending'),
+            'title' => $doc['doc_number'] . ' — ' . $doc['title'],
+            'link' => 'document.php?id=' . $doc['id'],
+            'sort' => 3,
+        ];
+    }
+
+    $stmt = $db->prepare("
+        SELECT DISTINCT d.id, d.doc_number, d.title
+        FROM documents d
+        JOIN employees e ON e.organization_id = d.organization_id
+        WHERE d.organization_id = ? AND d.requires_acknowledgment = 1 AND d.status = 'Godkendt' AND d.current_version_id IS NOT NULL
+            AND e.manager_user_id = ? AND e.active = 1
+            AND NOT EXISTS (
+                SELECT 1 FROM document_acknowledgments da WHERE da.version_id = d.current_version_id AND da.employee_id = e.id
+            )
+    ");
+    $stmt->execute([$orgId, $userId]);
+    foreach ($stmt->fetchAll() as $doc) {
+        $tasks[] = [
+            'urgency' => 'neutral',
+            'icon' => 'ti-users',
+            'label' => t('tasks.team_acknowledgment_pending'),
+            'title' => $doc['doc_number'] . ' — ' . $doc['title'],
+            'link' => 'document_acknowledge_team.php?document_id=' . $doc['id'],
+            'sort' => 3,
+        ];
+    }
+
     usort($tasks, fn($a, $b) => $a['sort'] <=> $b['sort']);
 
     return $tasks;

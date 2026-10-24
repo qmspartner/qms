@@ -39,6 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $section = trim($_POST['section'] ?? '');
     $operation = trim($_POST['operation'] ?? '');
     $isTemplate = (!$existingDoc && isset($_POST['is_template'])) ? 1 : 0;
+    $requiresAcknowledgment = (!$existingDoc && isset($_POST['requires_acknowledgment'])) ? 1 : 0;
 
     $file = $_FILES['file'] ?? null;
 
@@ -106,11 +107,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $docId = $existingDoc['id'];
                     } else {
                         $stmt = $db->prepare('
-                            INSERT INTO documents (organization_id, doc_number, title, category, is_template, iso_clause, owner_id, status, is_configuration_item, baseline_reference, section, operation, is_imported, original_issue_date)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            INSERT INTO documents (organization_id, doc_number, title, category, is_template, requires_acknowledgment, iso_clause, owner_id, status, is_configuration_item, baseline_reference, section, operation, is_imported, original_issue_date)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         ');
                         $stmt->execute([
-                            $user['organization_id'], $docNumber, $title, $category, $isTemplate, $isoClause ?: null, $user['id'], 'Til godkendelse',
+                            $user['organization_id'], $docNumber, $title, $category, $isTemplate, $requiresAcknowledgment, $isoClause ?: null, $user['id'], 'Til godkendelse',
                             $isConfigItem, $isConfigItem ? ($baselineRef ?: null) : null,
                             $usesStructuredId ? $section : null, $usesStructuredId ? $operation : null,
                             $isImported, ($isImported && $originalIssueDate !== '') ? $originalIssueDate : null,
@@ -180,6 +181,14 @@ $categories = list_active_values('document_category');
                     <span style="font-size:13.5px;">
                         <strong><?= h(t('upload.field.is_template')) ?></strong><br>
                         <span class="muted" style="font-size:12px;"><?= h(t('upload.field.is_template_help')) ?></span>
+                    </span>
+                </label>
+
+                <label style="display:flex; align-items:flex-start; gap:10px; background:#eef4ff; border:1px solid #c3d6fb; border-radius:8px; padding:12px 14px; margin-bottom:14px; flex-direction:row; font-weight:400;">
+                    <input type="checkbox" name="requires_acknowledgment" id="requires_acknowledgment" value="1" style="width:auto; margin-top:2px;">
+                    <span style="font-size:13.5px;">
+                        <strong><?= h(t('upload.field.requires_acknowledgment')) ?></strong><br>
+                        <span class="muted" style="font-size:12px;"><?= h(t('upload.field.requires_acknowledgment_help')) ?></span>
                     </span>
                 </label>
 
