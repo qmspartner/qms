@@ -231,8 +231,8 @@ render_header(t('newcase.title'));
                 </select>
             </label>
         </div>
-        <label><?= h(t('newcase.field.supplier')) ?>
-            <select name="supplier_id">
+        <label id="supplier-field-label"><?= h(t('newcase.field.supplier')) ?><span id="supplier-required-marker" style="display:none; color:var(--danger);"> *</span>
+            <select name="supplier_id" id="supplier-select">
                 <option value=""><?= h(t('newcase.field.supplier_none')) ?></option>
                 <?php foreach ($suppliersForCase as $sup): ?>
                     <option value="<?= (int) $sup['id'] ?>" <?= $vSupplierId === (int) $sup['id'] ? 'selected' : '' ?>><?= h($sup['name']) ?></option>
@@ -273,6 +273,10 @@ function toggleSeverity(type) {
     document.getElementById('severity-field').style.display = (type === 'Forslag') ? 'none' : 'block';
     document.getElementById('customer-field').style.display = (type === 'Kundeklage') ? 'block' : 'none';
     document.getElementById('supplier-status-field').style.display = (type === 'Leverandør reklamation') ? 'block' : 'none';
+
+    var supplierRequired = (type === 'Mistænkt forfalsket del' || type === 'Leverandør reklamation');
+    document.getElementById('supplier-select').required = supplierRequired;
+    document.getElementById('supplier-required-marker').style.display = supplierRequired ? 'inline' : 'none';
 }
 toggleSeverity(document.getElementById('type-select').value);
 </script>
