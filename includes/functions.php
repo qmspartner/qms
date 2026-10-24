@@ -612,6 +612,13 @@ function count_open_counterfeit_cases(int $supplierId): int {
     return (int) $stmt->fetchColumn();
 }
 
+function count_open_supplier_complaint_cases(int $supplierId): int {
+    $db = get_db();
+    $stmt = $db->prepare("SELECT COUNT(*) FROM cases WHERE supplier_id = ? AND type = 'Leverandør reklamation' AND status != 'Lukket'");
+    $stmt->execute([$supplierId]);
+    return (int) $stmt->fetchColumn();
+}
+
 function is_gqar(array $user): bool {
     return $user['role'] === 'gqar';
 }
@@ -954,7 +961,7 @@ function render_header(string $title): void {
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title><?= h($title) ?> - <?= h(t('brand.name')) ?></title>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
-        <link rel="stylesheet" href="css/style.css?v=46">
+        <link rel="stylesheet" href="css/style.css?v=47">
     </head>
     <body>
     <?php if (is_impersonating()): ?>

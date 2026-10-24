@@ -21,6 +21,7 @@ if (!$supplier) {
 $canManage = can_manage_suppliers($user);
 $error = '';
 $openCounterfeitCount = count_open_counterfeit_cases($id);
+$openComplaintCount = count_open_supplier_complaint_cases($id);
 
 if ($canManage && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $status = $_POST['status'] ?? 'Under vurdering';
@@ -113,6 +114,13 @@ render_header($supplier['name']);
                 <?= h(t('supplier.counterfeit_warning', ['count' => $openCounterfeitCount])) ?>
                 <a href="cases.php?<?= http_build_query(['type' => ['Mistænkt forfalsket del']]) ?>&supplier_id=<?= (int) $supplier['id'] ?>"><?= h(t('supplier.counterfeit_see_cases')) ?></a>
                 <?php help_tip('help.tip.supplier_locked'); ?>
+            </div>
+        <?php endif; ?>
+
+        <?php if ($openComplaintCount > 0): ?>
+            <div class="alert alert-warning">
+                <?= h(t('supplier.complaint_warning', ['count' => $openComplaintCount])) ?>
+                <a href="cases.php?<?= http_build_query(['type' => ['Leverandør reklamation']]) ?>&supplier_id=<?= (int) $supplier['id'] ?>"><?= h(t('supplier.complaint_see_cases')) ?></a>
             </div>
         <?php endif; ?>
 

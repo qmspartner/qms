@@ -890,6 +890,9 @@ return [
     'supplier.counterfeit_see_cases' => 'View the quality events',
     'supplier.status_locked' => 'Locked while there are open suspicion quality events',
     'supplier.counterfeit_badge' => '{count} suspected part(s)',
+    'supplier.complaint_warning' => '{count} open supplier complaint(s) are registered for this supplier.',
+    'supplier.complaint_see_cases' => 'View the quality events',
+    'supplier.complaint_badge' => '{count} complaint(s)',
 
     'help.toc_title' => 'Jump to section',
     'help.toc_group.general' => 'General',

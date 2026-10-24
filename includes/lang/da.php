@@ -890,6 +890,9 @@ return [
     'supplier.counterfeit_see_cases' => 'Se kvalitetshændelserne',
     'supplier.status_locked' => 'Låst, mens der er åbne mistanke-kvalitetshændelser',
     'supplier.counterfeit_badge' => '{count} mistænkt(e) del(e)',
+    'supplier.complaint_warning' => '{count} åben(ne) leverandørreklamation(er) er registreret på denne leverandør.',
+    'supplier.complaint_see_cases' => 'Se kvalitetshændelserne',
+    'supplier.complaint_badge' => '{count} reklamation(er)',
 
     'help.toc_title' => 'Spring til afsnit',
     'help.toc_group.general' => 'Generelt',

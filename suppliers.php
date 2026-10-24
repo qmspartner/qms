@@ -118,6 +118,15 @@ render_header(t('suppliers.title'));
                         <i class="ti ti-alert-triangle" style="font-size:15px;"></i><span style="font-size:13px; font-weight:600;"><?= $counterfeitCount ?></span>
                     </a>
                 <?php endif; ?>
+                <?php $complaintCount = count_open_supplier_complaint_cases((int) $s['id']); ?>
+                <?php if ($complaintCount > 0): ?>
+                    <a href="cases.php?<?= http_build_query(['type' => ['Leverandør reklamation']]) ?>&supplier_id=<?= (int) $s['id'] ?>"
+                       title="<?= h(t('supplier.complaint_badge', ['count' => $complaintCount])) ?>"
+                       style="display:inline-flex; align-items:center; gap:2px; margin-left:6px; color:var(--warning);"
+                       onclick="event.stopPropagation();">
+                        <i class="ti ti-alert-triangle" style="font-size:15px;"></i><span style="font-size:13px; font-weight:600;"><?= $complaintCount ?></span>
+                    </a>
+                <?php endif; ?>
             </td>
             <td><?= h(supplier_category_label($s['category'])) ?></td>
             <td><span class="<?= equipment_criticality_class($s['criticality']) ?>"><?= h(equipment_criticality_label($s['criticality'])) ?></span></td>
