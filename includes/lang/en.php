@@ -779,6 +779,8 @@ return [
     'supplier.register_evaluation' => 'Register evaluation',
     'supplier.evaluation_history' => 'Evaluation history',
     'supplier.no_evaluations' => 'No evaluations registered yet.',
+    'supplier.history' => 'History',
+    'supplier.no_history' => 'No history yet.',
     'supplier.evaluated_by' => 'evaluated by',
     'supplier.delete' => 'Delete supplier',
     'supplier.delete_confirm' => 'Are you sure you want to permanently delete this supplier? The entire evaluation history will be deleted and cannot be restored.',

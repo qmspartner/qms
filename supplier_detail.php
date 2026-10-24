@@ -34,6 +34,13 @@ if ($canManage && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $status = $supplier['status'];
     }
 
+    $oldStatus = $supplier['status'];
+    $oldCriticality = $supplier['criticality'];
+    $oldInterval = $supplier['evaluation_interval_months'];
+    $oldNextEvaluationDate = $supplier['next_evaluation_date'];
+    $oldQualityPassedOn = (int) $supplier['quality_requirements_passed_on'];
+    $oldContracts = get_entity_contracts('supplier_contracts', 'supplier_id', $id);
+
     $stmt = $db->prepare('
         UPDATE suppliers
         SET status = ?, criticality = ?, evaluation_interval_months = ?, next_evaluation_date = ?, quality_requirements_passed_on = ?
@@ -44,7 +51,32 @@ if ($canManage && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $contracts = array_values(array_filter((array) ($_POST['contracts'] ?? [])));
     save_entity_contracts('supplier_contracts', 'supplier_id', $id, $contracts);
 
-    log_supplier_action($id, 'Leverandør opdateret', 'Status: ' . $status);
+    $changes = [];
+    if ($oldStatus !== $status) {
+        $changes[] = t('supplier.field.status') . ': ' . supplier_status_label($oldStatus) . ' → ' . supplier_status_label($status);
+    }
+    if ($oldCriticality !== $criticality) {
+        $changes[] = t('supplier.field.criticality') . ': ' . equipment_criticality_label($oldCriticality) . ' → ' . equipment_criticality_label($criticality);
+    }
+    if ((int) $oldInterval !== (int) $interval) {
+        $changes[] = t('supplier.field.interval') . ': ' . ($oldInterval ?: '—') . ' → ' . ($interval ?: '—');
+    }
+    if (($oldNextEvaluationDate ?: '') !== ($nextEvaluationDate ?: '')) {
+        $changes[] = t('supplier.field.next_evaluation') . ': ' . ($oldNextEvaluationDate ?: '—') . ' → ' . ($nextEvaluationDate ?: '—');
+    }
+    if ($oldQualityPassedOn !== $qualityPassedOn) {
+        $changes[] = t('supplier.field.quality_requirements') . ': ' . ($qualityPassedOn ? t('common.yes') : '—');
+    }
+    sort($oldContracts);
+    $newContracts = $contracts;
+    sort($newContracts);
+    if ($oldContracts !== $newContracts) {
+        $changes[] = t('supplier.contracts') . ': ' . ($newContracts ? implode(', ', $newContracts) : '—');
+    }
+
+    if ($changes) {
+        log_supplier_action($id, 'Leverandør opdateret', implode(' | ', $changes));
+    }
 
     header('Location: supplier_detail.php?id=' . $id);
     exit;
@@ -59,6 +91,33 @@ $stmt = $db->prepare('
 ');
 $stmt->execute([$id]);
 $evaluations = $stmt->fetchAll();
+
+$stmt = $db->prepare('
+    SELECT l.*, u.name AS user_name
+    FROM supplier_log l
+    JOIN users u ON u.id = l.user_id
+    WHERE l.supplier_id = ?
+    ORDER BY l.created_at DESC
+');
+$stmt->execute([$id]);
+$supplierLogEntries = $stmt->fetchAll();
+
+$historyItems = [];
+foreach ($evaluations as $e) {
+    $historyItems[] = [
+        'sort_key' => $e['evaluation_date'] . ' 00:00:00',
+        'type' => 'evaluation',
+        'data' => $e,
+    ];
+}
+foreach ($supplierLogEntries as $entry) {
+    $historyItems[] = [
+        'sort_key' => $entry['created_at'],
+        'type' => 'log',
+        'data' => $entry,
+    ];
+}
+usort($historyItems, fn ($a, $b) => strcmp($b['sort_key'], $a['sort_key']));
 
 render_header($supplier['name']);
 ?>
@@ -167,22 +226,31 @@ render_header($supplier['name']);
 </div>
 <?php endif; ?>
 
-<h2><?= h(t('supplier.evaluation_history')) ?></h2>
+<h2><?= h(t('supplier.history')) ?></h2>
 <div class="card">
-    <?php foreach ($evaluations as $e): ?>
-        <div class="timeline-row">
-            <div>
-                <p><strong><?= format_date($e['evaluation_date']) ?></strong> — <?= h(t('supplier.evaluated_by')) ?> <?= h($e['performed_by_name']) ?></p>
-                <?php if ($e['result']): ?><p class="muted"><?= nl2br(h($e['result'])) ?></p><?php endif; ?>
+    <?php foreach ($historyItems as $item): ?>
+        <?php if ($item['type'] === 'evaluation'): ?>
+            <?php $e = $item['data']; ?>
+            <div class="timeline-row">
+                <div>
+                    <p><strong><?= format_date($e['evaluation_date']) ?></strong> — <?= h(t('supplier.evaluated_by')) ?> <?= h($e['performed_by_name']) ?></p>
+                    <?php if ($e['result']): ?><p class="muted"><?= nl2br(h($e['result'])) ?></p><?php endif; ?>
+                </div>
+                <div class="timeline-actions">
+                    <?php if ($e['stored_filename']): ?>
+                        <a href="download_supplier_evaluation.php?id=<?= (int)$e['id'] ?>"><?= h(t('doc.download')) ?></a>
+                    <?php endif; ?>
+                </div>
             </div>
-            <div class="timeline-actions">
-                <?php if ($e['stored_filename']): ?>
-                    <a href="download_supplier_evaluation.php?id=<?= (int)$e['id'] ?>"><?= h(t('doc.download')) ?></a>
-                <?php endif; ?>
+        <?php else: ?>
+            <?php $entry = $item['data']; ?>
+            <div class="log-row">
+                <p><strong><?= h($entry['user_name']) ?></strong> — <?= h($entry['action']) ?><?= $entry['details'] ? ': ' . h($entry['details']) : '' ?></p>
+                <p class="muted"><?= h($entry['created_at']) ?></p>
             </div>
-        </div>
+        <?php endif; ?>
     <?php endforeach; ?>
-    <?php if (!$evaluations): ?><p class="muted"><?= h(t('supplier.no_evaluations')) ?></p><?php endif; ?>
+    <?php if (!$historyItems): ?><p class="muted"><?= h(t('supplier.no_history')) ?></p><?php endif; ?>
 </div>
 
 <?php render_footer(); ?>

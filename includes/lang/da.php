@@ -779,6 +779,8 @@ return [
     'supplier.register_evaluation' => 'Registrer evaluering',
     'supplier.evaluation_history' => 'Evalueringshistorik',
     'supplier.no_evaluations' => 'Ingen evalueringer registreret endnu.',
+    'supplier.history' => 'Historik',
+    'supplier.no_history' => 'Ingen historik endnu.',
     'supplier.evaluated_by' => 'evalueret af',
     'supplier.delete' => 'Slet leverandør',
     'supplier.delete_confirm' => 'Er du sikker på, at du vil slette denne leverandør permanent? Hele evalueringshistorikken slettes og kan ikke gendannes.',
