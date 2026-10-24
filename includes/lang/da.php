@@ -465,15 +465,17 @@ return [
     'help.documents.step1' => 'En Redaktør eller Administrator uploader en ny version og vælger en Godkender.',
     'help.documents.step2' => 'Den valgte Godkender modtager en e-mail og kan godkende eller afvise (med en begrundelse).',
     'help.documents.step3' => 'Ved godkendelse arkiveres den forrige version automatisk, og dokumentet får en ny revisionsdato.',
+    'help.documents.acknowledgment' => 'Et dokument kan markeres med "Kræver kvittering for læsning". Systembrugere kvitterer selv, mens medarbejdere uden login i stedet kvitteres for af deres nærmeste leder — fx samlet på et tavlemøde, med en fælles note om hvordan. En ny godkendt version nulstiller kravet, og dokumentets ejer/redaktør kan altid se et samlet overblik over, hvem der mangler at kvittere.',
 
     'help.section.cases' => 'Sådan fungerer registeret for kvalitetshændelser',
     'help.cases.step1' => 'Alle roller kan registrere en afvigelse, et forbedringsforslag eller en observation — evt. med bilag.',
     'help.cases.step2' => 'En Administrator eller Redaktør tildeler en ansvarlig, sætter en frist, og beskriver rodårsag og korrigerende handling.',
     'help.cases.step3' => 'Status opdateres løbende, indtil kvalitetshændelsen lukkes.',
 
-    'help.section.records' => 'Sådan fungerer optegnelser',
-    'help.records.step1' => 'Optegnelser (fx kompetencematrix, kalibreringsbeviser) kræver ikke godkendelse, men gemmer altid fuld versionshistorik.',
-    'help.records.step2' => 'Hver optegnelse har en næste-opdateringsdato og en opbevaringstid, der foreslås ud fra typen og altid kan justeres.',
+    'help.section.meetings' => 'Sådan fungerer Møder',
+    'help.meetings.step1' => 'Mødereferater og Ledelsens evaluering samles under Møder, med dagsordenpunkter og referater direkte i systemet frem for som vedhæftede filer.',
+    'help.meetings.step2' => 'Handlinger fra et møde bliver til rigtige kvalitetshændelser (typen "Opfølgningspunkt"), tildelt en ansvarlig og med en frist — de dukker op under "Mine opgaver" for vedkommende, men vises ikke i selve Kvalitetshændelser-registeret.',
+    'help.meetings.step3' => 'Fanen "Åbne handlinger" giver et samlet overblik over alle endnu-ikke-lukkede mødehandlinger på tværs af møder.',
 
     'help.section.tables' => 'Sortering og filtrering',
     'help.tables.text1' => 'Klik på en kolonneoverskrift for at sortere A-Å eller Å-A.',
@@ -935,6 +937,12 @@ return [
 
     'help.section.reports' => 'Rapporter',
     'help.reports.text' => 'Rapporter viser tendenser over tid, som ikke fremgår andre steder i systemet: gennemsnitlig godkendelsestid for dokumenter, gennemsnitlig tid til lukning af kvalitetshændelser, andel kvalitetshændelser og audits gennemført til tiden, samt antal kvalitetshændelser pr. måned. Vælg en periode øverst på siden.',
+
+    'help.section.employees' => 'Sådan fungerer Medarbejdere',
+    'help.employees.step1' => 'Medarbejdere er en liste over navn, titel og afdeling for alle medarbejdere — også dem der ikke har en bruger og derfor ikke kan logge ind. Det gør det muligt at holde styr på kvalifikationer for hele organisationen, ikke kun systembrugerne.',
+    'help.employees.step2' => 'Hver medarbejder kan have én eller flere kvalifikationer (fx certificeringer eller gennemførte kurser). Udløbsdato beregnes automatisk ud fra gyldighedsperioden, og kompetencematrixen giver et samlet overblik over, hvem der har hvad, og hvad der snart udløber.',
+    'help.employees.step3' => 'Feltet "Nærmeste leder" peger på en systembruger. Lederen kan se (men ikke redigere) sin medarbejders kvalifikationer, og får automatisk en opgave under "Mine opgaver", når en af dem er ved at udløbe.',
+    'help.employees.step4' => 'Kun Administrator kan oprette og redigere medarbejdere og deres kvalifikationer; andre roller kan se kompetencematrixen, hvis den er aktiveret for dem under Adgangsstyring.',
 
     'help.section.access_control' => 'Adgangsstyring',
     'help.access_control.p1' => 'Under Indstillinger → Adgangsstyring kan du finjustere, hvad hver rolle (Redaktør, Godkender, Bruger) må gøre i hvert modul: Se, Opret, Rediger og Slet, hver for sig. Administrator er ikke vist og kan ikke begrænses — rollen har altid fuld adgang overalt.',

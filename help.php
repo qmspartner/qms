@@ -15,8 +15,9 @@ $showDocNumbering = !$gqar;
 $showTemplates = has_permission($user, 'templates');
 $showCases = true;
 $showCounterfeit = !$gqar;
-$showRecords = !$gqar;
 $showAudits = true;
+$showMeetings = !$gqar;
+$showEmployees = $isAdmin;
 $showEquipment = !$gqar;
 $showRisks = !$gqar;
 $showSuppliers = !$gqar;
@@ -58,7 +59,7 @@ if ($casesItems) $groups[] = ['help.toc_group.cases', $casesItems];
 
 $operationsItems = [];
 if ($showAudits) $operationsItems[] = ['audits', 'help.section.audits'];
-if ($showRecords) $operationsItems[] = ['records', 'help.section.records'];
+if ($showMeetings) $operationsItems[] = ['meetings', 'help.section.meetings'];
 if ($showEquipment) $operationsItems[] = ['equipment', 'help.section.equipment'];
 if ($showRisks) $operationsItems[] = ['risks', 'help.section.risks'];
 if ($showSuppliers) $operationsItems[] = ['suppliers', 'help.section.suppliers'];
@@ -72,6 +73,7 @@ if ($overviewItems) $groups[] = ['help.toc_group.overview_reports', $overviewIte
 
 $settingsItems = [];
 if ($showCustomers) $settingsItems[] = ['customers', 'help.section.customers'];
+if ($showEmployees) $settingsItems[] = ['employees', 'help.section.employees'];
 if ($showAccessControl) $settingsItems[] = ['access-control', 'help.section.access_control'];
 if ($showImpersonation) $settingsItems[] = ['impersonation', 'help.section.impersonation'];
 if ($settingsItems) $groups[] = ['help.toc_group.settings_access', $settingsItems];
@@ -192,7 +194,8 @@ render_header(t('help.title'));
             <p style="margin:0 0 8px;"><?= h(t('help.documents.step1')) ?></p>
             <p style="margin:0 0 8px;"><?= h(t('help.documents.step2')) ?></p>
             <p style="margin:0 0 8px;"><?= h(t('help.documents.step3')) ?></p>
-            <p style="margin:0;"><?= h(t('help.documents.config')) ?></p>
+            <p style="margin:0 0 8px;"><?= h(t('help.documents.config')) ?></p>
+            <p style="margin:0;"><?= h(t('help.documents.acknowledgment')) ?></p>
         </div>
         <?php endif; ?>
 
@@ -248,11 +251,12 @@ render_header(t('help.title'));
         </div>
         <?php endif; ?>
 
-        <?php if ($showRecords): ?>
-        <h2 id="records"><?= h(t('help.section.records')) ?></h2>
+        <?php if ($showMeetings): ?>
+        <h2 id="meetings"><?= h(t('help.section.meetings')) ?></h2>
         <div class="card" style="margin-bottom:1.5rem;">
-            <p style="margin:0 0 8px;"><?= h(t('help.records.step1')) ?></p>
-            <p style="margin:0;"><?= h(t('help.records.step2')) ?></p>
+            <p style="margin:0 0 8px;"><?= h(t('help.meetings.step1')) ?></p>
+            <p style="margin:0 0 8px;"><?= h(t('help.meetings.step2')) ?></p>
+            <p style="margin:0;"><?= h(t('help.meetings.step3')) ?></p>
         </div>
         <?php endif; ?>
 
@@ -302,6 +306,16 @@ render_header(t('help.title'));
         <h2 id="customers"><?= h(t('help.section.customers')) ?></h2>
         <div class="card" style="margin-bottom:1.5rem;">
             <p style="margin:0;"><?= h(t('help.customers.text')) ?></p>
+        </div>
+        <?php endif; ?>
+
+        <?php if ($showEmployees): ?>
+        <h2 id="employees"><?= h(t('help.section.employees')) ?></h2>
+        <div class="card" style="margin-bottom:1.5rem;">
+            <p style="margin:0 0 8px;"><?= h(t('help.employees.step1')) ?></p>
+            <p style="margin:0 0 8px;"><?= h(t('help.employees.step2')) ?></p>
+            <p style="margin:0 0 8px;"><?= h(t('help.employees.step3')) ?></p>
+            <p style="margin:0;"><?= h(t('help.employees.step4')) ?></p>
         </div>
         <?php endif; ?>
 

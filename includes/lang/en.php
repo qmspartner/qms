@@ -465,15 +465,17 @@ return [
     'help.documents.step1' => 'An Editor or Administrator uploads a new version and chooses an Approver.',
     'help.documents.step2' => 'The chosen Approver receives an email and can approve or reject it (with a reason).',
     'help.documents.step3' => 'On approval, the previous version is archived automatically, and the document gets a new review date.',
+    'help.documents.acknowledgment' => 'A document can be marked "Requires read acknowledgment". System users acknowledge it themselves, while employees without login are instead acknowledged for by their line manager — e.g. together at a team briefing, with a shared note on how. A new approved version resets the requirement, and the document\'s owner/editor can always see a combined overview of who still needs to acknowledge.',
 
     'help.section.cases' => 'How quality events work',
     'help.cases.step1' => 'Any role can register a deviation, improvement suggestion or observation — with attachments if needed.',
     'help.cases.step2' => 'An Administrator or Editor assigns someone responsible, sets a deadline, and describes the root cause and corrective action.',
     'help.cases.step3' => 'Status is updated as work progresses, until the quality event is closed.',
 
-    'help.section.records' => 'How records work',
-    'help.records.step1' => 'Records (e.g. competence matrices, calibration certificates) do not require approval, but always keep full version history.',
-    'help.records.step2' => 'Each record has a next-update date and a retention period, suggested based on its type and always adjustable.',
+    'help.section.meetings' => 'How Meetings work',
+    'help.meetings.step1' => 'Meeting minutes and Management review are gathered under Meetings, with agenda items and minutes directly in the system instead of as attached files.',
+    'help.meetings.step2' => 'Actions from a meeting become real quality events (the "Follow-up item" type), assigned to an owner with a due date — they show up under "My tasks" for that person, but are not listed in the Quality Events register itself.',
+    'help.meetings.step3' => 'The "Open actions" tab gives a combined overview of all not-yet-closed meeting actions across meetings.',
 
     'help.section.tables' => 'Sorting and filtering',
     'help.tables.text1' => 'Click a column heading to sort A-Z or Z-A.',
@@ -935,6 +937,12 @@ return [
 
     'help.section.reports' => 'Reports',
     'help.reports.text' => 'Reports shows trends over time not visible elsewhere in the system: average document approval time, average time to quality event closure, share of quality events and audits completed on time, and quality events per month. Choose a period at the top of the page.',
+
+    'help.section.employees' => 'How Employees work',
+    'help.employees.step1' => 'Employees is a list of name, title and department for every employee — including those who have no user account and so cannot log in. This makes it possible to track qualifications for the whole organization, not just system users.',
+    'help.employees.step2' => 'Each employee can have one or more qualifications (e.g. certifications or completed training). The expiry date is calculated automatically from the validity period, and the competence matrix gives a combined overview of who holds what and what is about to expire.',
+    'help.employees.step3' => 'The "Line manager" field points to a system user. The manager can see (but not edit) their employee\'s qualifications, and automatically gets a task under "My tasks" when one of them is about to expire.',
+    'help.employees.step4' => 'Only Administrator can create and edit employees and their qualifications; other roles can see the competence matrix if it has been enabled for them under Access control.',
 
     'help.section.access_control' => 'Access control',
     'help.access_control.p1' => 'Under Settings → Access control you can fine-tune what each role (Editor, Approver, User) may do in each module: View, Create, Edit, and Delete, individually. Administrator is not shown and cannot be restricted — the role always has full access everywhere.',
