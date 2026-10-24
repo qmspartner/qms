@@ -79,7 +79,7 @@ $stmt = $db->prepare("
 $stmt->execute([$user['organization_id']]);
 $stats = $stmt->fetch();
 
-$types = ['Afvigelse', 'Forslag', 'Observation', 'Audit fund', 'Kundeklage', 'Mistænkt forfalsket del'];
+$types = ['Afvigelse', 'Forslag', 'Observation', 'Audit fund', 'Kundeklage', 'Mistænkt forfalsket del', 'Opfølgningspunkt'];
 $severities = ['Høj', 'Mellem', 'Lav'];
 $caseStatuses = ['Registreret', 'Under undersøgelse', 'Handling igangsat', 'Lukket'];
 

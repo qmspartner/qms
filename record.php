@@ -40,10 +40,17 @@ $logEntries = $stmt->fetchAll();
 
 $canManage = can_manage_records($user);
 $isManagementReview = $record['type'] === 'Ledelsens evaluering';
-$uploadUrl = $isManagementReview
-    ? 'new_management_review.php?record_id=' . (int) $record['id']
-    : 'new_record.php?record_id=' . (int) $record['id'];
-$uploadLabel = $isManagementReview ? t('record.register_review') : t('record.upload_new_version');
+$isMeetingMinutes = $record['type'] === 'Mødereferat';
+$uploadUrl = match (true) {
+    $isManagementReview => 'new_management_review.php?record_id=' . (int) $record['id'],
+    $isMeetingMinutes => 'new_meeting_minutes.php?record_id=' . (int) $record['id'],
+    default => 'new_record.php?record_id=' . (int) $record['id'],
+};
+$uploadLabel = match (true) {
+    $isManagementReview => t('record.register_review'),
+    $isMeetingMinutes => t('record.register_meeting'),
+    default => t('record.upload_new_version'),
+};
 
 render_header($record['title']);
 ?>
@@ -70,6 +77,9 @@ render_header($record['title']);
         <?php endif; ?>
         <?php if ($isManagementReview && $versions): ?>
             <a class="button" href="management_review_detail.php?version_id=<?= (int)$versions[0]['id'] ?>"><?= h(t('mgmtreview.view_title')) ?></a>
+        <?php endif; ?>
+        <?php if ($isMeetingMinutes && $versions): ?>
+            <a class="button" href="meeting_minutes_detail.php?version_id=<?= (int)$versions[0]['id'] ?>"><?= h(t('meetingminutes.view_title')) ?></a>
         <?php endif; ?>
         <?php if ($canManage): ?>
             <a class="button button-secondary" href="<?= h($uploadUrl) ?>"><?= h($uploadLabel) ?></a>
@@ -98,6 +108,9 @@ render_header($record['title']);
             <div class="timeline-actions">
                 <?php if ($isManagementReview): ?>
                     <a href="management_review_detail.php?version_id=<?= (int)$v['id'] ?>"><?= h(t('mgmtreview.view_title')) ?></a>
+                <?php endif; ?>
+                <?php if ($isMeetingMinutes): ?>
+                    <a href="meeting_minutes_detail.php?version_id=<?= (int)$v['id'] ?>"><?= h(t('meetingminutes.view_title')) ?></a>
                 <?php endif; ?>
                 <?php if ($v['stored_filename']): ?>
                     <a href="download_record_attachment.php?id=<?= (int)$v['id'] ?>"><?= h(t('doc.download')) ?></a>

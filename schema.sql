@@ -385,6 +385,30 @@ CREATE TABLE `management_review_details` (
   CONSTRAINT `management_review_details_ibfk_1` FOREIGN KEY (`version_id`) REFERENCES `record_versions` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+CREATE TABLE `meeting_minutes_details` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `version_id` int NOT NULL,
+  `meeting_type` varchar(100) DEFAULT NULL,
+  `meeting_date` date NOT NULL,
+  `participants` text,
+  `absentees` text,
+  `next_meeting_date` date DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `version_id` (`version_id`),
+  CONSTRAINT `meeting_minutes_details_ibfk_1` FOREIGN KEY (`version_id`) REFERENCES `record_versions` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `meeting_minutes_agenda_items` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `details_id` int NOT NULL,
+  `position` int NOT NULL DEFAULT '0',
+  `topic` varchar(255) DEFAULT NULL,
+  `notes` text,
+  PRIMARY KEY (`id`),
+  KEY `details_id` (`details_id`),
+  CONSTRAINT `meeting_minutes_agenda_items_ibfk_1` FOREIGN KEY (`details_id`) REFERENCES `meeting_minutes_details` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
 -- --------------------------------------------------------
 
 CREATE TABLE `audits` (
@@ -446,6 +470,7 @@ CREATE TABLE `cases` (
   `assigned_to` int DEFAULT NULL,
   `due_date` date DEFAULT NULL,
   `linked_document_id` int DEFAULT NULL,
+  `source_record_id` int DEFAULT NULL,
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `audit_id` int DEFAULT NULL,
@@ -468,13 +493,15 @@ CREATE TABLE `cases` (
   KEY `fk_cases_audit` (`audit_id`),
   KEY `fk_cases_supplier` (`supplier_id`),
   KEY `fk_cases_customer` (`customer_id`),
+  KEY `fk_cases_source_record` (`source_record_id`),
   CONSTRAINT `cases_ibfk_1` FOREIGN KEY (`organization_id`) REFERENCES `organizations` (`id`),
   CONSTRAINT `cases_ibfk_2` FOREIGN KEY (`reported_by`) REFERENCES `users` (`id`),
   CONSTRAINT `cases_ibfk_3` FOREIGN KEY (`assigned_to`) REFERENCES `users` (`id`),
   CONSTRAINT `cases_ibfk_4` FOREIGN KEY (`linked_document_id`) REFERENCES `documents` (`id`),
   CONSTRAINT `fk_cases_audit` FOREIGN KEY (`audit_id`) REFERENCES `audits` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_cases_customer` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`) ON DELETE SET NULL,
-  CONSTRAINT `fk_cases_supplier` FOREIGN KEY (`supplier_id`) REFERENCES `suppliers` (`id`) ON DELETE SET NULL
+  CONSTRAINT `fk_cases_supplier` FOREIGN KEY (`supplier_id`) REFERENCES `suppliers` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_cases_source_record` FOREIGN KEY (`source_record_id`) REFERENCES `records` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE `case_attachments` (

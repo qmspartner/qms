@@ -9,7 +9,7 @@ $id = (int) ($_GET['id'] ?? 0);
 
 $stmt = $db->prepare('
     SELECT c.*, r.name AS reported_by_name, a.name AS assigned_to_name, d.title AS linked_document_title, d.doc_number AS linked_document_number,
-           au.title AS linked_audit_title, sup.name AS linked_supplier_name, cust.name AS customer_name
+           au.title AS linked_audit_title, sup.name AS linked_supplier_name, cust.name AS customer_name, sr.title AS source_record_title, sr.type AS source_record_type
     FROM cases c
     JOIN users r ON r.id = c.reported_by
     LEFT JOIN users a ON a.id = c.assigned_to
@@ -17,6 +17,7 @@ $stmt = $db->prepare('
     LEFT JOIN audits au ON au.id = c.audit_id
     LEFT JOIN suppliers sup ON sup.id = c.supplier_id
     LEFT JOIN customers cust ON cust.id = c.customer_id
+    LEFT JOIN records sr ON sr.id = c.source_record_id
     WHERE c.id = ? AND c.organization_id = ?
 ');
 $stmt->execute([$id, $user['organization_id']]);
@@ -260,6 +261,11 @@ render_header($case['title']);
         <?php if ($case['linked_supplier_name']): ?>
             <a class="button button-secondary" href="supplier_detail.php?id=<?= (int)$case['supplier_id'] ?>">
                 <?= h(t('supplier.linked_to_case')) ?>: <?= h($case['linked_supplier_name']) ?>
+            </a>
+        <?php endif; ?>
+        <?php if ($case['source_record_title']): ?>
+            <a class="button button-secondary" href="record.php?id=<?= (int)$case['source_record_id'] ?>">
+                <?= h(t('case.source_record')) ?>: <?= h($case['source_record_title']) ?>
             </a>
         <?php endif; ?>
         <?php if ($user['role'] === 'admin'): ?>
