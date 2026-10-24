@@ -884,6 +884,9 @@ return [
     'type.Leverandør reklamation' => 'Leverandør reklamation',
     'cases.stat.supplier_complaints' => 'Leverandørreklamationer',
     'newcase.error.supplier_required_complaint' => 'Leverandør er påkrævet ved en leverandørreklamation.',
+    'newcase.field.supplier_status_update' => 'Opdater leverandørens status',
+    'newcase.field.supplier_status_update_none' => '— Behold nuværende status —',
+    'supplier.log.status_changed_via_complaint' => 'Status ændret i forbindelse med leverandørreklamation',
     'newcase.attachments_note' => 'Dine øvrige svar er bevaret. Hvis du allerede havde valgt filer til vedhæftning, skal du vælge dem igen — det er en begrænsning i browseren, ikke noget vi kan omgå.',
 
     'supplier.counterfeit_warning' => '{count} åbne kvalitetshændelse(r) om mistænkte forfalskede dele er registreret på denne leverandør. Status kan ikke ændres, før de er afklaret.',

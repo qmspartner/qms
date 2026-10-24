@@ -25,8 +25,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $customerId = (int) ($_POST['customer_id'] ?? 0);
     $requiresNotification = isset($_POST['requires_customer_notification']) ? 1 : 0;
     $contractReference = trim($_POST['contract_reference'] ?? '');
+    $supplierStatusUpdate = $_POST['supplier_status_update'] ?? '';
     $allowedTypes = ['Afvigelse', 'Forslag', 'Observation', 'Audit fund', 'Kundeklage', 'Mistænkt forfalsket del', 'Leverandør reklamation'];
     $allowedSeverities = ['', 'Høj', 'Mellem', 'Lav'];
+    $allowedSupplierStatusUpdates = ['', 'Under vurdering', 'Afvist'];
 
     if ($type === 'Forslag') {
         $severity = '';
@@ -73,6 +75,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = t('newcase.error.supplier_required_counterfeit');
     } elseif ($type === 'Leverandør reklamation' && (int) ($_POST['supplier_id'] ?? 0) === 0) {
         $error = t('newcase.error.supplier_required_complaint');
+    } elseif (!in_array($supplierStatusUpdate, $allowedSupplierStatusUpdates, true)) {
+        $error = t('newcase.error.type');
     }
 
     if (!$error) {
@@ -129,6 +133,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($type === 'Mistænkt forfalsket del' && $linkedSupplierIdValid) {
             $stmt = $db->prepare("UPDATE suppliers SET status = 'Under vurdering' WHERE id = ? AND organization_id = ? AND status = 'Godkendt'");
             $stmt->execute([$linkedSupplierIdValid, $user['organization_id']]);
+        }
+
+        // Leverandørreklamation: status ændres kun hvis brugeren aktivt har valgt det ved registreringen
+        if ($type === 'Leverandør reklamation' && $linkedSupplierIdValid && in_array($supplierStatusUpdate, ['Under vurdering', 'Afvist'], true)) {
+            $stmt = $db->prepare('UPDATE suppliers SET status = ? WHERE id = ? AND organization_id = ?');
+            $stmt->execute([$supplierStatusUpdate, $linkedSupplierIdValid, $user['organization_id']]);
+            log_supplier_action($linkedSupplierIdValid, t('supplier.log.status_changed_via_complaint'), t('supplier.field.status') . ': ' . supplier_status_label($supplierStatusUpdate));
         }
 
         header('Location: ' . ($linkedAudit ? 'audit.php?id=' . $linkedAudit['id'] : 'cases.php'));
@@ -228,6 +239,15 @@ render_header(t('newcase.title'));
                 <?php endforeach; ?>
             </select>
         </label>
+        <div id="supplier-status-field" style="display:none;">
+            <label><?= h(t('newcase.field.supplier_status_update')) ?>
+                <select name="supplier_status_update">
+                    <option value=""><?= h(t('newcase.field.supplier_status_update_none')) ?></option>
+                    <option value="Under vurdering" <?= ($_POST['supplier_status_update'] ?? '') === 'Under vurdering' ? 'selected' : '' ?>><?= h(supplier_status_label('Under vurdering')) ?></option>
+                    <option value="Afvist" <?= ($_POST['supplier_status_update'] ?? '') === 'Afvist' ? 'selected' : '' ?>><?= h(supplier_status_label('Afvist')) ?></option>
+                </select>
+            </label>
+        </div>
         <label><?= h(t('newcase.field.attachments', ['types' => implode(', ', ALLOWED_EXTENSIONS)])) ?>
             <input type="file" name="attachments[]" multiple>
         </label>
@@ -252,6 +272,7 @@ render_header(t('newcase.title'));
 function toggleSeverity(type) {
     document.getElementById('severity-field').style.display = (type === 'Forslag') ? 'none' : 'block';
     document.getElementById('customer-field').style.display = (type === 'Kundeklage') ? 'block' : 'none';
+    document.getElementById('supplier-status-field').style.display = (type === 'Leverandør reklamation') ? 'block' : 'none';
 }
 toggleSeverity(document.getElementById('type-select').value);
 </script>
