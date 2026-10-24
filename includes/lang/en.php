@@ -881,6 +881,9 @@ return [
     'type.Mistænkt forfalsket del' => 'Suspected counterfeit part',
     'cases.stat.counterfeit' => 'Suspected counterfeit parts',
     'newcase.error.supplier_required_counterfeit' => 'Supplier is required when a counterfeit part is suspected.',
+    'type.Leverandør reklamation' => 'Supplier complaint',
+    'cases.stat.supplier_complaints' => 'Supplier complaints',
+    'newcase.error.supplier_required_complaint' => 'Supplier is required for a supplier complaint.',
     'newcase.attachments_note' => 'Your other answers have been kept. If you had already selected files to attach, you will need to select them again — that is a browser limitation, not something we can work around.',
 
     'supplier.counterfeit_warning' => '{count} open quality event(s) about suspected counterfeit parts are registered for this supplier. Status cannot be changed until they are resolved.',

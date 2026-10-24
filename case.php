@@ -44,7 +44,7 @@ $error = '';
 $effectivenessError = '';
 // Disse sagstyper skal, ved lukning, have en dokumenteret rodårsag og korrigerende
 // handling samt en planlagt dato for effektivitetstjek af handlingen (ISO 9001 pkt. 10.2).
-$requiresClosureDocumentation = in_array($case['type'], ['Audit fund', 'Afvigelse', 'Kundeklage'], true);
+$requiresClosureDocumentation = in_array($case['type'], ['Audit fund', 'Afvigelse', 'Kundeklage', 'Leverandør reklamation'], true);
 
 if ($canManage && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['effectiveness_action'])) {
     $effectivenessAction = $_POST['effectiveness_action'];

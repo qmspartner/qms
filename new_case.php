@@ -25,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $customerId = (int) ($_POST['customer_id'] ?? 0);
     $requiresNotification = isset($_POST['requires_customer_notification']) ? 1 : 0;
     $contractReference = trim($_POST['contract_reference'] ?? '');
-    $allowedTypes = ['Afvigelse', 'Forslag', 'Observation', 'Audit fund', 'Kundeklage', 'Mistænkt forfalsket del'];
+    $allowedTypes = ['Afvigelse', 'Forslag', 'Observation', 'Audit fund', 'Kundeklage', 'Mistænkt forfalsket del', 'Leverandør reklamation'];
     $allowedSeverities = ['', 'Høj', 'Mellem', 'Lav'];
 
     if ($type === 'Forslag') {
@@ -71,6 +71,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = t('newcase.error.customer_required');
     } elseif ($type === 'Mistænkt forfalsket del' && (int) ($_POST['supplier_id'] ?? 0) === 0) {
         $error = t('newcase.error.supplier_required_counterfeit');
+    } elseif ($type === 'Leverandør reklamation' && (int) ($_POST['supplier_id'] ?? 0) === 0) {
+        $error = t('newcase.error.supplier_required_complaint');
     }
 
     if (!$error) {
@@ -184,6 +186,7 @@ render_header(t('newcase.title'));
                 <option value="Audit fund" <?= $vType === 'Audit fund' ? 'selected' : '' ?>><?= h(type_label('Audit fund')) ?></option>
                 <option value="Kundeklage" <?= $vType === 'Kundeklage' ? 'selected' : '' ?>><?= h(type_label('Kundeklage')) ?></option>
                 <option value="Mistænkt forfalsket del" <?= $vType === 'Mistænkt forfalsket del' ? 'selected' : '' ?>><?= h(type_label('Mistænkt forfalsket del')) ?></option>
+                <option value="Leverandør reklamation" <?= $vType === 'Leverandør reklamation' ? 'selected' : '' ?>><?= h(type_label('Leverandør reklamation')) ?></option>
             </select>
         </label>
         <div id="severity-field">

@@ -881,6 +881,9 @@ return [
     'type.Mistænkt forfalsket del' => 'Mistænkt forfalsket del',
     'cases.stat.counterfeit' => 'Mistænkte forfalskede dele',
     'newcase.error.supplier_required_counterfeit' => 'Leverandør er påkrævet ved mistanke om en forfalsket del.',
+    'type.Leverandør reklamation' => 'Leverandør reklamation',
+    'cases.stat.supplier_complaints' => 'Leverandørreklamationer',
+    'newcase.error.supplier_required_complaint' => 'Leverandør er påkrævet ved en leverandørreklamation.',
     'newcase.attachments_note' => 'Dine øvrige svar er bevaret. Hvis du allerede havde valgt filer til vedhæftning, skal du vælge dem igen — det er en begrænsning i browseren, ikke noget vi kan omgå.',
 
     'supplier.counterfeit_warning' => '{count} åbne kvalitetshændelse(r) om mistænkte forfalskede dele er registreret på denne leverandør. Status kan ikke ændres, før de er afklaret.',

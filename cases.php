@@ -71,6 +71,7 @@ $stmt = $db->prepare("
         SUM(requires_customer_notification = 1 AND status != 'Lukket') AS notification_count,
         SUM(type = 'Kundeklage' AND status != 'Lukket') AS complaint_count,
         SUM(type = 'Mistænkt forfalsket del' AND status != 'Lukket') AS counterfeit_count,
+        SUM(type = 'Leverandør reklamation' AND status != 'Lukket') AS supplier_complaint_count,
         SUM(status = 'Lukket' AND corrective_action IS NOT NULL AND corrective_action != '' AND effectiveness_result IS NULL AND effectiveness_review_due IS NULL) AS effectiveness_pending_date_count,
         SUM(status = 'Lukket' AND corrective_action IS NOT NULL AND corrective_action != '' AND effectiveness_result IS NULL AND effectiveness_review_due IS NOT NULL AND effectiveness_review_due <= CURDATE() + INTERVAL " . EFFECTIVENESS_DUE_SOON_DAYS . " DAY) AS effectiveness_due_count
     FROM cases
@@ -79,7 +80,7 @@ $stmt = $db->prepare("
 $stmt->execute([$user['organization_id']]);
 $stats = $stmt->fetch();
 
-$types = ['Afvigelse', 'Forslag', 'Observation', 'Audit fund', 'Kundeklage', 'Mistænkt forfalsket del'];
+$types = ['Afvigelse', 'Forslag', 'Observation', 'Audit fund', 'Kundeklage', 'Mistænkt forfalsket del', 'Leverandør reklamation'];
 $severities = ['Høj', 'Mellem', 'Lav'];
 $caseStatuses = ['Registreret', 'Under undersøgelse', 'Handling igangsat', 'Lukket'];
 
@@ -116,6 +117,7 @@ render_header(t('cases.title'));
     <div class="stat-card"><p class="stat-label"><?= h(t('cases.stat.customer_notification')) ?></p><p class="stat-value stat-danger"><?= (int)($stats['notification_count'] ?? 0) ?></p></div>
     <div class="stat-card"><p class="stat-label"><?= h(t('cases.stat.complaints')) ?></p><p class="stat-value stat-warning"><?= (int)($stats['complaint_count'] ?? 0) ?></p></div>
     <div class="stat-card"><p class="stat-label"><?= h(t('cases.stat.counterfeit')) ?></p><p class="stat-value stat-danger"><?= (int)($stats['counterfeit_count'] ?? 0) ?></p></div>
+    <div class="stat-card"><p class="stat-label"><?= h(t('cases.stat.supplier_complaints')) ?></p><p class="stat-value stat-warning"><?= (int)($stats['supplier_complaint_count'] ?? 0) ?></p></div>
     <div class="stat-card"><p class="stat-label"><?= h(t('cases.stat.effectiveness_pending_date')) ?></p><p class="stat-value"><?= (int)($stats['effectiveness_pending_date_count'] ?? 0) ?></p></div>
     <div class="stat-card"><p class="stat-label"><?= h(t('cases.stat.effectiveness_due')) ?></p><p class="stat-value stat-warning"><?= (int)($stats['effectiveness_due_count'] ?? 0) ?></p></div>
 </div>
