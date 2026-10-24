@@ -2,17 +2,28 @@
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/functions.php';
 
-$user = require_role(['admin']);
+$user = require_login();
 $db = get_db();
 
 $id = (int) ($_GET['id'] ?? 0);
-$stmt = $db->prepare('SELECT * FROM employee_qualifications WHERE id = ? AND organization_id = ?');
+$stmt = $db->prepare('
+    SELECT eq.*, e.manager_user_id
+    FROM employee_qualifications eq
+    JOIN employees e ON e.id = eq.employee_id
+    WHERE eq.id = ? AND eq.organization_id = ?
+');
 $stmt->execute([$id, $user['organization_id']]);
 $assignment = $stmt->fetch();
 
 if (!$assignment || !$assignment['stored_filename']) {
     http_response_code(404);
     exit('Filen blev ikke fundet.');
+}
+
+$isManager = (int) ($assignment['manager_user_id'] ?? 0) === (int) $user['id'];
+if ($user['role'] !== 'admin' && !$isManager) {
+    http_response_code(403);
+    exit(t('error.forbidden'));
 }
 
 $path = UPLOAD_DIR . $assignment['stored_filename'];

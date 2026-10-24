@@ -27,13 +27,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $name = trim($_POST['name'] ?? '');
         $title = trim($_POST['title'] ?? '');
         $department = trim($_POST['department'] ?? '');
+        $managerUserId = (int) ($_POST['manager_user_id'] ?? 0) ?: null;
         $active = isset($_POST['active']) ? 1 : 0;
 
         if ($name === '') {
             $error = t('employees.error.required');
         } else {
-            $stmt = $db->prepare('UPDATE employees SET name = ?, title = ?, department = ?, active = ? WHERE id = ? AND organization_id = ?');
-            $stmt->execute([$name, $title ?: null, $department ?: null, $active, $id, $user['organization_id']]);
+            $stmt = $db->prepare('UPDATE employees SET name = ?, title = ?, department = ?, manager_user_id = ?, active = ? WHERE id = ? AND organization_id = ?');
+            $stmt->execute([$name, $title ?: null, $department ?: null, $managerUserId, $active, $id, $user['organization_id']]);
             log_employee_action($id, 'Medarbejder opdateret');
 
             header('Location: edit_employee.php?id=' . $id);
@@ -125,6 +126,10 @@ $stmt->execute([$user['organization_id']]);
 $allQualifications = $stmt->fetchAll();
 $availableQualifications = array_filter($allQualifications, fn($q) => !in_array((int) $q['id'], $assignedQualificationIds, true));
 
+$stmt = $db->prepare("SELECT id, name FROM users WHERE organization_id = ? AND active = 1 ORDER BY name");
+$stmt->execute([$user['organization_id']]);
+$managerOptions = $stmt->fetchAll();
+
 render_header($employee['name']);
 ?>
 <p class="breadcrumb"><a href="competence.php"><?= h(t('competence.title')) ?></a> &raquo; <a href="employees.php"><?= h(t('employees.title')) ?></a> &raquo; <?= h($employee['name']) ?></p>
@@ -151,6 +156,14 @@ render_header($employee['name']);
         </label>
         <label><?= h(t('employees.field.department_ph')) ?>
             <input type="text" name="department" value="<?= h($employee['department'] ?? '') ?>">
+        </label>
+        <label><?= h(t('employees.field.manager')) ?>
+            <select name="manager_user_id">
+                <option value=""><?= h(t('employees.field.manager_choose')) ?></option>
+                <?php foreach ($managerOptions as $m): ?>
+                    <option value="<?= (int) $m['id'] ?>" <?= (int) $employee['manager_user_id'] === (int) $m['id'] ? 'selected' : '' ?>><?= h($m['name']) ?></option>
+                <?php endforeach; ?>
+            </select>
         </label>
         <label style="display:flex; align-items:center; gap:8px; flex-direction:row;">
             <input type="checkbox" name="active" value="1" <?= $employee['active'] ? 'checked' : '' ?> style="width:auto;">

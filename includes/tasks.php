@@ -87,6 +87,30 @@ function get_my_tasks(array $user): array {
         ];
     }
 
+    $stmt = $db->prepare("
+        SELECT eq.employee_id, eq.qualification_id, eq.obtained_date, eq.expiry_date, e.name AS employee_name, q.name AS qualification_name
+        FROM employee_qualifications eq
+        JOIN employees e ON e.id = eq.employee_id
+        JOIN qualifications q ON q.id = eq.qualification_id
+        WHERE eq.organization_id = ? AND e.active = 1 AND e.manager_user_id = ?
+    ");
+    $stmt->execute([$orgId, $userId]);
+    foreach ($stmt->fetchAll() as $eq) {
+        $status = qualification_status($eq);
+        if ($status !== 'expiring' && $status !== 'expired') {
+            continue;
+        }
+        $overdue = $status === 'expired';
+        $tasks[] = [
+            'urgency' => $overdue ? 'danger' : 'warning',
+            'icon' => $overdue ? 'ti-alert-triangle' : 'ti-calendar-event',
+            'label' => $overdue ? t('tasks.qualification_expired') : t('tasks.qualification_expiring'),
+            'title' => $eq['employee_name'] . ' — ' . $eq['qualification_name'],
+            'link' => 'employee_qualification.php?employee_id=' . $eq['employee_id'] . '&qualification_id=' . $eq['qualification_id'],
+            'sort' => $overdue ? 0 : 2,
+        ];
+    }
+
     usort($tasks, fn($a, $b) => $a['sort'] <=> $b['sort']);
 
     return $tasks;

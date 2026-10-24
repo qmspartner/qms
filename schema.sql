@@ -698,11 +698,14 @@ CREATE TABLE `employees` (
   `name` varchar(255) NOT NULL,
   `title` varchar(255) DEFAULT NULL,
   `department` varchar(255) DEFAULT NULL,
+  `manager_user_id` int DEFAULT NULL,
   `active` tinyint(1) NOT NULL DEFAULT '1',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `organization_id` (`organization_id`),
-  CONSTRAINT `employees_ibfk_1` FOREIGN KEY (`organization_id`) REFERENCES `organizations` (`id`)
+  KEY `manager_user_id` (`manager_user_id`),
+  CONSTRAINT `employees_ibfk_1` FOREIGN KEY (`organization_id`) REFERENCES `organizations` (`id`),
+  CONSTRAINT `fk_employees_manager` FOREIGN KEY (`manager_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE `qualifications` (

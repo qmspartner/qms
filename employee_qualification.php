@@ -2,7 +2,7 @@
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/functions.php';
 
-$user = require_role(['admin']);
+$user = require_login();
 $db = get_db();
 
 $employeeId = (int) ($_GET['employee_id'] ?? $_POST['employee_id'] ?? 0);
@@ -21,6 +21,22 @@ if (!$employee || !$qualification) {
     render_header(t('employee_qualification.not_found'));
     echo '<div class="card">' . h(t('employee_qualification.not_found')) . '</div>';
     render_footer();
+    exit;
+}
+
+// Admin har fuld adgang. En medarbejders nærmeste leder må se status for sin egen
+// medarbejders kvalifikation (fra "Mine opgaver"), men kan ikke redigere eller slette.
+$canEdit = $user['role'] === 'admin';
+$isManager = (int) ($employee['manager_user_id'] ?? 0) === (int) $user['id'];
+if (!$canEdit && !$isManager) {
+    http_response_code(403);
+    render_header(t('error.forbidden'));
+    echo '<div class="card">' . h(t('error.forbidden')) . '</div>';
+    render_footer();
+    exit;
+}
+if (!$canEdit && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    http_response_code(403);
     exit;
 }
 
@@ -114,12 +130,19 @@ $currentStatus = $assignment ? qualification_status($assignment) : null;
 
 render_header($qualification['name']);
 ?>
+<?php if ($canEdit): ?>
 <p class="breadcrumb">
     <a href="competence.php"><?= h(t('competence.title')) ?></a> &raquo;
     <a href="competence_matrix.php"><?= h(t('competence_matrix.title')) ?></a> &raquo;
     <a href="edit_employee.php?id=<?= $employeeId ?>"><?= h($employee['name']) ?></a> &raquo;
     <?= h($qualification['name']) ?>
 </p>
+<?php else: ?>
+<p class="breadcrumb">
+    <a href="index.php"><?= h(t('tasks.title')) ?></a> &raquo;
+    <?= h($employee['name']) ?> &raquo; <?= h($qualification['name']) ?>
+</p>
+<?php endif; ?>
 
 <?php if ($error): ?><p class="alert alert-danger"><?= h($error) ?></p><?php endif; ?>
 
@@ -144,6 +167,7 @@ render_header($qualification['name']);
         </p>
     <?php endif; ?>
 
+    <?php if ($canEdit): ?>
     <form method="post" enctype="multipart/form-data" style="margin-top:1rem;">
     <?= csrf_field() ?>
         <input type="hidden" name="action" value="save">
@@ -180,6 +204,13 @@ render_header($qualification['name']);
                 <button type="submit" class="button-secondary button-danger"><?= h(t('employee_qualification.delete')) ?></button>
             </form>
         </div>
+    <?php endif; ?>
+    <?php else: ?>
+        <p class="muted" style="margin-top:1rem;">
+            <?= h(t('employee_qualification.field.planned_date')) ?>: <?= $assignment && $assignment['planned_date'] ? format_date($assignment['planned_date']) : '—' ?><br>
+            <?= h(t('employee_qualification.field.obtained_date')) ?>: <?= $assignment && $assignment['obtained_date'] ? format_date($assignment['obtained_date']) : '—' ?><br>
+            <?= h(t('employee_qualification.field.expiry_date')) ?>: <?= $assignment && $assignment['expiry_date'] ? format_date($assignment['expiry_date']) : '—' ?>
+        </p>
     <?php endif; ?>
 </div>
 

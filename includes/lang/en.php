@@ -1224,11 +1224,11 @@ return [
     'home.greeting_evening' => 'Good evening',
 
     // --- Competence and training module ---
-    'nav.competence' => 'Competence',
+    'nav.competence' => 'Employees',
 
-    'competence.title' => 'Competence',
+    'competence.title' => 'Employees',
     'competence.description' => 'Employee qualifications, certifications and training.',
-    'competence.hub.employees' => 'Employees',
+    'competence.hub.employees' => 'Master data',
     'competence.hub.employees_desc' => 'Employee master data, independent of system users.',
     'competence.hub.qualifications' => 'Qualifications',
     'competence.hub.qualifications_desc' => 'The list of certifications and qualifications that can be assigned.',
@@ -1246,10 +1246,13 @@ return [
     'employees.field.name_ph' => 'Name',
     'employees.field.title_ph' => 'Job title',
     'employees.field.department_ph' => 'Department',
+    'employees.field.manager' => 'Line manager',
+    'employees.field.manager_choose' => '— None —',
     'employees.create' => 'Create',
     'employees.table.name' => 'Name',
     'employees.table.title' => 'Job title',
     'employees.table.department' => 'Department',
+    'employees.table.manager' => 'Line manager',
     'employees.table.status' => 'Status',
     'employees.active' => 'Active',
     'employees.inactive' => 'Inactive',
@@ -1307,7 +1310,7 @@ return [
     'employee_qualification.delete_confirm' => 'Are you sure you want to remove this qualification from the employee?',
     'employee_qualification.not_found' => 'The qualification was not found.',
 
-    'home.competence.title' => 'Competence',
+    'home.competence.title' => 'Employees',
     'home.competence.desc' => 'Employee qualifications and certifications, with automatic expiry tracking.',
     'home.competence.total' => 'Assignments',
     'home.competence.attention' => 'Needs attention',
@@ -1344,6 +1347,8 @@ return [
 
     'tasks.effectiveness_due' => 'Effectiveness check due soon',
     'tasks.effectiveness_overdue' => 'Effectiveness check overdue',
+    'tasks.qualification_expiring' => 'Qualification · Expiring soon',
+    'tasks.qualification_expired' => 'Qualification · Expired',
 
     'case.field.effectiveness_review_due' => 'Effectiveness check date',
     'case.field.closure_requirements_hint' => 'Root cause, corrective action, preventive action and an effectiveness check date must be filled in before the case can be closed.',

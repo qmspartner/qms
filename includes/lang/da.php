@@ -1224,11 +1224,11 @@ return [
     'home.greeting_evening' => 'Godaften',
 
     // --- Kompetence- og uddannelsesmodul ---
-    'nav.competence' => 'Kompetencer',
+    'nav.competence' => 'Medarbejdere',
 
-    'competence.title' => 'Kompetencer',
+    'competence.title' => 'Medarbejdere',
     'competence.description' => 'Medarbejderes kvalifikationer, certificeringer og uddannelse.',
-    'competence.hub.employees' => 'Medarbejdere',
+    'competence.hub.employees' => 'Stamdata',
     'competence.hub.employees_desc' => 'Stamdata på medarbejdere, uafhængigt af systembrugere.',
     'competence.hub.qualifications' => 'Kvalifikationer',
     'competence.hub.qualifications_desc' => 'Listen af certificeringer og kvalifikationer, der kan tildeles.',
@@ -1246,10 +1246,13 @@ return [
     'employees.field.name_ph' => 'Navn',
     'employees.field.title_ph' => 'Stilling',
     'employees.field.department_ph' => 'Afdeling',
+    'employees.field.manager' => 'Nærmeste leder',
+    'employees.field.manager_choose' => '— Ingen —',
     'employees.create' => 'Opret',
     'employees.table.name' => 'Navn',
     'employees.table.title' => 'Stilling',
     'employees.table.department' => 'Afdeling',
+    'employees.table.manager' => 'Nærmeste leder',
     'employees.table.status' => 'Status',
     'employees.active' => 'Aktiv',
     'employees.inactive' => 'Inaktiv',
@@ -1307,7 +1310,7 @@ return [
     'employee_qualification.delete_confirm' => 'Er du sikker på, at du vil fjerne denne kvalifikation fra medarbejderen?',
     'employee_qualification.not_found' => 'Kvalifikationen blev ikke fundet.',
 
-    'home.competence.title' => 'Kompetencer',
+    'home.competence.title' => 'Medarbejdere',
     'home.competence.desc' => 'Medarbejderes kvalifikationer og certificeringer, med automatisk udløbsstyring.',
     'home.competence.total' => 'Tildelinger',
     'home.competence.attention' => 'Kræver opmærksomhed',
@@ -1344,6 +1347,8 @@ return [
 
     'tasks.effectiveness_due' => 'Effektivitetstjek forfalder snart',
     'tasks.effectiveness_overdue' => 'Effektivitetstjek overskredet',
+    'tasks.qualification_expiring' => 'Kvalifikation · Udløber snart',
+    'tasks.qualification_expired' => 'Kvalifikation · Udløbet',
 
     'case.field.effectiveness_review_due' => 'Dato for effektivitetstjek',
     'case.field.closure_requirements_hint' => 'Rodårsag, korrigerende handling, forebyggende handling og dato for effektivitetstjek skal udfyldes, før sagen kan lukkes.',
