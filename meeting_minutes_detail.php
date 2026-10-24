@@ -41,7 +41,7 @@ $actions = $stmt->fetchAll();
 
 render_header($meeting['record_title']);
 ?>
-<p class="breadcrumb"><a href="records.php"><?= h(t('records.title')) ?></a> &raquo; <a href="record.php?id=<?= (int)$meeting['record_id'] ?>"><?= h($meeting['record_title']) ?></a> &raquo; <?= format_date($meeting['meeting_date']) ?></p>
+<p class="breadcrumb"><a href="meetings.php"><?= h(t('nav.meetings')) ?></a> &raquo; <a href="record.php?id=<?= (int)$meeting['record_id'] ?>"><?= h($meeting['record_title']) ?></a> &raquo; <?= format_date($meeting['meeting_date']) ?></p>
 
 <div class="card">
     <div class="doc-header">

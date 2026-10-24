@@ -52,9 +52,18 @@ $uploadLabel = match (true) {
     default => t('record.upload_new_version'),
 };
 
+$isMeetingHome = $isManagementReview || $isMeetingMinutes;
+
 render_header($record['title']);
 ?>
-<p class="breadcrumb"><a href="records.php"><?= h(t('records.title')) ?></a> &raquo; <?= h(record_type_label($record['type'])) ?></p>
+<p class="breadcrumb">
+    <?php if ($isMeetingHome): ?>
+        <a href="meetings.php"><?= h(t('nav.meetings')) ?></a>
+    <?php else: ?>
+        <a href="records.php"><?= h(t('records.title')) ?></a>
+    <?php endif; ?>
+    &raquo; <?= h(record_type_label($record['type'])) ?>
+</p>
 
 <div class="card">
     <div class="doc-header">

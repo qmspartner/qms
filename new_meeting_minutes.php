@@ -174,7 +174,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $db->commit();
             log_record_action($recId, $existingRecord ? t('meetingminutes.record_log.new_version') : t('meetingminutes.record_log.created'), $meetingDate);
 
-            header('Location: records.php');
+            header('Location: meetings.php');
             exit;
         } catch (Exception $e) {
             $db->rollBack();

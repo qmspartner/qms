@@ -162,7 +162,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $db->commit();
                 log_record_action($recId, $existingRecord ? 'Ny ledelsesevaluering registreret' : 'Ledelsesevaluering oprettet', $reviewDate);
 
-                header('Location: records.php');
+                header('Location: meetings.php');
                 exit;
             } catch (Exception $e) {
                 $db->rollBack();

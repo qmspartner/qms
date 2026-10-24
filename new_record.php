@@ -18,7 +18,7 @@ if ($recordId) {
 }
 
 $error = '';
-$types = list_active_values('record_type');
+$types = array_values(array_diff(list_active_values('record_type'), record_type_relocated()));
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $title = trim($_POST['title'] ?? '');
@@ -99,7 +99,7 @@ render_header($existingRecord ? t('newrecord.title_new_version') : t('newrecord.
                 <input type="text" name="title" required>
             </label>
             <label><?= h(t('newrecord.field.type')) ?>
-                <select name="type" id="type-select" onchange="if (this.value === 'Ledelsens evaluering') { window.location = 'new_management_review.php'; } else if (this.value === 'Mødereferat') { window.location = 'new_meeting_minutes.php'; } else { applyDefaults(this.value); }" required>
+                <select name="type" id="type-select" onchange="applyDefaults(this.value);" required>
                     <?php foreach ($types as $ty): ?>
                         <option value="<?= h($ty) ?>"><?= h(record_type_label($ty)) ?></option>
                     <?php endforeach; ?>

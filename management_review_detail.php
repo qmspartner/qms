@@ -46,7 +46,7 @@ function review_quant_row(string $label, ?string $systemValue, ?int $systemCount
 
 render_header($review['record_title']);
 ?>
-<p class="breadcrumb"><a href="records.php"><?= h(t('records.title')) ?></a> &raquo; <a href="record.php?id=<?= (int)$review['record_id'] ?>"><?= h($review['record_title']) ?></a> &raquo; <?= format_date($review['review_date']) ?></p>
+<p class="breadcrumb"><a href="meetings.php"><?= h(t('nav.meetings')) ?></a> &raquo; <a href="record.php?id=<?= (int)$review['record_id'] ?>"><?= h($review['record_title']) ?></a> &raquo; <?= format_date($review['review_date']) ?></p>
 
 <div class="card">
     <div class="doc-header">

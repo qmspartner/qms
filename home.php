@@ -73,15 +73,25 @@ if ($gqar) {
 }
 
 if (!$gqar) {
+    $relocatedTypes = record_type_relocated();
     $stmt = $db->prepare('
         SELECT
             COUNT(*) AS total,
             SUM(next_update_date IS NOT NULL AND next_update_date <= CURDATE() + INTERVAL 60 DAY) AS due_soon
         FROM records
         WHERE organization_id = ?
+        AND type NOT IN (' . implode(',', array_fill(0, count($relocatedTypes), '?')) . ')
     ');
-    $stmt->execute([$user['organization_id']]);
+    $stmt->execute(array_merge([$user['organization_id']], $relocatedTypes));
     $recordStats = $stmt->fetch();
+
+    $stmt = $db->prepare("
+        SELECT
+            (SELECT COUNT(*) FROM records WHERE organization_id = ? AND type IN ('Mødereferat', 'Ledelsens evaluering')) AS total,
+            (SELECT COUNT(*) FROM cases WHERE organization_id = ? AND type = 'Opfølgningspunkt' AND status != 'Lukket') AS open_actions
+    ");
+    $stmt->execute([$user['organization_id'], $user['organization_id']]);
+    $meetingStats = $stmt->fetch();
 
     $stmt = $db->prepare("
         SELECT
@@ -146,6 +156,11 @@ $modules = [
     ],
 ];
 if (!$gqar) {
+    $modules[] = [
+        'href' => 'meetings.php', 'icon' => 'meetings', 'title' => t('home.meetings.title'),
+        'attn_label' => t('home.meetings.open_actions'), 'attn_value' => (int) ($meetingStats['open_actions'] ?? 0), 'attn_severity' => 'warning',
+        'total_label' => t('home.meetings.total'), 'total_value' => (int) ($meetingStats['total'] ?? 0),
+    ];
     $modules[] = [
         'href' => 'records.php', 'icon' => 'records', 'title' => t('home.records.title'),
         'attn_label' => t('home.records.due_soon'), 'attn_value' => (int) ($recordStats['due_soon'] ?? 0), 'attn_severity' => 'warning',

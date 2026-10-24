@@ -30,7 +30,7 @@ $sql = "
     FROM cases c
     JOIN users r ON r.id = c.reported_by
     LEFT JOIN users a ON a.id = c.assigned_to
-    WHERE c.organization_id = ?
+    WHERE c.organization_id = ? AND c.type != 'Opfølgningspunkt'
 ";
 $params = [$user['organization_id']];
 
@@ -74,12 +74,12 @@ $stmt = $db->prepare("
         SUM(status = 'Lukket' AND corrective_action IS NOT NULL AND corrective_action != '' AND effectiveness_result IS NULL AND effectiveness_review_due IS NULL) AS effectiveness_pending_date_count,
         SUM(status = 'Lukket' AND corrective_action IS NOT NULL AND corrective_action != '' AND effectiveness_result IS NULL AND effectiveness_review_due IS NOT NULL AND effectiveness_review_due <= CURDATE() + INTERVAL " . EFFECTIVENESS_DUE_SOON_DAYS . " DAY) AS effectiveness_due_count
     FROM cases
-    WHERE organization_id = ?
+    WHERE organization_id = ? AND type != 'Opfølgningspunkt'
 ");
 $stmt->execute([$user['organization_id']]);
 $stats = $stmt->fetch();
 
-$types = ['Afvigelse', 'Forslag', 'Observation', 'Audit fund', 'Kundeklage', 'Mistænkt forfalsket del', 'Opfølgningspunkt'];
+$types = ['Afvigelse', 'Forslag', 'Observation', 'Audit fund', 'Kundeklage', 'Mistænkt forfalsket del'];
 $severities = ['Høj', 'Mellem', 'Lav'];
 $caseStatuses = ['Registreret', 'Under undersøgelse', 'Handling igangsat', 'Lukket'];
 

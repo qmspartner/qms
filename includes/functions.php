@@ -790,11 +790,18 @@ function record_type_label(string $type): string {
     return list_value_label('record_type', $type);
 }
 
+/**
+ * Optegnelsestyper der er flyttet til deres eget funktionelle modul (Møder, Udstyr, ...)
+ * og derfor ikke længere skal kunne oprettes eller vises via den generiske Optegnelser-side.
+ */
+function record_type_relocated(): array {
+    return ['Mødereferat', 'Ledelsens evaluering'];
+}
+
 function record_type_group(string $type): string {
     return match ($type) {
         'Kompetencematrix', 'Træningsbevis' => 'records.group.competence',
         'Kalibreringsbevis' => 'records.group.equipment',
-        'Mødereferat' => 'records.group.meetings',
         default => 'records.group.other',
     };
 }
@@ -805,7 +812,7 @@ function record_type_group(string $type): string {
  * gruppe lander automatisk i "Andet", så den ikke forsvinder fra oversigten.
  */
 function record_type_nav_groups(array $selectedTypes): array {
-    $allTypes = list_active_values('record_type');
+    $allTypes = array_values(array_diff(list_active_values('record_type'), record_type_relocated()));
 
     $byGroup = [];
     foreach ($allTypes as $type) {
@@ -814,7 +821,7 @@ function record_type_nav_groups(array $selectedTypes): array {
     }
 
     // Fast, meningsfuld rækkefølge på grupperne; "Andet" ligger altid sidst.
-    $groupOrder = ['records.group.meetings', 'records.group.competence', 'records.group.equipment', 'records.group.other'];
+    $groupOrder = ['records.group.competence', 'records.group.equipment', 'records.group.other'];
 
     $groups = [];
     foreach ($groupOrder as $groupKey) {
@@ -913,6 +920,7 @@ function nav_icon(string $key): string {
         'documents' => '<path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6"/>',
         'cases' => '<path d="M10.3 3.9 1.9 18a2 2 0 0 0 1.7 3h16.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
         'records' => '<rect x="2.5" y="4" width="19" height="5" rx="1"/><path d="M4 9v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9"/><path d="M10 13h4"/>',
+        'meetings' => '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
         'audits' => '<rect x="6" y="3" width="12" height="18" rx="2"/><path d="M9 3v2a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V3"/><path d="m9 13 2 2 4-4"/>',
         'equipment' => '<path d="M14.7 6.3a4 4 0 0 1-5.4 5.4L4 17l3 3 5.3-5.3a4 4 0 0 1 5.4-5.4l-2.7 2.7-2-2Z"/>',
         'risks' => '<path d="M12 2 3 6v6c0 5 4 8.5 9 10 5-1.5 9-5 9-10V6l-9-4Z"/><path d="M12 8v4"/><path d="M12 16h.01"/>',
@@ -945,7 +953,7 @@ function render_header(string $title): void {
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title><?= h($title) ?> - <?= h(t('brand.name')) ?></title>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
-        <link rel="stylesheet" href="css/style.css?v=45">
+        <link rel="stylesheet" href="css/style.css?v=46">
     </head>
     <body>
     <?php if (is_impersonating()): ?>
@@ -991,6 +999,7 @@ function render_header(string $title): void {
                 <?php if ($showAudits || $showRecords || $showEquipment || $showRisks || $showSuppliers): ?>
                     <p class="sidebar-group-label"><?= h(t('nav.operations')) ?></p>
                     <?php if ($showAudits): ?><a href="audits.php" class="sidebar-link<?= $isCurrent('audits.php') ?>"><?= nav_icon('audits') ?><span><?= h(t('nav.audits')) ?></span></a><?php endif; ?>
+                    <?php if ($showRecords): ?><a href="meetings.php" class="sidebar-link<?= $isCurrent('meetings.php') ?>"><?= nav_icon('meetings') ?><span><?= h(t('nav.meetings')) ?></span></a><?php endif; ?>
                     <?php if ($showRecords): ?><a href="records.php" class="sidebar-link<?= $isCurrent('records.php') ?>"><?= nav_icon('records') ?><span><?= h(t('nav.records')) ?></span></a><?php endif; ?>
                     <?php if ($showEquipment): ?><a href="equipment.php" class="sidebar-link<?= $isCurrent('equipment.php') ?>"><?= nav_icon('equipment') ?><span><?= h(t('nav.equipment')) ?></span></a><?php endif; ?>
                     <?php if ($showRisks): ?><a href="risks.php" class="sidebar-link<?= $isCurrent('risks.php') ?>"><?= nav_icon('risks') ?><span><?= h(t('nav.risks')) ?></span></a><?php endif; ?>

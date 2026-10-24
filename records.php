@@ -22,14 +22,17 @@ if (!isset($sortColumns[$sortCol])) {
 }
 $sortDir = ($_GET['dir'] ?? 'asc') === 'desc' ? 'DESC' : 'ASC';
 
+$relocatedTypes = record_type_relocated();
+
 $sql = '
     SELECT r.*, u.name AS owner_name, v.version_number, v.uploaded_at AS last_updated_at
     FROM records r
     JOIN users u ON u.id = r.owner_id
     LEFT JOIN record_versions v ON v.id = r.current_version_id
     WHERE r.organization_id = ?
+    AND r.type NOT IN (' . implode(',', array_fill(0, count($relocatedTypes), '?')) . ')
 ';
-$params = [$user['organization_id']];
+$params = array_merge([$user['organization_id']], $relocatedTypes);
 
 if ($selectedTypes) {
     $sql .= ' AND r.type IN (' . implode(',', array_fill(0, count($selectedTypes), '?')) . ')';
@@ -47,8 +50,9 @@ $stmt = $db->prepare('
         SUM(next_update_date IS NOT NULL AND next_update_date <= CURDATE() + INTERVAL 60 DAY) AS due_soon
     FROM records
     WHERE organization_id = ?
+    AND type NOT IN (' . implode(',', array_fill(0, count($relocatedTypes), '?')) . ')
 ');
-$stmt->execute([$user['organization_id']]);
+$stmt->execute(array_merge([$user['organization_id']], $relocatedTypes));
 $stats = $stmt->fetch();
 
 $navGroups = record_type_nav_groups($selectedTypes);

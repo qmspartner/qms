@@ -12,12 +12,14 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $recordId = (int) ($_POST['record_id'] ?? 0);
 
-$stmt = $db->prepare('SELECT id FROM records WHERE id = ? AND organization_id = ?');
+$stmt = $db->prepare('SELECT id, type FROM records WHERE id = ? AND organization_id = ?');
 $stmt->execute([$recordId, $user['organization_id']]);
-if (!$stmt->fetch()) {
+$record = $stmt->fetch();
+if (!$record) {
     http_response_code(404);
     exit('Optegnelsen blev ikke fundet.');
 }
+$redirectTo = in_array($record['type'], record_type_relocated(), true) ? 'meetings.php' : 'records.php';
 
 $stmt = $db->prepare('SELECT stored_filename FROM record_versions WHERE record_id = ?');
 $stmt->execute([$recordId]);
@@ -33,5 +35,5 @@ foreach ($filesToDelete as $filename) {
     }
 }
 
-header('Location: records.php');
+header('Location: ' . $redirectTo);
 exit;
