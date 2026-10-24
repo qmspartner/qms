@@ -121,7 +121,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $logDetails = 'Type: ' . $type . ($filesToSave ? ' — ' . count($filesToSave) . ' bilag vedhæftet' : '');
-        log_case_action($caseId, 'Sag registreret', $logDetails);
+        log_case_action($caseId, 'Kvalitetshændelse registreret', $logDetails);
 
         // Opgradér leverandørens status til "Under vurdering", hvis den i dag er "Godkendt"
         if ($type === 'Mistænkt forfalsket del' && $linkedSupplierIdValid) {

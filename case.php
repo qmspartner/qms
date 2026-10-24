@@ -161,7 +161,7 @@ if ($canManage && $_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['effect
         ]);
 
         $details = 'Status: ' . $status . ($assignedUser ? ' — Tildelt: ' . $assignedUser['name'] : '');
-        log_case_action($id, 'Sag opdateret', $details);
+        log_case_action($id, 'Kvalitetshændelse opdateret', $details);
 
         header('Location: cases.php');
         exit;

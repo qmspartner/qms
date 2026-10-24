@@ -16,7 +16,7 @@ $stmt = $db->prepare('SELECT id FROM cases WHERE id = ? AND organization_id = ?'
 $stmt->execute([$caseId, $user['organization_id']]);
 if (!$stmt->fetch()) {
     http_response_code(404);
-    exit('Sagen blev ikke fundet.');
+    exit('Kvalitetshændelsen blev ikke fundet.');
 }
 
 // Sletning af sagen sletter automatisk dens statushistorik (ON DELETE CASCADE i databasen).
