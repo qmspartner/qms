@@ -121,11 +121,18 @@ render_header(t('help.title'));
                 <p class="module-desc"><?= h(t('home.cases.desc')) ?></p>
             </div>
             <?php endif; ?>
-            <?php if (has_permission($user, 'records')): ?>
+            <?php if (!$gqar): ?>
             <div class="module-card" style="cursor:default;">
-                <div class="module-icon module-icon-success">O</div>
-                <p class="module-title"><?= h(t('home.records.title')) ?></p>
-                <p class="module-desc"><?= h(t('home.records.desc')) ?></p>
+                <div class="module-icon module-icon-success">M</div>
+                <p class="module-title"><?= h(t('home.meetings.title')) ?></p>
+                <p class="module-desc"><?= h(t('home.meetings.desc')) ?></p>
+            </div>
+            <?php endif; ?>
+            <?php if ($isAdmin): ?>
+            <div class="module-card" style="cursor:default;">
+                <div class="module-icon module-icon-success">M</div>
+                <p class="module-title"><?= h(t('home.competence.title')) ?></p>
+                <p class="module-desc"><?= h(t('home.competence.desc')) ?></p>
             </div>
             <?php endif; ?>
             <?php if (has_permission($user, 'audits')): ?>

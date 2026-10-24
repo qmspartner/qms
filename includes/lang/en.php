@@ -74,6 +74,7 @@ return [
     'home.cases.open' => 'Open quality events',
     'home.cases.overdue' => 'Overdue',
     'home.meetings.title' => 'Meetings',
+    'home.meetings.desc' => 'Meeting minutes and Management review, with actions that become real follow-up items.',
     'home.meetings.total' => 'Meetings',
     'home.meetings.open_actions' => 'Open actions',
     'home.records.title' => 'Records',

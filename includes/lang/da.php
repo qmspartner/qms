@@ -74,6 +74,7 @@ return [
     'home.cases.open' => 'Åbne kvalitetshændelser',
     'home.cases.overdue' => 'Forfaldne',
     'home.meetings.title' => 'Møder',
+    'home.meetings.desc' => 'Mødereferater og Ledelsens evaluering, med handlinger der bliver til rigtige opfølgningspunkter.',
     'home.meetings.total' => 'Møder',
     'home.meetings.open_actions' => 'Åbne handlinger',
     'home.records.title' => 'Optegnelser',
