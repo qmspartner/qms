@@ -31,6 +31,5 @@ CREATE TABLE `document_acknowledgments` (
   CONSTRAINT `fk_docack_version` FOREIGN KEY (`version_id`) REFERENCES `document_versions` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_docack_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_docack_employee` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_docack_by` FOREIGN KEY (`acknowledged_by`) REFERENCES `users` (`id`),
-  CONSTRAINT `chk_docack_subject` CHECK (((`user_id` is not null) and (`employee_id` is null)) or ((`user_id` is null) and (`employee_id` is not null)))
+  CONSTRAINT `fk_docack_by` FOREIGN KEY (`acknowledged_by`) REFERENCES `users` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
