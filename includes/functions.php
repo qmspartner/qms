@@ -1000,7 +1000,6 @@ function render_header(string $title): void {
                     <p class="sidebar-group-label"><?= h(t('nav.operations')) ?></p>
                     <?php if ($showAudits): ?><a href="audits.php" class="sidebar-link<?= $isCurrent('audits.php') ?>"><?= nav_icon('audits') ?><span><?= h(t('nav.audits')) ?></span></a><?php endif; ?>
                     <?php if ($showRecords): ?><a href="meetings.php" class="sidebar-link<?= $isCurrent('meetings.php') ?>"><?= nav_icon('meetings') ?><span><?= h(t('nav.meetings')) ?></span></a><?php endif; ?>
-                    <?php if ($showRecords): ?><a href="records.php" class="sidebar-link<?= $isCurrent('records.php') ?>"><?= nav_icon('records') ?><span><?= h(t('nav.records')) ?></span></a><?php endif; ?>
                     <?php if ($showEquipment): ?><a href="equipment.php" class="sidebar-link<?= $isCurrent('equipment.php') ?>"><?= nav_icon('equipment') ?><span><?= h(t('nav.equipment')) ?></span></a><?php endif; ?>
                     <?php if ($showRisks): ?><a href="risks.php" class="sidebar-link<?= $isCurrent('risks.php') ?>"><?= nav_icon('risks') ?><span><?= h(t('nav.risks')) ?></span></a><?php endif; ?>
                     <?php if ($showSuppliers): ?><a href="suppliers.php" class="sidebar-link<?= $isCurrent('suppliers.php') ?>"><?= nav_icon('suppliers') ?><span><?= h(t('nav.suppliers')) ?></span></a><?php endif; ?>
