@@ -490,13 +490,14 @@ function seed_default_lists(int $organizationId): void {
             ['Politik', 'Policy'],
             ['Leverance-kvalitetsplan', 'Deliverable quality plan'],
         ],
-        'record_type' => [
-            ['Kompetencematrix', 'Competence matrix'],
-            ['Kalibreringsbevis', 'Calibration certificate'],
-            ['Mødereferat', 'Meeting minutes'],
-            ['Træningsbevis', 'Training certificate'],
-            ['Ledelsens evaluering', 'Management review'],
-        ],
+        // record_type er bevidst tom: alle de typer, der tidligere blev seedet her
+        // (Kompetencematrix, Kalibreringsbevis, Mødereferat, Træningsbevis, Ledelsens
+        // evaluering), har nu deres eget funktionelle hjem (Møder, Medarbejdere, Udstyr).
+        // Optegnelser er nedlagt fra navigationen (Fase 5), så en ny organisation skal
+        // ikke bootstrappes ind i den gamle, nu modstridende opsætning. Hvis en fremtidig
+        // optegnelsestype dukker op uden et naturligt modul, tilføjes den her igen —
+        // men kun hvis den reelt ikke kan gives et funktionelt hjem (jf. beslutningen om
+        // ikke at genindføre en "Andet"-skuffe).
         'risk_category' => [
             ['Strategisk', 'Strategic'],
             ['Operationel', 'Operational'],
