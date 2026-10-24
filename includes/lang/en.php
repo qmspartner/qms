@@ -809,7 +809,7 @@ return [
     'lists.col.prefix' => 'Prefix',
     'lists.field.prefix' => 'Prefix (e.g. SOP)',
 
-    'upload.field.is_imported' => 'Imported document (already has an ID)',
+    'upload.field.is_imported' => 'Enter existing ID manually (instead of automatic numbering)',
     'upload.field.original_issue_date' => 'Original issue date (optional)',
     'upload.field.section' => 'Section',
     'upload.field.operation' => 'Operation',

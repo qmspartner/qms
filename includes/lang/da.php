@@ -809,7 +809,7 @@ return [
     'lists.col.prefix' => 'Præfiks',
     'lists.field.prefix' => 'Præfiks (fx SOP)',
 
-    'upload.field.is_imported' => 'Importeret dokument (har allerede et ID)',
+    'upload.field.is_imported' => 'Angiv eksisterende ID manuelt (i stedet for automatisk nummerering)',
     'upload.field.original_issue_date' => 'Oprindelig udstedelsesdato (valgfrit)',
     'upload.field.section' => 'Afsnit',
     'upload.field.operation' => 'Operation',
