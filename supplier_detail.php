@@ -24,6 +24,12 @@ $openCounterfeitCount = count_open_counterfeit_cases($id);
 $openComplaintCount = count_open_supplier_complaint_cases($id);
 
 if ($canManage && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $name = trim($_POST['name'] ?? '');
+    $contactPerson = trim($_POST['contact_person'] ?? '');
+    $email = trim($_POST['email'] ?? '');
+    $phone = trim($_POST['phone'] ?? '');
+    $category = $_POST['category'] ?? $supplier['category'];
+    $ownerId = (int) ($_POST['owner_id'] ?? 0);
     $status = $_POST['status'] ?? 'Under vurdering';
     $criticality = $_POST['criticality'] ?? 'Ikke-kritisk';
     $interval = $_POST['evaluation_interval_months'] !== '' ? (int) $_POST['evaluation_interval_months'] : null;
@@ -34,52 +40,88 @@ if ($canManage && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $status = $supplier['status'];
     }
 
-    $oldStatus = $supplier['status'];
-    $oldCriticality = $supplier['criticality'];
-    $oldInterval = $supplier['evaluation_interval_months'];
-    $oldNextEvaluationDate = $supplier['next_evaluation_date'];
-    $oldQualityPassedOn = (int) $supplier['quality_requirements_passed_on'];
-    $oldContracts = get_entity_contracts('supplier_contracts', 'supplier_id', $id);
+    $stmt = $db->prepare('SELECT id FROM users WHERE id = ? AND organization_id = ?');
+    $stmt->execute([$ownerId, $user['organization_id']]);
+    $validOwner = $stmt->fetch();
 
-    $stmt = $db->prepare('
-        UPDATE suppliers
-        SET status = ?, criticality = ?, evaluation_interval_months = ?, next_evaluation_date = ?, quality_requirements_passed_on = ?
-        WHERE id = ? AND organization_id = ?
-    ');
-    $stmt->execute([$status, $criticality, $interval, $nextEvaluationDate ?: null, $qualityPassedOn, $id, $user['organization_id']]);
+    if ($name === '' || !$validOwner) {
+        $error = t('newsupplier.error.required');
+    } else {
+        $oldName = $supplier['name'];
+        $oldContactPerson = (string) ($supplier['contact_person'] ?? '');
+        $oldEmail = (string) ($supplier['email'] ?? '');
+        $oldPhone = (string) ($supplier['phone'] ?? '');
+        $oldCategory = $supplier['category'];
+        $oldOwnerId = (int) $supplier['owner_id'];
+        $oldOwnerName = $supplier['owner_name'];
+        $oldStatus = $supplier['status'];
+        $oldCriticality = $supplier['criticality'];
+        $oldInterval = $supplier['evaluation_interval_months'];
+        $oldNextEvaluationDate = $supplier['next_evaluation_date'];
+        $oldQualityPassedOn = (int) $supplier['quality_requirements_passed_on'];
+        $oldContracts = get_entity_contracts('supplier_contracts', 'supplier_id', $id);
 
-    $contracts = array_values(array_filter((array) ($_POST['contracts'] ?? [])));
-    save_entity_contracts('supplier_contracts', 'supplier_id', $id, $contracts);
+        $stmt = $db->prepare('
+            UPDATE suppliers
+            SET name = ?, contact_person = ?, email = ?, phone = ?, category = ?, owner_id = ?, status = ?, criticality = ?, evaluation_interval_months = ?, next_evaluation_date = ?, quality_requirements_passed_on = ?
+            WHERE id = ? AND organization_id = ?
+        ');
+        $stmt->execute([$name, $contactPerson ?: null, $email ?: null, $phone ?: null, $category, $ownerId, $status, $criticality, $interval, $nextEvaluationDate ?: null, $qualityPassedOn, $id, $user['organization_id']]);
 
-    $changes = [];
-    if ($oldStatus !== $status) {
-        $changes[] = t('supplier.field.status') . ': ' . supplier_status_label($oldStatus) . ' → ' . supplier_status_label($status);
-    }
-    if ($oldCriticality !== $criticality) {
-        $changes[] = t('supplier.field.criticality') . ': ' . equipment_criticality_label($oldCriticality) . ' → ' . equipment_criticality_label($criticality);
-    }
-    if ((int) $oldInterval !== (int) $interval) {
-        $changes[] = t('supplier.field.interval') . ': ' . ($oldInterval ?: '—') . ' → ' . ($interval ?: '—');
-    }
-    if (($oldNextEvaluationDate ?: '') !== ($nextEvaluationDate ?: '')) {
-        $changes[] = t('supplier.field.next_evaluation') . ': ' . ($oldNextEvaluationDate ?: '—') . ' → ' . ($nextEvaluationDate ?: '—');
-    }
-    if ($oldQualityPassedOn !== $qualityPassedOn) {
-        $changes[] = t('supplier.field.quality_requirements') . ': ' . ($qualityPassedOn ? t('common.yes') : '—');
-    }
-    sort($oldContracts);
-    $newContracts = $contracts;
-    sort($newContracts);
-    if ($oldContracts !== $newContracts) {
-        $changes[] = t('supplier.contracts') . ': ' . ($newContracts ? implode(', ', $newContracts) : '—');
-    }
+        $contracts = array_values(array_filter((array) ($_POST['contracts'] ?? [])));
+        save_entity_contracts('supplier_contracts', 'supplier_id', $id, $contracts);
 
-    if ($changes) {
-        log_supplier_action($id, 'Leverandør opdateret', implode(' | ', $changes));
-    }
+        $changes = [];
+        if ($oldName !== $name) {
+            $changes[] = t('supplier.field.name') . ': ' . $oldName . ' → ' . $name;
+        }
+        if ($oldContactPerson !== $contactPerson) {
+            $changes[] = t('supplier.field.contact_person') . ': ' . ($oldContactPerson ?: '—') . ' → ' . ($contactPerson ?: '—');
+        }
+        if ($oldEmail !== $email) {
+            $changes[] = t('supplier.field.email') . ': ' . ($oldEmail ?: '—') . ' → ' . ($email ?: '—');
+        }
+        if ($oldPhone !== $phone) {
+            $changes[] = t('supplier.field.phone') . ': ' . ($oldPhone ?: '—') . ' → ' . ($phone ?: '—');
+        }
+        if ($oldCategory !== $category) {
+            $changes[] = t('supplier.field.category') . ': ' . supplier_category_label($oldCategory) . ' → ' . supplier_category_label($category);
+        }
+        if ($oldOwnerId !== $ownerId) {
+            $stmt = $db->prepare('SELECT name FROM users WHERE id = ?');
+            $stmt->execute([$ownerId]);
+            $newOwnerName = $stmt->fetchColumn();
+            $changes[] = t('supplier.field.owner') . ': ' . $oldOwnerName . ' → ' . $newOwnerName;
+        }
+        if ($oldStatus !== $status) {
+            $changes[] = t('supplier.field.status') . ': ' . supplier_status_label($oldStatus) . ' → ' . supplier_status_label($status);
+        }
+        if ($oldCriticality !== $criticality) {
+            $changes[] = t('supplier.field.criticality') . ': ' . equipment_criticality_label($oldCriticality) . ' → ' . equipment_criticality_label($criticality);
+        }
+        if ((int) $oldInterval !== (int) $interval) {
+            $changes[] = t('supplier.field.interval') . ': ' . ($oldInterval ?: '—') . ' → ' . ($interval ?: '—');
+        }
+        if (($oldNextEvaluationDate ?: '') !== ($nextEvaluationDate ?: '')) {
+            $changes[] = t('supplier.field.next_evaluation') . ': ' . ($oldNextEvaluationDate ?: '—') . ' → ' . ($nextEvaluationDate ?: '—');
+        }
+        if ($oldQualityPassedOn !== $qualityPassedOn) {
+            $changes[] = t('supplier.field.quality_requirements') . ': ' . ($qualityPassedOn ? t('common.yes') : '—');
+        }
+        sort($oldContracts);
+        $newContracts = $contracts;
+        sort($newContracts);
+        if ($oldContracts !== $newContracts) {
+            $changes[] = t('supplier.contracts') . ': ' . ($newContracts ? implode(', ', $newContracts) : '—');
+        }
 
-    header('Location: supplier_detail.php?id=' . $id);
-    exit;
+        if ($changes) {
+            log_supplier_action($id, 'Leverandør opdateret', implode(' | ', $changes));
+        }
+
+        header('Location: supplier_detail.php?id=' . $id);
+        exit;
+    }
 }
 
 $stmt = $db->prepare('
@@ -101,6 +143,12 @@ $stmt = $db->prepare('
 ');
 $stmt->execute([$id]);
 $supplierLogEntries = $stmt->fetchAll();
+
+$stmt = $db->prepare("SELECT id, name FROM users WHERE organization_id = ? AND active = 1 ORDER BY name");
+$stmt->execute([$user['organization_id']]);
+$orgUsers = $stmt->fetchAll();
+
+$categories = supplier_category_options();
 
 $historyItems = [];
 foreach ($evaluations as $e) {
@@ -188,6 +236,32 @@ render_header($supplier['name']);
 <div class="card">
     <form method="post">
     <?= csrf_field() ?>
+        <label><?= h(t('supplier.field.name')) ?>
+            <input type="text" name="name" value="<?= h($supplier['name']) ?>" required>
+        </label>
+        <label><?= h(t('supplier.field.contact_person')) ?>
+            <input type="text" name="contact_person" value="<?= h($supplier['contact_person'] ?? '') ?>">
+        </label>
+        <label><?= h(t('supplier.field.email')) ?>
+            <input type="email" name="email" value="<?= h($supplier['email'] ?? '') ?>">
+        </label>
+        <label><?= h(t('supplier.field.phone')) ?>
+            <input type="text" name="phone" value="<?= h($supplier['phone'] ?? '') ?>">
+        </label>
+        <label><?= h(t('supplier.field.category')) ?>
+            <select name="category">
+                <?php foreach ($categories as $cat): ?>
+                    <option value="<?= h($cat) ?>" <?= $supplier['category'] === $cat ? 'selected' : '' ?>><?= h(supplier_category_label($cat)) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </label>
+        <label><?= h(t('supplier.field.owner')) ?>
+            <select name="owner_id" required>
+                <?php foreach ($orgUsers as $u): ?>
+                    <option value="<?= (int) $u['id'] ?>" <?= (int) $supplier['owner_id'] === (int) $u['id'] ? 'selected' : '' ?>><?= h($u['name']) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </label>
         <label><?= h(t('supplier.field.status')) ?>
             <select name="status" <?= $openCounterfeitCount > 0 ? 'disabled' : '' ?>>
                 <?php foreach (['Godkendt', 'Under vurdering', 'Afvist', 'Udfaset'] as $s): ?>
