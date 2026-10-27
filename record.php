@@ -44,7 +44,7 @@ $isMeetingMinutes = $record['type'] === 'Mødereferat';
 $uploadUrl = match (true) {
     $isManagementReview => 'new_management_review.php?record_id=' . (int) $record['id'],
     $isMeetingMinutes => 'new_meeting_minutes.php?record_id=' . (int) $record['id'],
-    default => 'new_record.php?record_id=' . (int) $record['id'],
+    default => null,
 };
 $uploadLabel = match (true) {
     $isManagementReview => t('record.register_review'),
@@ -59,10 +59,9 @@ render_header($record['title']);
 <p class="breadcrumb">
     <?php if ($isMeetingHome): ?>
         <a href="meetings.php"><?= h(t('nav.meetings')) ?></a>
-    <?php else: ?>
-        <a href="records.php"><?= h(t('records.title')) ?></a>
+        &raquo;
     <?php endif; ?>
-    &raquo; <?= h(record_type_label($record['type'])) ?>
+    <?= h(record_type_label($record['type'])) ?>
 </p>
 
 <div class="card">
@@ -90,7 +89,7 @@ render_header($record['title']);
         <?php if ($isMeetingMinutes && $versions): ?>
             <a class="button" href="meeting_minutes_detail.php?version_id=<?= (int)$versions[0]['id'] ?>"><?= h(t('meetingminutes.view_title')) ?></a>
         <?php endif; ?>
-        <?php if ($canManage): ?>
+        <?php if ($canManage && $uploadUrl): ?>
             <a class="button button-secondary" href="<?= h($uploadUrl) ?>"><?= h($uploadLabel) ?></a>
         <?php endif; ?>
         <?php if ($user['role'] === 'admin'): ?>

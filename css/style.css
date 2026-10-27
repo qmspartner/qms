@@ -450,33 +450,6 @@ button:hover { opacity: 0.9; }
 .page-layout { display: grid; grid-template-columns: 1fr 280px; gap: 20px; align-items: start; }
 @media (max-width: 760px) { .page-layout, .page-heading-row { grid-template-columns: 1fr; } }
 
-.records-layout { display: grid; grid-template-columns: 220px 1fr 280px; gap: 20px; align-items: start; }
-@media (max-width: 960px) { .records-layout { grid-template-columns: 220px 1fr; } }
-@media (max-width: 760px) { .records-layout { grid-template-columns: 1fr; } }
-.records-nav { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 10px; }
-.records-nav-search {
-    width: 100%; box-sizing: border-box; padding: 7px 10px; margin-bottom: 10px;
-    border: 1px solid var(--border); border-radius: 6px; font-size: 13px; font-family: inherit;
-}
-.records-nav-group-label {
-    font-size: 13px; font-weight: 700; text-transform: none; letter-spacing: normal;
-    color: var(--text); margin: 20px 0 8px; padding: 0 8px 5px; border-bottom: 2px solid var(--text);
-}
-.records-nav-group-label:first-of-type { margin-top: 8px; }
-.records-nav-link {
-    display: block; margin-left: 4px; padding: 6px 8px; border-radius: 6px; font-size: 13.5px;
-    font-weight: 400; color: var(--text); text-decoration: none; border-left: 2px solid transparent;
-}
-.records-nav-link:hover { background: var(--page-bg); }
-.records-nav-link-active { background: var(--accent-bg); color: var(--accent); font-weight: 600; border-left-color: var(--accent); }
-.records-nav-all {
-    display: block; font-weight: 700; font-size: 14px; padding: 7px 8px; border-radius: 6px;
-    color: var(--text); text-decoration: none; margin-bottom: 10px; padding-bottom: 14px;
-    border-bottom: 1px solid var(--border);
-}
-.records-nav-all:hover { background: var(--page-bg); }
-.records-nav-all.records-nav-link-active { background: var(--accent-bg); color: var(--accent); }
-.records-nav-empty { padding: 8px 8px; font-size: 12px; color: var(--text-muted); display: none; }
 .task-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; position: sticky; top: 16px; }
 .task-panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; }
 .task-panel-title { font-size: 15px; font-weight: 600; margin: 0; }

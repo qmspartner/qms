@@ -6,7 +6,7 @@ $user = require_permission('records', 'delete');
 $db = get_db();
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: records.php');
+    header('Location: meetings.php');
     exit;
 }
 
@@ -19,7 +19,7 @@ if (!$record) {
     http_response_code(404);
     exit('Optegnelsen blev ikke fundet.');
 }
-$redirectTo = in_array($record['type'], record_type_relocated(), true) ? 'meetings.php' : 'records.php';
+$redirectTo = 'meetings.php';
 
 $stmt = $db->prepare('SELECT stored_filename FROM record_versions WHERE record_id = ?');
 $stmt->execute([$recordId]);
