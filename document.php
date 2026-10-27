@@ -282,6 +282,9 @@ render_header($doc['title']);
                     <?php endif; ?>
                 <?php elseif ($v['original_approver'] || $v['original_approval_date']): ?>
                     <p class="muted"><?= h(t('doc.original_approval')) ?><?= $v['original_approver'] ? ' ' . h($v['original_approver']) : '' ?><?= $v['original_approval_date'] ? ', ' . format_date($v['original_approval_date']) : '' ?></p>
+                    <?php if ($v['import_source_reference']): ?>
+                        <p class="muted"><?= h(t('doc.import_source')) ?> <?= h($v['import_source_reference']) ?></p>
+                    <?php endif; ?>
                 <?php elseif ($v['assigned_approver_name']): ?>
                     <p class="muted"><?= h(t('doc.awaiting_approval')) ?> <?= h($v['assigned_approver_name']) ?></p>
                 <?php endif; ?>

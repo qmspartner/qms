@@ -87,7 +87,7 @@ render_header(t('documents.title'));
 <div class="page-heading">
     <h1><?= h(t('documents.title')) ?></h1>
     <?php if (can_edit_documents($user)): ?>
-        <a class="button button-secondary" href="import_documents_csv.php"><?= h(t('docimport.nav')) ?></a>
+        <a class="button button-secondary" href="import_documents.php"><?= h(t('bulkimport.nav')) ?></a>
         <a class="button" href="upload_version.php"><?= h(t('documents.new')) ?></a>
     <?php endif; ?>
 </div>
