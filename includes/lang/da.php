@@ -153,6 +153,7 @@ return [
     'documents.search.placeholder' => 'Søg efter titel eller ID',
     'documents.search.allcategories' => 'Alle kategorier',
     'documents.search.submit' => 'Søg',
+    'documents.search.searching' => 'Søger …',
     'documents.table.document' => 'Dokument',
     'documents.table.id' => 'ID',
     'documents.table.category' => 'Kategori',
@@ -440,6 +441,7 @@ return [
     'help.role.user.desc' => 'Kan se, søge og downloade dokumenter, kvalitetshændelser og optegnelser, samt registrere nye kvalitetshændelser.',
 
     'help.section.documents' => 'Sådan fungerer dokumentgodkendelse',
+    'help.documents.search' => 'Søgefeltet på dokumentoversigten opdaterer listen automatisk, et kort øjeblik efter du er stoppet med at skrive — du behøver ikke trykke "Søg" eller Enter. Søgningen slår op direkte i databasen (ikke kun i det, der allerede vises), så den virker lige godt uanset hvor mange dokumenter registret vokser til. Søgeordet vises stadig som et fjernbart filter-chip og indgår i sidens adresse, så et søgeresultat kan deles eller gemmes som bogmærke.',
     'help.documents.step1' => 'En Redaktør eller Administrator uploader en ny version og vælger en Godkender.',
     'help.documents.step2' => 'Den valgte Godkender modtager en e-mail og kan godkende eller afvise (med en begrundelse).',
     'help.documents.step3' => 'Ved godkendelse arkiveres den forrige version automatisk, og dokumentet får en ny revisionsdato.',

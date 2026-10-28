@@ -81,6 +81,14 @@ foreach ($selectedStatuses as $val) {
     $activeChips[] = ['label' => t('documents.table.status') . ': ' . status_label($val), 'href' => remove_array_filter_href('status', $selectedStatuses, $val)];
 }
 
+// Levende søgning: ?partial=1 bruges af JS (fetch) til kun at hente det opdaterede
+// filter-chip-/tabel-fragment, uden hele sidens skal (header/nav/stat-grid).
+if (isset($_GET['partial'])) {
+    header('Content-Type: text/html; charset=utf-8');
+    require __DIR__ . '/includes/partials/document_results.php';
+    exit;
+}
+
 render_header(t('documents.title'));
 ?>
 <div class="page-heading-row">
@@ -102,10 +110,11 @@ render_header(t('documents.title'));
     <div class="stat-card"><p class="stat-label"><?= h(t('documents.stat.expiring')) ?></p><p class="stat-value stat-danger"><?= (int)($stats['expiring'] ?? 0) ?></p></div>
 </div>
 
-<form method="get" class="filter-bar">
+<form method="get" class="filter-bar" id="doc-search-form">
     <?php hidden_inputs_for_query(['q']); ?>
-    <input type="text" name="q" placeholder="<?= h(t('documents.search.placeholder')) ?>" value="<?= h($search) ?>">
+    <input type="text" name="q" id="doc-search-input" placeholder="<?= h(t('documents.search.placeholder')) ?>" value="<?= h($search) ?>" autocomplete="off">
     <button type="submit"><?= h(t('documents.search.submit')) ?></button>
+    <span id="doc-search-status" class="muted" style="display:none; font-size:13px;"><?= h(t('documents.search.searching')) ?></span>
 </form>
 
 <p style="margin:4px 0 0;">
@@ -114,37 +123,98 @@ render_header(t('documents.title'));
     </a>
 </p>
 
-<?php render_active_filters($activeChips, clear_all_filters_href(['q', 'category', 'status'])); ?>
-
-<table class="doc-table">
-    <thead>
-    <tr>
-        <th><?php render_th_controls(t('documents.table.document'), 'title', $sortCol, $sortDir === 'DESC' ? 'desc' : 'asc'); ?></th>
-        <th><?php render_th_controls(t('documents.table.id'), 'doc_number', $sortCol, $sortDir === 'DESC' ? 'desc' : 'asc'); ?></th>
-        <th><?php render_th_controls(t('documents.table.category'), 'category', $sortCol, $sortDir === 'DESC' ? 'desc' : 'asc', 'category', $categories, $selectedCategories, 'category_label', t('documents.table.category')); ?></th>
-        <th><?php render_th_controls(t('documents.table.owner'), 'owner_name', $sortCol, $sortDir === 'DESC' ? 'desc' : 'asc'); ?></th>
-        <th><?php render_th_controls(t('documents.table.status'), 'status', $sortCol, $sortDir === 'DESC' ? 'desc' : 'asc', 'status', $statuses, $selectedStatuses, 'status_label', t('documents.table.status')); ?></th>
-        <th><?php render_th_controls(t('documents.table.reviewed'), 'next_review_date', $sortCol, $sortDir === 'DESC' ? 'desc' : 'asc'); ?></th>
-    </tr>
-    </thead>
-    <tbody>
-    <?php foreach ($documents as $doc): ?>
-        <tr onclick="window.location='document.php?id=<?= (int)$doc['id'] ?>'">
-            <td><?= h($doc['title']) ?><?php if ($doc['is_template']): ?> <span class="template-badge"><?= h(t('doc.template_badge')) ?></span><?php endif; ?></td>
-            <td><?= h($doc['doc_number']) ?></td>
-            <td><?= h(category_label($doc['category'])) ?></td>
-            <td><?= h($doc['owner_name']) ?></td>
-            <td><span class="<?= status_badge_class($doc['status']) ?>"><?= h(status_label($doc['status'])) ?></span></td>
-            <td><?= format_date($doc['next_review_date']) ?></td>
-        </tr>
-    <?php endforeach; ?>
-    <?php if (!$documents): ?>
-        <tr><td colspan="6" class="muted"><?= h(t('documents.empty')) ?></td></tr>
-    <?php endif; ?>
-    </tbody>
-</table>
+<div id="doc-results">
+<?php require __DIR__ . '/includes/partials/document_results.php'; ?>
+</div>
 </div>
 <?php render_task_panel($myTasks); ?>
 </div>
+
+<script>
+(function () {
+    var form = document.getElementById('doc-search-form');
+    var input = document.getElementById('doc-search-input');
+    var results = document.getElementById('doc-results');
+    var status = document.getElementById('doc-search-status');
+    if (!form || !input || !results) {
+        return;
+    }
+
+    var debounceTimer = null;
+    var requestId = 0;
+
+    function paramsWith(extra) {
+        var params = new URLSearchParams(window.location.search);
+        params.delete('partial');
+        if (input.value === '') {
+            params.delete('q');
+        } else {
+            params.set('q', input.value);
+        }
+        for (var key in extra) {
+            if (extra[key] === null) {
+                params.delete(key);
+            } else {
+                params.set(key, extra[key]);
+            }
+        }
+        return params;
+    }
+
+    function runSearch() {
+        var thisRequest = ++requestId;
+        var fetchParams = paramsWith({ partial: '1' });
+
+        if (status) {
+            status.style.display = '';
+        }
+
+        fetch(window.location.pathname + '?' + fetchParams.toString(), {
+            headers: { 'X-Requested-With': 'fetch' }
+        })
+            .then(function (response) { return response.text(); })
+            .then(function (html) {
+                if (thisRequest !== requestId) {
+                    return; // et nyere søgeord er allerede undervejs - ignorer dette svar
+                }
+                results.innerHTML = html;
+                if (status) {
+                    status.style.display = 'none';
+                }
+                var displayParams = paramsWith({});
+                var query = displayParams.toString();
+                var newUrl = window.location.pathname + (query ? '?' + query : '');
+                window.history.replaceState(null, '', newUrl);
+            })
+            .catch(function () {
+                if (thisRequest !== requestId) {
+                    return;
+                }
+                if (status) {
+                    status.style.display = 'none';
+                }
+                // Fald tilbage til almindeligt sideskift, hvis AJAX-kaldet fejler.
+                form.submit();
+            });
+    }
+
+    input.addEventListener('input', function () {
+        if (debounceTimer) {
+            clearTimeout(debounceTimer);
+        }
+        debounceTimer = setTimeout(runSearch, 300);
+    });
+
+    // Tryk på Enter/"Søg"-knappen afbryder en evt. ventende debounce og søger med det samme
+    // via samme AJAX-vej, så almindeligt sideskift kun sker hvis JS er deaktiveret.
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        if (debounceTimer) {
+            clearTimeout(debounceTimer);
+        }
+        runSearch();
+    });
+})();
+</script>
 
 <?php render_footer(); ?>

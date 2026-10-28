@@ -153,6 +153,7 @@ return [
     'documents.search.placeholder' => 'Search by title or ID',
     'documents.search.allcategories' => 'All categories',
     'documents.search.submit' => 'Search',
+    'documents.search.searching' => 'Searching …',
     'documents.table.document' => 'Document',
     'documents.table.id' => 'ID',
     'documents.table.category' => 'Category',
@@ -440,6 +441,7 @@ return [
     'help.role.user.desc' => 'Can view, search and download documents, quality events and records, and register new quality events.',
 
     'help.section.documents' => 'How document approval works',
+    'help.documents.search' => 'The search box on the document overview updates the list automatically, shortly after you stop typing — there is no need to press "Search" or Enter. The search runs directly against the database (not just what is already shown), so it stays fast no matter how large the register grows. The search term still shows as a removable filter chip and is part of the page address, so a search result can be shared or bookmarked.',
     'help.documents.step1' => 'An Editor or Administrator uploads a new version and chooses an Approver.',
     'help.documents.step2' => 'The chosen Approver receives an email and can approve or reject it (with a reason).',
     'help.documents.step3' => 'On approval, the previous version is archived automatically, and the document gets a new review date.',

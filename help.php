@@ -203,6 +203,7 @@ render_header(t('help.title'));
                 <span class="muted">→</span>
                 <span class="<?= status_badge_class('Godkendt') ?>"><?= h(status_label('Godkendt')) ?></span>
             </div>
+            <p style="margin:0 0 8px;"><?= h(t('help.documents.search')) ?></p>
             <p style="margin:0 0 8px;"><?= h(t('help.documents.step1')) ?></p>
             <p style="margin:0 0 8px;"><?= h(t('help.documents.step2')) ?></p>
             <p style="margin:0 0 8px;"><?= h(t('help.documents.step3')) ?></p>
