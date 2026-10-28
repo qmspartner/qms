@@ -1317,6 +1317,7 @@ return [
     'offboard.action.take_over_all' => 'Overfør alt til mig',
     'offboard.action.cancel' => 'Annuller fratrædelsesanmodning',
     'offboard.action.review' => 'Gennemgå fratrædelse',
+    'offboard.action.view_log' => 'Se fratrædelseslog',
     'offboard.action.deactivate_employee' => 'Deaktiver medarbejder',
     'offboard.action.deactivate_user' => 'Deaktiver bruger',
     'offboard.cancel_confirm' => 'Annuller fratrædelsesanmodningen? Personen forbliver aktiv, og allerede lukkede/omfordelte punkter påvirkes ikke.',

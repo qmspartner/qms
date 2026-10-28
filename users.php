@@ -38,6 +38,10 @@ $stmt = $db->prepare('SELECT id, name, email, role, active, deactivation_request
 $stmt->execute([$user['organization_id']]);
 $users = $stmt->fetchAll();
 
+$stmt = $db->prepare("SELECT DISTINCT subject_id FROM offboarding_log WHERE organization_id = ? AND subject_type = 'user'");
+$stmt->execute([$user['organization_id']]);
+$usersWithOffboardingLog = array_flip($stmt->fetchAll(PDO::FETCH_COLUMN));
+
 $messages = [
     'updated' => t('users.msg.updated'),
     'deleted' => t('users.msg.deleted'),
@@ -108,6 +112,9 @@ render_header(t('users.title'));
                     </form>
                 <?php else: ?>
                     <a href="edit_user.php?id=<?= (int) $u['id'] ?>"><?= h(t('users.edit')) ?></a>
+                    <?php if (isset($usersWithOffboardingLog[$u['id']])): ?>
+                        <a href="offboard_user.php?id=<?= (int) $u['id'] ?>"><?= h(t('offboard.action.view_log')) ?></a>
+                    <?php endif; ?>
                     <?php if ($u['role'] !== 'admin' && $u['active']): ?>
                         <a href="start_impersonation.php?user_id=<?= (int) $u['id'] ?>" onclick="return confirm('<?= h(t('impersonation.confirm', ['name' => $u['name']])) ?>');"><?= h(t('impersonation.view_as')) ?></a>
                     <?php endif; ?>

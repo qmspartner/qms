@@ -1317,6 +1317,7 @@ return [
     'offboard.action.take_over_all' => 'Transfer everything to me',
     'offboard.action.cancel' => 'Cancel offboarding request',
     'offboard.action.review' => 'Review offboarding',
+    'offboard.action.view_log' => 'View offboarding log',
     'offboard.action.deactivate_employee' => 'Deactivate employee',
     'offboard.action.deactivate_user' => 'Deactivate user',
     'offboard.cancel_confirm' => 'Cancel the offboarding request? The person remains active, and items already closed/reassigned are not affected.',
