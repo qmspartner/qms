@@ -87,6 +87,7 @@ render_header(t('help.title'));
 
 <div class="help-layout">
     <nav class="help-toc">
+        <input type="search" id="help-search-input" class="help-search-input" placeholder="<?= h(t('help.search.placeholder')) ?>">
         <?php foreach ($groups as [$groupLabelKey, $items]): ?>
             <p class="help-toc-group"><?= h(t($groupLabelKey)) ?></p>
             <?php foreach ($items as [$anchor, $labelKey]): ?>
@@ -96,6 +97,8 @@ render_header(t('help.title'));
     </nav>
 
     <div class="help-content">
+
+        <p id="help-no-results" class="muted" style="display:none;"><?= h(t('help.search.no_results')) ?></p>
 
         <?php if ($gqar): ?>
         <h2 id="gqar-role"><?= h(t('help.section.gqar_role')) ?></h2>
@@ -449,6 +452,84 @@ render_header(t('help.title'));
 
     sizeToc();
     window.addEventListener('resize', sizeToc);
+})();
+
+(function () {
+    // Søgning i hjælpen: grupperer hjælpeindholdet i sektioner (hver <h2> plus alt
+    // indhold indtil næste <h2>) ud fra den faktiske DOM frem for en hardkodet liste,
+    // så nye afsnit, der tilføjes senere, søges med automatisk uden kodeændring her.
+    var input = document.getElementById('help-search-input');
+    var content = document.querySelector('.help-content');
+    var noResults = document.getElementById('help-no-results');
+    if (!input || !content) return;
+
+    var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.help-toc-link'));
+    var tocGroupLabels = Array.prototype.slice.call(document.querySelectorAll('.help-toc-group'));
+
+    var sections = [];
+    var current = null;
+    Array.prototype.forEach.call(content.children, function (el) {
+        if (el === noResults) return;
+        if (el.tagName === 'H2') {
+            if (current) sections.push(current);
+            current = { id: el.id, elements: [el], text: '' };
+        } else if (current) {
+            current.elements.push(el);
+        }
+    });
+    if (current) sections.push(current);
+    sections.forEach(function (s) {
+        s.text = s.elements.map(function (el) { return el.textContent || ''; }).join(' ').toLowerCase();
+    });
+
+    function setVisible(section, visible) {
+        section.elements.forEach(function (el) { el.style.display = visible ? '' : 'none'; });
+    }
+
+    function filter() {
+        var query = input.value.trim().toLowerCase();
+
+        if (!query) {
+            sections.forEach(function (s) { setVisible(s, true); });
+            tocLinks.forEach(function (a) { a.style.display = ''; });
+            tocGroupLabels.forEach(function (p) { p.style.display = ''; });
+            if (noResults) noResults.style.display = 'none';
+            return;
+        }
+
+        var visibleIds = {};
+        var anyVisible = false;
+        sections.forEach(function (s) {
+            // Simpel delstrengs-match: finder også beslægtede ordformer, da danske
+            // flertals-/bøjningsformer typisk bygger videre på samme stamme
+            // ("bruger" matcher "brugere", "fratrådt" matcher "fratrådte").
+            var match = s.text.indexOf(query) !== -1;
+            setVisible(s, match);
+            if (match) {
+                anyVisible = true;
+                visibleIds[s.id] = true;
+            }
+        });
+
+        tocLinks.forEach(function (a) {
+            var id = (a.getAttribute('href') || '').replace('#', '');
+            a.style.display = visibleIds[id] ? '' : 'none';
+        });
+
+        tocGroupLabels.forEach(function (label) {
+            var hasVisible = false;
+            var el = label.nextElementSibling;
+            while (el && el.classList.contains('help-toc-link')) {
+                if (el.style.display !== 'none') hasVisible = true;
+                el = el.nextElementSibling;
+            }
+            label.style.display = hasVisible ? '' : 'none';
+        });
+
+        if (noResults) noResults.style.display = anyVisible ? 'none' : '';
+    }
+
+    input.addEventListener('input', filter);
 })();
 </script>
 

@@ -429,6 +429,8 @@ return [
 
     'help.title' => 'Help',
     'help.intro' => 'A short overview of how the system is structured and how to use it.',
+    'help.search.placeholder' => 'Search help…',
+    'help.search.no_results' => 'No sections match your search.',
 
     'help.section.overview' => 'System structure',
     'help.section.roles' => 'Roles and permissions',

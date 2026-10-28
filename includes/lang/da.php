@@ -429,6 +429,8 @@ return [
 
     'help.title' => 'Hjælp',
     'help.intro' => 'En kort oversigt over, hvordan systemet er bygget op, og hvordan du bruger det.',
+    'help.search.placeholder' => 'Søg i hjælp…',
+    'help.search.no_results' => 'Ingen afsnit matcher din søgning.',
 
     'help.section.overview' => 'Systemets opbygning',
     'help.section.roles' => 'Roller og rettigheder',
