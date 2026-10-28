@@ -18,6 +18,7 @@ $showCounterfeit = !$gqar;
 $showAudits = true;
 $showMeetings = !$gqar;
 $showEmployees = $isAdmin;
+$showUsers = $isAdmin;
 $showEquipment = !$gqar;
 $showRisks = !$gqar;
 $showSuppliers = !$gqar;
@@ -73,6 +74,7 @@ if ($overviewItems) $groups[] = ['help.toc_group.overview_reports', $overviewIte
 
 $settingsItems = [];
 if ($showCustomers) $settingsItems[] = ['customers', 'help.section.customers'];
+if ($showUsers) $settingsItems[] = ['users', 'help.section.users'];
 if ($showEmployees) $settingsItems[] = ['employees', 'help.section.employees'];
 if ($showAccessControl) $settingsItems[] = ['access-control', 'help.section.access_control'];
 if ($showImpersonation) $settingsItems[] = ['impersonation', 'help.section.impersonation'];
@@ -316,13 +318,25 @@ render_header(t('help.title'));
         </div>
         <?php endif; ?>
 
+        <?php if ($showUsers): ?>
+        <h2 id="users"><?= h(t('help.section.users')) ?></h2>
+        <div class="card" style="margin-bottom:1.5rem;">
+            <p style="margin:0 0 8px;"><?= h(t('help.users.step1')) ?></p>
+            <p style="margin:0 0 8px;"><?= h(t('help.users.step2')) ?></p>
+            <p style="margin:0 0 8px;"><?= h(t('help.users.step3')) ?></p>
+            <p style="margin:0;"><?= h(t('help.users.step4')) ?></p>
+        </div>
+        <?php endif; ?>
+
         <?php if ($showEmployees): ?>
         <h2 id="employees"><?= h(t('help.section.employees')) ?></h2>
         <div class="card" style="margin-bottom:1.5rem;">
             <p style="margin:0 0 8px;"><?= h(t('help.employees.step1')) ?></p>
             <p style="margin:0 0 8px;"><?= h(t('help.employees.step2')) ?></p>
             <p style="margin:0 0 8px;"><?= h(t('help.employees.step3')) ?></p>
-            <p style="margin:0;"><?= h(t('help.employees.step4')) ?></p>
+            <p style="margin:0 0 8px;"><?= h(t('help.employees.step4')) ?></p>
+            <p style="margin:0 0 8px;"><?= h(t('help.employees.step5')) ?></p>
+            <p style="margin:0;"><?= h(t('help.employees.step6')) ?></p>
         </div>
         <?php endif; ?>
 

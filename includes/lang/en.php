@@ -932,11 +932,19 @@ return [
     'help.section.reports' => 'Reports',
     'help.reports.text' => 'Reports shows trends over time not visible elsewhere in the system: average document approval time, average time to quality event closure, share of quality events and audits completed on time, and quality events per month. Choose a period at the top of the page.',
 
+    'help.section.users' => 'How Users work',
+    'help.users.step1' => 'A user is an account with a login and a role (e.g. Administrator, Editor, Approver or GQAR). Users are created and edited under Settings → Users, by Administrator only. Unlike an employee, a user can actually log in to the system.',
+    'help.users.step2' => 'The role decides what the user has access to — see the "Roles and permissions" section. Name, email, password and role can be changed as long as the account is active.',
+    'help.users.step3' => 'When a user leaves, the account is deactivated via "Edit". If the user owns or is assigned open work (documents, approvals, quality events, suppliers, risks, equipment or records), the account is instead set to "Awaiting review", and an administrator must reassign each item to a named person or take it over themselves before deactivation can complete. "Not relevant" is not an option for a user, since it is always real work that needs an owner. Every action is logged.',
+    'help.users.step4' => 'A deactivated user cannot be edited until the account is reactivated with the "Reactivate" button on the edit page. The "Log" link from the user list shows the full history for the user — creation, name/email/role changes, password resets and offboarding — as one combined, chronological timeline.',
+
     'help.section.employees' => 'How Employees work',
     'help.employees.step1' => 'Employees is a list of name, title and department for every employee — including those who have no user account and so cannot log in. This makes it possible to track qualifications for the whole organization, not just system users.',
     'help.employees.step2' => 'Each employee can have one or more qualifications (e.g. certifications or completed training). The expiry date is calculated automatically from the validity period, and the competence matrix gives a combined overview of who holds what and what is about to expire.',
     'help.employees.step3' => 'The "Line manager" field points to a system user. The manager can see (but not edit) their employee\'s qualifications, and automatically gets a task under "My tasks" when one of them is about to expire.',
     'help.employees.step4' => 'Only Administrator can create and edit employees and their qualifications; other roles can see the competence matrix if it has been enabled for them under Access control.',
+    'help.employees.step5' => 'When an employee leaves, they are deactivated via "Edit". If the employee has open items (expired or expiring qualifications, a missing acknowledgment for a read document), the employee\'s line manager — or an administrator — must first close each item with a reason ("not relevant, employee has left") before deactivation can complete. For a quick exit (e.g. summary dismissal), all items can be closed with the same reason at once.',
+    'help.employees.step6' => 'A deactivated employee can be reactivated with the "Reactivate" button on the edit page. The "Log" link from the employee list shows the full history for the employee — creation, qualifications and offboarding — as one combined, chronological timeline.',
 
     'help.section.access_control' => 'Access control',
     'help.access_control.p1' => 'Under Settings → Access control you can fine-tune what each role (Editor, Approver, User) may do in each module: View, Create, Edit, and Delete, individually. Administrator is not shown and cannot be restricted — the role always has full access everywhere.',
