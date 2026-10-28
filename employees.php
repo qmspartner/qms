@@ -35,14 +35,6 @@ $stmt = $db->prepare('
 $stmt->execute([$user['organization_id']]);
 $employees = $stmt->fetchAll();
 
-$stmt = $db->prepare("
-    SELECT DISTINCT employee_id AS eid FROM employee_log WHERE organization_id = ?
-    UNION
-    SELECT DISTINCT subject_id AS eid FROM offboarding_log WHERE organization_id = ? AND subject_type = 'employee'
-");
-$stmt->execute([$user['organization_id'], $user['organization_id']]);
-$employeesWithOffboardingLog = array_flip($stmt->fetchAll(PDO::FETCH_COLUMN));
-
 $stmt = $db->prepare("SELECT id, name FROM users WHERE organization_id = ? AND active = 1 ORDER BY name");
 $stmt->execute([$user['organization_id']]);
 $managerOptions = $stmt->fetchAll();
@@ -97,9 +89,7 @@ render_header(t('employees.title'));
             </td>
             <td onclick="event.stopPropagation()">
                 <a href="edit_employee.php?id=<?= (int) $e['id'] ?>"><?= h(t('employees.edit')) ?></a>
-                <?php if (isset($employeesWithOffboardingLog[$e['id']])): ?>
-                    <a href="employee_log.php?id=<?= (int) $e['id'] ?>"><?= h(t('log.action.view')) ?></a>
-                <?php endif; ?>
+                <a href="employee_log.php?id=<?= (int) $e['id'] ?>"><?= h(t('log.action.view')) ?></a>
             </td>
         </tr>
     <?php endforeach; ?>
