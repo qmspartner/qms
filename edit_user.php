@@ -18,8 +18,23 @@ if (!$editUser) {
     exit;
 }
 
+$isLocked = (int) $editUser['active'] === 0 && !$editUser['deactivation_requested_at'];
+
 $error = '';
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? 'update') === 'reactivate') {
+    if (!$isLocked) {
+        $error = t('offboard.error.locked');
+    } else {
+        $stmt = $db->prepare('UPDATE users SET active = 1, deactivation_requested_at = NULL, deactivation_requested_by = NULL WHERE id = ? AND organization_id = ?');
+        $stmt->execute([$editUser['id'], $user['organization_id']]);
+        log_offboarding_action('user', (int) $editUser['id'], 'user', (int) $editUser['id'], $editUser['name'], 'reactivated', null, null, $user);
+
+        header('Location: edit_user.php?id=' . $editUser['id'] . '&msg=reactivated');
+        exit;
+    }
+} elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && $isLocked) {
+    $error = t('offboard.error.locked');
+} elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = trim($_POST['name'] ?? '');
     $email = trim($_POST['email'] ?? '');
     $role = $_POST['role'] ?? 'user';
@@ -96,24 +111,30 @@ render_header(t('edituser.title'));
         <?= h(t('offboard.employee.pending_banner', ['date' => format_date(substr($editUser['deactivation_requested_at'], 0, 10))])) ?>
         <a href="offboard_user.php?id=<?= (int) $editUser['id'] ?>"><?= h(t('offboard.action.review')) ?></a>
     </p>
+<?php elseif ($isLocked): ?>
+    <p class="alert alert-warning">
+        <?= h(t('offboard.user.locked_hint')) ?>
+    </p>
 <?php endif; ?>
+<?php if (($_GET['msg'] ?? '') === 'reactivated'): ?><p class="alert alert-success"><?= h(t('offboard.msg.reactivated')) ?></p><?php endif; ?>
 <div class="card login-card">
     <h1><?= h(t('edituser.title')) ?></h1>
     <?php if ($error): ?><p class="alert alert-danger"><?= h($error) ?></p><?php endif; ?>
     <form method="post">
     <?= csrf_field() ?>
         <input type="hidden" name="id" value="<?= (int) $editUser['id'] ?>">
+        <input type="hidden" name="action" value="update">
         <label><?= h(t('edituser.field.name')) ?>
-            <input type="text" name="name" value="<?= h($editUser['name']) ?>" required>
+            <input type="text" name="name" value="<?= h($editUser['name']) ?>" <?= $isLocked ? 'disabled' : '' ?> required>
         </label>
         <label><?= h(t('edituser.field.email')) ?>
-            <input type="email" name="email" value="<?= h($editUser['email']) ?>" required>
+            <input type="email" name="email" value="<?= h($editUser['email']) ?>" <?= $isLocked ? 'disabled' : '' ?> required>
         </label>
         <label><?= h(t('edituser.field.password')) ?>
-            <input type="password" name="password" minlength="8">
+            <input type="password" name="password" minlength="8" <?= $isLocked ? 'disabled' : '' ?>>
         </label>
         <label><?= h(t('edituser.field.role')) ?>
-            <select name="role">
+            <select name="role" <?= $isLocked ? 'disabled' : '' ?>>
                 <option value="user" <?= $editUser['role'] === 'user' ? 'selected' : '' ?>><?= h(role_label('user')) ?></option>
                 <option value="editor" <?= $editUser['role'] === 'editor' ? 'selected' : '' ?>><?= h(role_label('editor')) ?></option>
                 <option value="approver" <?= $editUser['role'] === 'approver' ? 'selected' : '' ?>><?= h(role_label('approver')) ?></option>
@@ -123,23 +144,34 @@ render_header(t('edituser.title'));
         </label>
         <?php $currentGqarContracts = get_entity_contracts('gqar_contracts', 'user_id', (int) $editUser['id']); ?>
         <label><?= h(t('users.field.contract_reference')) ?>
-            <select name="gqar_contracts[]" multiple size="4">
+            <select name="gqar_contracts[]" multiple size="4" <?= $isLocked ? 'disabled' : '' ?>>
                 <?php foreach (list_active_values('contract_reference') as $ref): ?>
                     <option value="<?= h($ref) ?>" <?= in_array($ref, $currentGqarContracts, true) ? 'selected' : '' ?>><?= h($ref) ?></option>
                 <?php endforeach; ?>
             </select>
         </label>
         <label style="display:flex; align-items:center; gap:8px; flex-direction:row;">
-            <input type="checkbox" name="active" value="1" style="width:auto;" <?= $editUser['active'] ? 'checked' : '' ?> <?= $editUser['deactivation_requested_at'] ? 'disabled' : '' ?>>
+            <input type="checkbox" name="active" value="1" style="width:auto;" <?= $editUser['active'] ? 'checked' : '' ?> <?= ($editUser['deactivation_requested_at'] || $isLocked) ? 'disabled' : '' ?>>
             <?= h(t('edituser.field.active')) ?>
         </label>
         <?php if ($editUser['deactivation_requested_at']): ?>
             <p class="muted" style="font-size:13px;"><?= h(t('offboard.employee.active_disabled_hint')) ?></p>
         <?php endif; ?>
         <div class="button-row">
-            <button type="submit"><?= h(t('edituser.save')) ?></button>
+            <?php if (!$isLocked): ?>
+                <button type="submit"><?= h(t('edituser.save')) ?></button>
+            <?php endif; ?>
             <a class="button button-secondary" href="users.php"><?= h(t('edituser.cancel')) ?></a>
         </div>
     </form>
+    <?php if ($isLocked): ?>
+        <form method="post" class="inline-form" style="margin-top:1rem;"
+              onsubmit="return confirm('<?= h(t('offboard.reactivate_confirm', ['name' => $editUser['name']])) ?>');">
+    <?= csrf_field() ?>
+            <input type="hidden" name="id" value="<?= (int) $editUser['id'] ?>">
+            <input type="hidden" name="action" value="reactivate">
+            <button type="submit" class="button-secondary"><?= h(t('offboard.action.reactivate')) ?></button>
+        </form>
+    <?php endif; ?>
 </div>
 <?php render_footer(); ?>

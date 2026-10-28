@@ -18,12 +18,28 @@ if (!$employee) {
     exit;
 }
 
+$isLocked = (int) $employee['active'] === 0 && !$employee['deactivation_requested_at'];
+
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? 'update';
 
-    if ($action === 'update') {
+    if ($action === 'reactivate') {
+        if (!$isLocked) {
+            $error = t('offboard.error.locked');
+        } else {
+            $stmt = $db->prepare('UPDATE employees SET active = 1, deactivation_requested_at = NULL, deactivation_requested_by = NULL WHERE id = ? AND organization_id = ?');
+            $stmt->execute([$id, $user['organization_id']]);
+            log_employee_action($id, 'Medarbejder genaktiveret');
+            log_offboarding_action('employee', $id, 'employee', $id, $employee['name'], 'reactivated', null, null, $user);
+
+            header('Location: edit_employee.php?id=' . $id . '&msg=reactivated');
+            exit;
+        }
+    } elseif ($action === 'update' && $isLocked) {
+        $error = t('offboard.error.locked');
+    } elseif ($action === 'update') {
         $name = trim($_POST['name'] ?? '');
         $title = trim($_POST['title'] ?? '');
         $department = trim($_POST['department'] ?? '');
@@ -61,6 +77,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header('Location: edit_employee.php?id=' . $id);
             exit;
         }
+    } elseif ($action === 'add_qualification' && $isLocked) {
+        $error = t('offboard.error.locked');
     } elseif ($action === 'add_qualification') {
         $qualificationId = (int) ($_POST['qualification_id'] ?? 0);
         $plannedDate = trim($_POST['planned_date'] ?? '');
@@ -159,11 +177,16 @@ render_header($employee['name']);
 <?php if (($_GET['msg'] ?? '') === 'offboarding_requested'): ?><p class="alert alert-success"><?= h(t('offboard.msg.requested')) ?></p><?php endif; ?>
 <?php if (($_GET['msg'] ?? '') === 'offboarding_cancelled'): ?><p class="alert alert-success"><?= h(t('offboard.msg.cancelled')) ?></p><?php endif; ?>
 <?php if (($_GET['msg'] ?? '') === 'deactivated'): ?><p class="alert alert-success"><?= h(t('offboard.msg.deactivated')) ?></p><?php endif; ?>
+<?php if (($_GET['msg'] ?? '') === 'reactivated'): ?><p class="alert alert-success"><?= h(t('offboard.msg.reactivated')) ?></p><?php endif; ?>
 
 <?php if ($employee['deactivation_requested_at']): ?>
     <p class="alert alert-warning">
         <?= h(t('offboard.employee.pending_banner', ['date' => format_date(substr($employee['deactivation_requested_at'], 0, 10))])) ?>
         <a href="offboard_employee.php?id=<?= (int) $employee['id'] ?>"><?= h(t('offboard.action.review')) ?></a>
+    </p>
+<?php elseif ($isLocked): ?>
+    <p class="alert alert-warning">
+        <?= h(t('offboard.employee.locked_hint')) ?>
     </p>
 <?php endif; ?>
 
@@ -180,16 +203,16 @@ render_header($employee['name']);
     <?= csrf_field() ?>
         <input type="hidden" name="action" value="update">
         <label><?= h(t('employees.field.name_ph')) ?>
-            <input type="text" name="name" value="<?= h($employee['name']) ?>" required>
+            <input type="text" name="name" value="<?= h($employee['name']) ?>" <?= $isLocked ? 'disabled' : '' ?> required>
         </label>
         <label><?= h(t('employees.field.title_ph')) ?>
-            <input type="text" name="title" value="<?= h($employee['title'] ?? '') ?>">
+            <input type="text" name="title" value="<?= h($employee['title'] ?? '') ?>" <?= $isLocked ? 'disabled' : '' ?>>
         </label>
         <label><?= h(t('employees.field.department_ph')) ?>
-            <input type="text" name="department" value="<?= h($employee['department'] ?? '') ?>">
+            <input type="text" name="department" value="<?= h($employee['department'] ?? '') ?>" <?= $isLocked ? 'disabled' : '' ?>>
         </label>
         <label><?= h(t('employees.field.manager')) ?>
-            <select name="manager_user_id">
+            <select name="manager_user_id" <?= $isLocked ? 'disabled' : '' ?>>
                 <option value=""><?= h(t('employees.field.manager_choose')) ?></option>
                 <?php foreach ($managerOptions as $m): ?>
                     <option value="<?= (int) $m['id'] ?>" <?= (int) $employee['manager_user_id'] === (int) $m['id'] ? 'selected' : '' ?>><?= h($m['name']) ?></option>
@@ -197,16 +220,26 @@ render_header($employee['name']);
             </select>
         </label>
         <label style="display:flex; align-items:center; gap:8px; flex-direction:row;">
-            <input type="checkbox" name="active" value="1" <?= $employee['active'] ? 'checked' : '' ?> <?= $employee['deactivation_requested_at'] ? 'disabled' : '' ?> style="width:auto;">
+            <input type="checkbox" name="active" value="1" <?= $employee['active'] ? 'checked' : '' ?> <?= ($employee['deactivation_requested_at'] || $isLocked) ? 'disabled' : '' ?> style="width:auto;">
             <?= h(t('employees.field.active')) ?>
         </label>
         <?php if ($employee['deactivation_requested_at']): ?>
             <p class="muted" style="font-size:13px;"><?= h(t('offboard.employee.active_disabled_hint')) ?></p>
         <?php endif; ?>
-        <button type="submit"><?= h(t('employees.save')) ?></button>
+        <?php if (!$isLocked): ?>
+            <button type="submit"><?= h(t('employees.save')) ?></button>
+        <?php endif; ?>
     </form>
 
     <div class="button-row">
+        <?php if ($isLocked): ?>
+            <form method="post" class="inline-form"
+                  onsubmit="return confirm('<?= h(t('offboard.reactivate_confirm', ['name' => $employee['name']])) ?>');">
+    <?= csrf_field() ?>
+                <input type="hidden" name="action" value="reactivate">
+                <button type="submit" class="button-secondary"><?= h(t('offboard.action.reactivate')) ?></button>
+            </form>
+        <?php endif; ?>
         <form method="post" action="delete_employee.php" class="inline-form"
               onsubmit="return confirm('<?= h(t('employees.delete_confirm')) ?>
 ');">
@@ -245,7 +278,7 @@ render_header($employee['name']);
     </table>
 </div>
 
-<?php if ($availableQualifications): ?>
+<?php if ($availableQualifications && !$isLocked): ?>
 <h2><?= h(t('employees.add_qualification')) ?></h2>
 <div class="card">
     <form method="post" enctype="multipart/form-data">

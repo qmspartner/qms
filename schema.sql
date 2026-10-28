@@ -810,7 +810,7 @@ CREATE TABLE `offboarding_log` (
   `item_type` varchar(50) NOT NULL,
   `item_id` int NOT NULL,
   `item_label` varchar(255) NOT NULL,
-  `action` enum('requested','cancelled','closed_not_relevant','reassigned','taken_over','deactivated') NOT NULL,
+  `action` enum('requested','cancelled','closed_not_relevant','reassigned','taken_over','deactivated','reactivated') NOT NULL,
   `new_owner_id` int DEFAULT NULL,
   `note` text,
   `performed_by` int NOT NULL,
