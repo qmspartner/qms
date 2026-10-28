@@ -49,6 +49,7 @@ try {
         // Kun historiske referencer uden reelt åbent ejerskab - deaktiver med det samme som hidtil.
         $stmt = $db->prepare('UPDATE users SET active = 0 WHERE id = ? AND organization_id = ?');
         $stmt->execute([$targetId, $user['organization_id']]);
+        log_offboarding_action('user', $targetId, 'deactivation', $targetId, $targetUser['name'], 'deactivated', null, null, $user);
         header('Location: users.php?msg=deactivated');
     }
 }

@@ -825,6 +825,23 @@ CREATE TABLE `offboarding_log` (
   CONSTRAINT `fk_offboardinglog_performed_by` FOREIGN KEY (`performed_by`) REFERENCES `users` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+CREATE TABLE `user_log` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `organization_id` int NOT NULL,
+  `target_user_id` int NOT NULL,
+  `action` varchar(150) NOT NULL,
+  `details` text,
+  `performed_by` int NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `organization_id` (`organization_id`),
+  KEY `target_user_id` (`target_user_id`),
+  KEY `performed_by` (`performed_by`),
+  CONSTRAINT `fk_userlog_org` FOREIGN KEY (`organization_id`) REFERENCES `organizations` (`id`),
+  CONSTRAINT `fk_userlog_target` FOREIGN KEY (`target_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_userlog_performed_by` FOREIGN KEY (`performed_by`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
 -- --------------------------------------------------------
 -- First Article Inspection (FAI), styret af organizations.fai_enabled, uafhængig af AQAP 2210.
 -- Kun én aktiv FAI pr. delnummer pr. kontrakt - en ny upload afløser den forrige (se uniq_fai_part_per_contract).

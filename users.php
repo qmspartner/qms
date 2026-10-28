@@ -24,10 +24,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             $stmt = $db->prepare('INSERT INTO users (organization_id, name, email, password_hash, role) VALUES (?, ?, ?, ?, ?)');
             $stmt->execute([$user['organization_id'], $name, $email, password_hash($password, PASSWORD_DEFAULT), $role]);
+            $newUserId = (int) $db->lastInsertId();
             if ($role === 'gqar') {
-                $newUserId = (int) $db->lastInsertId();
                 save_entity_contracts('gqar_contracts', 'user_id', $newUserId, $gqarContracts);
             }
+            log_user_action($newUserId, 'Bruger oprettet', 'Rolle: ' . role_label($role));
         } catch (PDOException $e) {
             $error = t('users.error.exists');
         }
@@ -38,8 +39,12 @@ $stmt = $db->prepare('SELECT id, name, email, role, active, deactivation_request
 $stmt->execute([$user['organization_id']]);
 $users = $stmt->fetchAll();
 
-$stmt = $db->prepare("SELECT DISTINCT subject_id FROM offboarding_log WHERE organization_id = ? AND subject_type = 'user'");
-$stmt->execute([$user['organization_id']]);
+$stmt = $db->prepare("
+    SELECT DISTINCT target_user_id AS uid FROM user_log WHERE organization_id = ?
+    UNION
+    SELECT DISTINCT subject_id AS uid FROM offboarding_log WHERE organization_id = ? AND subject_type = 'user'
+");
+$stmt->execute([$user['organization_id'], $user['organization_id']]);
 $usersWithOffboardingLog = array_flip($stmt->fetchAll(PDO::FETCH_COLUMN));
 
 $messages = [
@@ -104,6 +109,7 @@ render_header(t('users.title'));
             <td class="timeline-actions">
                 <?php if ($u['deactivation_requested_at']): ?>
                     <a href="offboard_user.php?id=<?= (int) $u['id'] ?>"><?= h(t('offboard.action.review')) ?></a>
+                    <a href="user_log.php?id=<?= (int) $u['id'] ?>"><?= h(t('log.action.view')) ?></a>
                     <form method="post" action="offboard_user.php" class="inline-form" onsubmit="return confirm('<?= h(t('offboard.cancel_confirm')) ?>');">
     <?= csrf_field() ?>
                         <input type="hidden" name="action" value="cancel">
@@ -113,7 +119,7 @@ render_header(t('users.title'));
                 <?php else: ?>
                     <a href="edit_user.php?id=<?= (int) $u['id'] ?>"><?= h(t('users.edit')) ?></a>
                     <?php if (isset($usersWithOffboardingLog[$u['id']])): ?>
-                        <a href="offboard_user.php?id=<?= (int) $u['id'] ?>"><?= h(t('offboard.action.view_log')) ?></a>
+                        <a href="user_log.php?id=<?= (int) $u['id'] ?>"><?= h(t('log.action.view')) ?></a>
                     <?php endif; ?>
                     <?php if ($u['role'] !== 'admin' && $u['active']): ?>
                         <a href="start_impersonation.php?user_id=<?= (int) $u['id'] ?>" onclick="return confirm('<?= h(t('impersonation.confirm', ['name' => $u['name']])) ?>');"><?= h(t('impersonation.view_as')) ?></a>

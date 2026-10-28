@@ -960,6 +960,130 @@ function reassign_user_open_item(PDO $db, int $subjectUserId, array $item, int $
     log_offboarding_action('user', $subjectUserId, $item['item_type'], $item['item_id'], $item['label'], $action, $newOwnerId, null, $performedBy);
 }
 
+/**
+ * Samlet aktivitetslog for én systembruger: egne hændelser (user_log - oprettelse,
+ * navn/e-mail/rolle-ændringer, adgangskode) plus fratrædelseshændelser
+ * (offboarding_log), sammenflettet i ét kronologisk forløb, nyeste først.
+ */
+function get_user_log_entries(PDO $db, array $targetUser): array {
+    $uid = $targetUser['id'];
+    $entries = [];
+
+    $stmt = $db->prepare('
+        SELECT ul.created_at, ul.action, ul.details, u.name AS actor_name
+        FROM user_log ul
+        JOIN users u ON u.id = ul.performed_by
+        WHERE ul.target_user_id = ?
+    ');
+    $stmt->execute([$uid]);
+    foreach ($stmt->fetchAll() as $row) {
+        $isCreated = $row['action'] === 'Bruger oprettet';
+        $entries[] = [
+            'created_at' => $row['created_at'],
+            'actor' => $row['actor_name'],
+            'title' => $row['action'],
+            'detail' => $row['details'] ?: null,
+            'category' => $isCreated ? 'account' : 'access',
+            'tone' => $isCreated ? 'neutral' : 'info',
+        ];
+    }
+
+    $stmt = $db->prepare('
+        SELECT ol.*, u.name AS performed_by_name, nu.name AS new_owner_name
+        FROM offboarding_log ol
+        JOIN users u ON u.id = ol.performed_by
+        LEFT JOIN users nu ON nu.id = ol.new_owner_id
+        WHERE ol.subject_type = \'user\' AND ol.subject_id = ?
+    ');
+    $stmt->execute([$uid]);
+    foreach ($stmt->fetchAll() as $row) {
+        $entries[] = offboarding_log_entry_to_timeline_row($row);
+    }
+
+    usort($entries, fn($a, $b) => strcmp($b['created_at'], $a['created_at']));
+
+    return $entries;
+}
+
+/**
+ * Samme princip som get_user_log_entries(), men for en medarbejder: egne
+ * hændelser (employee_log - oprettelse, kvalifikationer, generelle opdateringer)
+ * plus fratrædelseshændelser (offboarding_log).
+ */
+function get_employee_log_entries(PDO $db, array $employee): array {
+    $employeeId = $employee['id'];
+    $entries = [];
+
+    $stmt = $db->prepare('
+        SELECT el.created_at, el.action, el.details, u.name AS actor_name
+        FROM employee_log el
+        JOIN users u ON u.id = el.user_id
+        WHERE el.employee_id = ?
+    ');
+    $stmt->execute([$employeeId]);
+    foreach ($stmt->fetchAll() as $row) {
+        $isQualification = $row['action'] === 'Kvalifikation tildelt';
+        $entries[] = [
+            'created_at' => $row['created_at'],
+            'actor' => $row['actor_name'],
+            'title' => $row['action'],
+            'detail' => $row['details'] ?: null,
+            'category' => $isQualification ? 'qualification' : 'account',
+            'tone' => $isQualification ? 'qualification' : 'neutral',
+        ];
+    }
+
+    $stmt = $db->prepare('
+        SELECT ol.*, u.name AS performed_by_name, nu.name AS new_owner_name
+        FROM offboarding_log ol
+        JOIN users u ON u.id = ol.performed_by
+        LEFT JOIN users nu ON nu.id = ol.new_owner_id
+        WHERE ol.subject_type = \'employee\' AND ol.subject_id = ?
+    ');
+    $stmt->execute([$employeeId]);
+    foreach ($stmt->fetchAll() as $row) {
+        $entries[] = offboarding_log_entry_to_timeline_row($row);
+    }
+
+    usort($entries, fn($a, $b) => strcmp($b['created_at'], $a['created_at']));
+
+    return $entries;
+}
+
+/**
+ * Normaliserer én offboarding_log-række til samme form som user_log/employee_log,
+ * så de to kan vises i ét samlet, sammenflettet forløb.
+ */
+function offboarding_log_entry_to_timeline_row(array $row): array {
+    $subjectLevelTypes = ['request', 'deactivation', 'employee', 'user'];
+    $detail = null;
+    if (!in_array($row['item_type'], $subjectLevelTypes, true)) {
+        $detail = $row['item_label'];
+        if ($row['new_owner_name']) {
+            $detail .= ' → ' . $row['new_owner_name'];
+        }
+    }
+    if ($row['note']) {
+        $detail = ($detail ? $detail . ' — ' : '') . '"' . $row['note'] . '"';
+    }
+
+    $category = $row['action'] === 'reactivated' ? 'reactivated' : 'offboarding';
+    $tone = match ($row['action']) {
+        'deactivated' => 'danger',
+        'reactivated' => 'success',
+        default => 'warn',
+    };
+
+    return [
+        'created_at' => $row['created_at'],
+        'actor' => $row['performed_by_name'],
+        'title' => t('offboard.log.action.' . $row['action']),
+        'detail' => $detail,
+        'category' => $category,
+        'tone' => $tone,
+    ];
+}
+
 function audit_status_class(string $status): string {
     return match ($status) {
         'Gennemført' => 'badge badge-success',

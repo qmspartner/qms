@@ -56,6 +56,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? 'update') === 
     } elseif ($role === 'gqar' && !$gqarContracts) {
         $error = t('users.error.gqar_contract_required');
     } else {
+        $changes = [];
+        if ($name !== $editUser['name']) {
+            $changes[] = ['Navn ændret', $editUser['name'] . ' → ' . $name];
+        }
+        if ($email !== $editUser['email']) {
+            $changes[] = ['E-mail ændret', $editUser['email'] . ' → ' . $email];
+        }
+        if ($role !== $editUser['role']) {
+            $changes[] = ['Rolle ændret', role_label($editUser['role']) . ' → ' . role_label($role)];
+        }
+        if ($newPassword !== '') {
+            $changes[] = ['Adgangskode nulstillet', ''];
+        }
+
         try {
             if ($editUser['deactivation_requested_at']) {
                 // Under fratrædelse-gennemgang styres aktiv-status fra offboard_user.php, ikke herfra.
@@ -67,6 +81,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? 'update') === 
                     $stmt->execute([$name, $email, $role, $editUser['id'], $user['organization_id']]);
                 }
                 save_entity_contracts('gqar_contracts', 'user_id', (int) $editUser['id'], $role === 'gqar' ? $gqarContracts : []);
+                foreach ($changes as [$changeAction, $changeDetails]) {
+                    log_user_action((int) $editUser['id'], $changeAction, $changeDetails);
+                }
                 header('Location: edit_user.php?id=' . $editUser['id']);
                 exit;
             }
@@ -82,6 +99,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? 'update') === 
                         $stmt->execute([$name, $email, $role, $user['id'], $editUser['id'], $user['organization_id']]);
                     }
                     save_entity_contracts('gqar_contracts', 'user_id', (int) $editUser['id'], $role === 'gqar' ? $gqarContracts : []);
+                    foreach ($changes as [$changeAction, $changeDetails]) {
+                        log_user_action((int) $editUser['id'], $changeAction, $changeDetails);
+                    }
                     log_offboarding_action('user', (int) $editUser['id'], 'request', (int) $editUser['id'], $name, 'requested', null, null, $user);
                     header('Location: offboard_user.php?id=' . $editUser['id']);
                     exit;
@@ -96,6 +116,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? 'update') === 
                 $stmt->execute([$name, $email, $role, $active, $editUser['id'], $user['organization_id']]);
             }
             save_entity_contracts('gqar_contracts', 'user_id', (int) $editUser['id'], $role === 'gqar' ? $gqarContracts : []);
+            foreach ($changes as [$changeAction, $changeDetails]) {
+                log_user_action((int) $editUser['id'], $changeAction, $changeDetails);
+            }
+            if ((int) $editUser['active'] === 1 && $active === 0) {
+                log_offboarding_action('user', (int) $editUser['id'], 'deactivation', (int) $editUser['id'], $name, 'deactivated', null, null, $user);
+            }
             header('Location: users.php?msg=updated');
             exit;
         } catch (PDOException $e) {

@@ -73,6 +73,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $db->prepare('UPDATE employees SET name = ?, title = ?, department = ?, manager_user_id = ?, active = ? WHERE id = ? AND organization_id = ?');
             $stmt->execute([$name, $title ?: null, $department ?: null, $managerUserId, $active, $id, $user['organization_id']]);
             log_employee_action($id, 'Medarbejder opdateret');
+            if ((int) $employee['active'] === 1 && $active === 0) {
+                log_offboarding_action('employee', $id, 'deactivation', $id, $name, 'deactivated', null, null, $user);
+            }
 
             header('Location: edit_employee.php?id=' . $id);
             exit;

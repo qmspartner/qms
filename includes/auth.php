@@ -204,6 +204,15 @@ function log_employee_action(int $employeeId, string $action, string $details = 
     $stmt->execute([$user['organization_id'] ?? 0, $employeeId, $user['id'] ?? 0, $action, $details]);
 }
 
+function log_user_action(int $targetUserId, string $action, string $details = ''): void {
+    $user = current_user();
+    $db = get_db();
+    $stmt = $db->prepare(
+        'INSERT INTO user_log (organization_id, target_user_id, action, details, performed_by) VALUES (?, ?, ?, ?, ?)'
+    );
+    $stmt->execute([$user['organization_id'] ?? 0, $targetUserId, $action, $details, $user['id'] ?? 0]);
+}
+
 function log_case_action(int $caseId, string $action, string $details = ''): void {
     $user = current_user();
     $db = get_db();

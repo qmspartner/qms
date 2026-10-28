@@ -28,6 +28,8 @@ if ($validUser && $_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $stmt = $db->prepare('UPDATE users SET password_hash = ?, reset_token_hash = NULL, reset_token_expires = NULL WHERE id = ?');
         $stmt->execute([password_hash($password, PASSWORD_DEFAULT), $validUser['id']]);
+        $stmt = $db->prepare('INSERT INTO user_log (organization_id, target_user_id, action, details, performed_by) VALUES (?, ?, ?, ?, ?)');
+        $stmt->execute([$validUser['organization_id'], $validUser['id'], 'Adgangskode nulstillet (selvbetjening)', '', $validUser['id']]);
         $success = true;
     }
 }
