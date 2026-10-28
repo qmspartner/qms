@@ -32,6 +32,8 @@ CREATE TABLE `users` (
   `password_hash` varchar(255) NOT NULL,
   `role` enum('admin','editor','approver','user','gqar') NOT NULL DEFAULT 'user',
   `active` tinyint(1) NOT NULL DEFAULT '1',
+  `deactivation_requested_at` datetime DEFAULT NULL,
+  `deactivation_requested_by` int DEFAULT NULL,
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `language` varchar(5) NOT NULL DEFAULT 'da',
   `gqar_contract_reference` varchar(255) DEFAULT NULL,
@@ -40,7 +42,8 @@ CREATE TABLE `users` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`),
   KEY `fk_users_org` (`organization_id`),
-  CONSTRAINT `fk_users_org` FOREIGN KEY (`organization_id`) REFERENCES `organizations` (`id`)
+  CONSTRAINT `fk_users_org` FOREIGN KEY (`organization_id`) REFERENCES `organizations` (`id`),
+  CONSTRAINT `fk_users_deactivation_by` FOREIGN KEY (`deactivation_requested_by`) REFERENCES `users` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
@@ -732,12 +735,15 @@ CREATE TABLE `employees` (
   `department` varchar(255) DEFAULT NULL,
   `manager_user_id` int DEFAULT NULL,
   `active` tinyint(1) NOT NULL DEFAULT '1',
+  `deactivation_requested_at` datetime DEFAULT NULL,
+  `deactivation_requested_by` int DEFAULT NULL,
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `organization_id` (`organization_id`),
   KEY `manager_user_id` (`manager_user_id`),
   CONSTRAINT `employees_ibfk_1` FOREIGN KEY (`organization_id`) REFERENCES `organizations` (`id`),
-  CONSTRAINT `fk_employees_manager` FOREIGN KEY (`manager_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+  CONSTRAINT `fk_employees_manager` FOREIGN KEY (`manager_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_employees_deactivation_by` FOREIGN KEY (`deactivation_requested_by`) REFERENCES `users` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE `qualifications` (
@@ -794,6 +800,29 @@ CREATE TABLE `employee_log` (
   CONSTRAINT `employee_log_ibfk_1` FOREIGN KEY (`organization_id`) REFERENCES `organizations` (`id`),
   CONSTRAINT `employee_log_ibfk_2` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE,
   CONSTRAINT `employee_log_ibfk_3` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `offboarding_log` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `organization_id` int NOT NULL,
+  `subject_type` enum('employee','user') NOT NULL,
+  `subject_id` int NOT NULL,
+  `item_type` varchar(50) NOT NULL,
+  `item_id` int NOT NULL,
+  `item_label` varchar(255) NOT NULL,
+  `action` enum('requested','cancelled','closed_not_relevant','reassigned','taken_over','deactivated') NOT NULL,
+  `new_owner_id` int DEFAULT NULL,
+  `note` text,
+  `performed_by` int NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `organization_id` (`organization_id`),
+  KEY `subject` (`subject_type`,`subject_id`),
+  KEY `new_owner_id` (`new_owner_id`),
+  KEY `performed_by` (`performed_by`),
+  CONSTRAINT `fk_offboardinglog_org` FOREIGN KEY (`organization_id`) REFERENCES `organizations` (`id`),
+  CONSTRAINT `fk_offboardinglog_new_owner` FOREIGN KEY (`new_owner_id`) REFERENCES `users` (`id`),
+  CONSTRAINT `fk_offboardinglog_performed_by` FOREIGN KEY (`performed_by`) REFERENCES `users` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------

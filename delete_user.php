@@ -32,10 +32,24 @@ try {
     $stmt->execute([$targetId, $user['organization_id']]);
     header('Location: users.php?msg=deleted');
 } catch (PDOException $e) {
-    // Faldt tilbage til at deaktivere kontoen i stedet, så personen ikke kan logge ind,
-    // men historikken (hvem der har oprettet/godkendt hvad) bevares.
-    $stmt = $db->prepare('UPDATE users SET active = 0 WHERE id = ? AND organization_id = ?');
+    // Kan ikke slettes - tjek om brugeren reelt ejer/er tildelt noget aktivt lige nu.
+    $stmt = $db->prepare('SELECT * FROM users WHERE id = ? AND organization_id = ?');
     $stmt->execute([$targetId, $user['organization_id']]);
-    header('Location: users.php?msg=deactivated');
+    $targetUser = $stmt->fetch();
+
+    $openItems = $targetUser ? get_user_open_items($db, $targetUser) : [];
+
+    if ($openItems) {
+        // Åbne punkter skal omfordeles først - deaktiver ikke endnu.
+        $stmt = $db->prepare('UPDATE users SET deactivation_requested_at = NOW(), deactivation_requested_by = ? WHERE id = ? AND organization_id = ?');
+        $stmt->execute([$user['id'], $targetId, $user['organization_id']]);
+        log_offboarding_action('user', $targetId, 'request', $targetId, $targetUser['name'], 'requested', null, null, $user);
+        header('Location: offboard_user.php?id=' . $targetId);
+    } else {
+        // Kun historiske referencer uden reelt åbent ejerskab - deaktiver med det samme som hidtil.
+        $stmt = $db->prepare('UPDATE users SET active = 0 WHERE id = ? AND organization_id = ?');
+        $stmt->execute([$targetId, $user['organization_id']]);
+        header('Location: users.php?msg=deactivated');
+    }
 }
 exit;

@@ -32,7 +32,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($name === '') {
             $error = t('employees.error.required');
+        } elseif ($employee['deactivation_requested_at']) {
+            // Under fratrædelse-gennemgang styres aktiv-status fra offboard_employee.php, ikke herfra.
+            $stmt = $db->prepare('UPDATE employees SET name = ?, title = ?, department = ?, manager_user_id = ? WHERE id = ? AND organization_id = ?');
+            $stmt->execute([$name, $title ?: null, $department ?: null, $managerUserId, $id, $user['organization_id']]);
+            log_employee_action($id, 'Medarbejder opdateret');
+
+            header('Location: edit_employee.php?id=' . $id);
+            exit;
         } else {
+            if ((int) $employee['active'] === 1 && $active === 0) {
+                $openItems = get_employee_open_items($db, $employee);
+                if ($openItems) {
+                    $stmt = $db->prepare('UPDATE employees SET name = ?, title = ?, department = ?, manager_user_id = ?, deactivation_requested_at = NOW(), deactivation_requested_by = ? WHERE id = ? AND organization_id = ?');
+                    $stmt->execute([$name, $title ?: null, $department ?: null, $managerUserId, $user['id'], $id, $user['organization_id']]);
+                    log_employee_action($id, 'Fratrædelse anmodet');
+                    log_offboarding_action('employee', $id, 'request', $id, $name, 'requested', null, null, $user);
+
+                    header('Location: edit_employee.php?id=' . $id . '&msg=offboarding_requested');
+                    exit;
+                }
+            }
+
             $stmt = $db->prepare('UPDATE employees SET name = ?, title = ?, department = ?, manager_user_id = ?, active = ? WHERE id = ? AND organization_id = ?');
             $stmt->execute([$name, $title ?: null, $department ?: null, $managerUserId, $active, $id, $user['organization_id']]);
             log_employee_action($id, 'Medarbejder opdateret');
@@ -135,6 +156,16 @@ render_header($employee['name']);
 <p class="breadcrumb"><a href="competence.php"><?= h(t('competence.title')) ?></a> &raquo; <a href="employees.php"><?= h(t('employees.title')) ?></a> &raquo; <?= h($employee['name']) ?></p>
 
 <?php if ($error): ?><p class="alert alert-danger"><?= h($error) ?></p><?php endif; ?>
+<?php if (($_GET['msg'] ?? '') === 'offboarding_requested'): ?><p class="alert alert-success"><?= h(t('offboard.msg.requested')) ?></p><?php endif; ?>
+<?php if (($_GET['msg'] ?? '') === 'offboarding_cancelled'): ?><p class="alert alert-success"><?= h(t('offboard.msg.cancelled')) ?></p><?php endif; ?>
+<?php if (($_GET['msg'] ?? '') === 'deactivated'): ?><p class="alert alert-success"><?= h(t('offboard.msg.deactivated')) ?></p><?php endif; ?>
+
+<?php if ($employee['deactivation_requested_at']): ?>
+    <p class="alert alert-warning">
+        <?= h(t('offboard.employee.pending_banner', ['date' => format_date(substr($employee['deactivation_requested_at'], 0, 10))])) ?>
+        <a href="offboard_employee.php?id=<?= (int) $employee['id'] ?>"><?= h(t('offboard.action.review')) ?></a>
+    </p>
+<?php endif; ?>
 
 <div class="card">
     <div class="doc-header">
@@ -166,9 +197,12 @@ render_header($employee['name']);
             </select>
         </label>
         <label style="display:flex; align-items:center; gap:8px; flex-direction:row;">
-            <input type="checkbox" name="active" value="1" <?= $employee['active'] ? 'checked' : '' ?> style="width:auto;">
+            <input type="checkbox" name="active" value="1" <?= $employee['active'] ? 'checked' : '' ?> <?= $employee['deactivation_requested_at'] ? 'disabled' : '' ?> style="width:auto;">
             <?= h(t('employees.field.active')) ?>
         </label>
+        <?php if ($employee['deactivation_requested_at']): ?>
+            <p class="muted" style="font-size:13px;"><?= h(t('offboard.employee.active_disabled_hint')) ?></p>
+        <?php endif; ?>
         <button type="submit"><?= h(t('employees.save')) ?></button>
     </form>
 

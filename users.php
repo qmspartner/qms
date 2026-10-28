@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$stmt = $db->prepare('SELECT id, name, email, role, active FROM users WHERE organization_id = ? ORDER BY name');
+$stmt = $db->prepare('SELECT id, name, email, role, active, deactivation_requested_at FROM users WHERE organization_id = ? ORDER BY name');
 $stmt->execute([$user['organization_id']]);
 $users = $stmt->fetchAll();
 
@@ -42,6 +42,7 @@ $messages = [
     'updated' => t('users.msg.updated'),
     'deleted' => t('users.msg.deleted'),
     'deactivated' => t('users.msg.deactivated'),
+    'offboarding_cancelled' => t('offboard.msg.cancelled'),
 ];
 $msg = $_GET['msg'] ?? '';
 
@@ -89,22 +90,38 @@ render_header(t('users.title'));
             <td><?= h($u['name']) ?></td>
             <td><?= h($u['email']) ?></td>
             <td><?= h(role_label($u['role'])) ?></td>
-            <td><?= $u['active'] ? h(t('users.active')) : h(t('users.inactive')) ?></td>
-            <td class="timeline-actions">
-                <a href="edit_user.php?id=<?= (int) $u['id'] ?>"><?= h(t('users.edit')) ?></a>
-                <?php if ($u['role'] !== 'admin' && $u['active']): ?>
-                    <a href="start_impersonation.php?user_id=<?= (int) $u['id'] ?>" onclick="return confirm('<?= h(t('impersonation.confirm', ['name' => $u['name']])) ?>');"><?= h(t('impersonation.view_as')) ?></a>
+            <td>
+                <?php if ($u['deactivation_requested_at']): ?>
+                    <span class="badge badge-warning"><?= h(t('offboard.pending_badge')) ?></span>
+                <?php else: ?>
+                    <?= $u['active'] ? h(t('users.active')) : h(t('users.inactive')) ?>
                 <?php endif; ?>
-                <?php if ((int) $u['id'] !== (int) $user['id']): ?>
-                    <form method="post" action="delete_user.php" class="inline-form"
-                          onsubmit="return confirm('<?= h(t('users.delete_confirm')) ?>
-');">
+            </td>
+            <td class="timeline-actions">
+                <?php if ($u['deactivation_requested_at']): ?>
+                    <a href="offboard_user.php?id=<?= (int) $u['id'] ?>"><?= h(t('offboard.action.review')) ?></a>
+                    <form method="post" action="offboard_user.php" class="inline-form" onsubmit="return confirm('<?= h(t('offboard.cancel_confirm')) ?>');">
     <?= csrf_field() ?>
-                        <input type="hidden" name="user_id" value="<?= (int) $u['id'] ?>">
-                        <button type="submit" class="button-small button-danger"><?= h(t('users.delete')) ?></button>
+                        <input type="hidden" name="action" value="cancel">
+                        <input type="hidden" name="target_user_id" value="<?= (int) $u['id'] ?>">
+                        <button type="submit" class="button-small button-secondary"><?= h(t('offboard.action.cancel')) ?></button>
                     </form>
                 <?php else: ?>
-                    <span class="muted"><?= h(t('users.self')) ?></span>
+                    <a href="edit_user.php?id=<?= (int) $u['id'] ?>"><?= h(t('users.edit')) ?></a>
+                    <?php if ($u['role'] !== 'admin' && $u['active']): ?>
+                        <a href="start_impersonation.php?user_id=<?= (int) $u['id'] ?>" onclick="return confirm('<?= h(t('impersonation.confirm', ['name' => $u['name']])) ?>');"><?= h(t('impersonation.view_as')) ?></a>
+                    <?php endif; ?>
+                    <?php if ((int) $u['id'] !== (int) $user['id']): ?>
+                        <form method="post" action="delete_user.php" class="inline-form"
+                              onsubmit="return confirm('<?= h(t('users.delete_confirm')) ?>
+');">
+    <?= csrf_field() ?>
+                            <input type="hidden" name="user_id" value="<?= (int) $u['id'] ?>">
+                            <button type="submit" class="button-small button-danger"><?= h(t('users.delete')) ?></button>
+                        </form>
+                    <?php else: ?>
+                        <span class="muted"><?= h(t('users.self')) ?></span>
+                    <?php endif; ?>
                 <?php endif; ?>
             </td>
         </tr>

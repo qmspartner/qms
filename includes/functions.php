@@ -786,6 +786,180 @@ function can_manage_competence(array $user): bool {
     return $user['role'] === 'admin';
 }
 
+// =====================================================================
+// Fratrædelse / offboarding — medarbejdere uden login og systembrugere
+// =====================================================================
+
+/**
+ * Admin har altid adgang; medarbejderens egen nærmeste leder har adgang til
+ * netop denne ene medarbejders fratrædelses-gennemgang, uden at få generel
+ * adgang til employees.php.
+ */
+function can_manage_employee_offboarding(array $user, array $employee): bool {
+    return $user['role'] === 'admin' || (int) $user['id'] === (int) ($employee['manager_user_id'] ?? 0);
+}
+
+/**
+ * Åbne punkter for en medarbejder uden login: kvalifikationer der er udløbet
+ * eller udløber snart, og dokumenter medarbejderen skal kvittere for læsning
+ * af, men ikke har. Et punkt forsvinder herfra, så snart det er logget som
+ * lukket i offboarding_log - de underliggende rækker ændres ikke.
+ */
+function get_employee_open_items(PDO $db, array $employee): array {
+    $orgId = $employee['organization_id'];
+    $employeeId = $employee['id'];
+    $items = [];
+
+    $stmt = $db->prepare('
+        SELECT eq.qualification_id, eq.obtained_date, eq.expiry_date, q.name AS qualification_name
+        FROM employee_qualifications eq
+        JOIN qualifications q ON q.id = eq.qualification_id
+        WHERE eq.organization_id = ? AND eq.employee_id = ?
+            AND NOT EXISTS (
+                SELECT 1 FROM offboarding_log ol
+                WHERE ol.subject_type = \'employee\' AND ol.subject_id = ? AND ol.item_type = \'qualification\'
+                    AND ol.item_id = eq.qualification_id AND ol.action = \'closed_not_relevant\'
+            )
+    ');
+    $stmt->execute([$orgId, $employeeId, $employeeId]);
+    foreach ($stmt->fetchAll() as $eq) {
+        $status = qualification_status($eq);
+        if ($status !== 'expiring' && $status !== 'expired') {
+            continue;
+        }
+        $items[] = [
+            'item_type' => 'qualification',
+            'item_id' => (int) $eq['qualification_id'],
+            'type_label' => t('offboard.type.qualification'),
+            'label' => $eq['qualification_name'] . ' — ' . ($status === 'expired'
+                ? t('offboard.item.quali_expired', ['date' => format_date($eq['expiry_date'])])
+                : t('offboard.item.quali_expiring', ['date' => format_date($eq['expiry_date'])])),
+            'urgent' => $status === 'expired',
+        ];
+    }
+
+    $stmt = $db->prepare("
+        SELECT d.id, d.doc_number, d.title
+        FROM documents d
+        WHERE d.organization_id = ? AND d.requires_acknowledgment = 1 AND d.status = 'Godkendt' AND d.current_version_id IS NOT NULL
+            AND NOT EXISTS (SELECT 1 FROM document_acknowledgments da WHERE da.version_id = d.current_version_id AND da.employee_id = ?)
+            AND NOT EXISTS (
+                SELECT 1 FROM offboarding_log ol
+                WHERE ol.subject_type = 'employee' AND ol.subject_id = ? AND ol.item_type = 'document_acknowledgment'
+                    AND ol.item_id = d.id AND ol.action = 'closed_not_relevant'
+            )
+    ");
+    $stmt->execute([$orgId, $employeeId, $employeeId]);
+    foreach ($stmt->fetchAll() as $doc) {
+        $items[] = [
+            'item_type' => 'document_acknowledgment',
+            'item_id' => (int) $doc['id'],
+            'type_label' => t('offboard.type.document_acknowledgment'),
+            'label' => $doc['doc_number'] . ' — ' . $doc['title'],
+            'urgent' => false,
+        ];
+    }
+
+    return $items;
+}
+
+/**
+ * Åbne punkter for en systembruger: alt ejerskab og alle tildelinger, der
+ * reelt peger på denne bruger lige nu. Et punkt forsvinder herfra i det
+ * øjeblik den underliggende ejer/tildeling ændres - ingen offboarding_log-
+ * filtrering nødvendig her, i modsætning til medarbejder-siden.
+ */
+function get_user_open_items(PDO $db, array $targetUser): array {
+    $orgId = $targetUser['organization_id'];
+    $uid = $targetUser['id'];
+    $items = [];
+
+    $stmt = $db->prepare('SELECT id, doc_number, title FROM documents WHERE organization_id = ? AND owner_id = ?');
+    $stmt->execute([$orgId, $uid]);
+    foreach ($stmt->fetchAll() as $row) {
+        $items[] = ['item_type' => 'document_owner', 'item_id' => (int) $row['id'], 'type_label' => t('offboard.type.document_owner'), 'label' => $row['doc_number'] . ' — ' . $row['title']];
+    }
+
+    $stmt = $db->prepare("
+        SELECT v.id, d.doc_number, d.title
+        FROM document_versions v JOIN documents d ON d.id = v.document_id
+        WHERE d.organization_id = ? AND v.assigned_approver_id = ? AND v.status = 'Til godkendelse'
+    ");
+    $stmt->execute([$orgId, $uid]);
+    foreach ($stmt->fetchAll() as $row) {
+        $items[] = ['item_type' => 'document_approval', 'item_id' => (int) $row['id'], 'type_label' => t('offboard.type.document_approval'), 'label' => $row['doc_number'] . ' — ' . $row['title']];
+    }
+
+    $stmt = $db->prepare('SELECT id, name FROM suppliers WHERE organization_id = ? AND owner_id = ?');
+    $stmt->execute([$orgId, $uid]);
+    foreach ($stmt->fetchAll() as $row) {
+        $items[] = ['item_type' => 'supplier_owner', 'item_id' => (int) $row['id'], 'type_label' => t('offboard.type.supplier_owner'), 'label' => $row['name']];
+    }
+
+    $stmt = $db->prepare('SELECT id, title FROM risks WHERE organization_id = ? AND owner_id = ?');
+    $stmt->execute([$orgId, $uid]);
+    foreach ($stmt->fetchAll() as $row) {
+        $items[] = ['item_type' => 'risk_owner', 'item_id' => (int) $row['id'], 'type_label' => t('offboard.type.risk_owner'), 'label' => $row['title']];
+    }
+
+    $stmt = $db->prepare('SELECT id, name FROM equipment WHERE organization_id = ? AND responsible_id = ?');
+    $stmt->execute([$orgId, $uid]);
+    foreach ($stmt->fetchAll() as $row) {
+        $items[] = ['item_type' => 'equipment_responsible', 'item_id' => (int) $row['id'], 'type_label' => t('offboard.type.equipment_responsible'), 'label' => $row['name']];
+    }
+
+    $stmt = $db->prepare('SELECT id, title FROM records WHERE organization_id = ? AND owner_id = ?');
+    $stmt->execute([$orgId, $uid]);
+    foreach ($stmt->fetchAll() as $row) {
+        $items[] = ['item_type' => 'record_owner', 'item_id' => (int) $row['id'], 'type_label' => t('offboard.type.record_owner'), 'label' => $row['title']];
+    }
+
+    $stmt = $db->prepare("SELECT id, title FROM cases WHERE organization_id = ? AND assigned_to = ? AND status != 'Lukket'");
+    $stmt->execute([$orgId, $uid]);
+    foreach ($stmt->fetchAll() as $row) {
+        $items[] = ['item_type' => 'case_assigned', 'item_id' => (int) $row['id'], 'type_label' => t('offboard.type.case_assigned'), 'label' => $row['title']];
+    }
+
+    return $items;
+}
+
+function log_offboarding_action(string $subjectType, int $subjectId, string $itemType, int $itemId, string $itemLabel, string $action, ?int $newOwnerId, ?string $note, array $performedBy): void {
+    $db = get_db();
+    $stmt = $db->prepare('
+        INSERT INTO offboarding_log (organization_id, subject_type, subject_id, item_type, item_id, item_label, action, new_owner_id, note, performed_by)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ');
+    $stmt->execute([
+        $performedBy['organization_id'], $subjectType, $subjectId, $itemType, $itemId, $itemLabel, $action, $newOwnerId, $note, $performedBy['id'],
+    ]);
+}
+
+/**
+ * Udfører selve omfordelingen/overtagelsen af ét åbent punkt for en
+ * systembruger: opdaterer ejer/tildeling i den rigtige tabel og logger det.
+ */
+function reassign_user_open_item(PDO $db, int $subjectUserId, array $item, int $newOwnerId, array $performedBy): void {
+    $column = match ($item['item_type']) {
+        'document_owner' => ['documents', 'owner_id'],
+        'document_approval' => ['document_versions', 'assigned_approver_id'],
+        'supplier_owner' => ['suppliers', 'owner_id'],
+        'risk_owner' => ['risks', 'owner_id'],
+        'equipment_responsible' => ['equipment', 'responsible_id'],
+        'record_owner' => ['records', 'owner_id'],
+        'case_assigned' => ['cases', 'assigned_to'],
+        default => null,
+    };
+    if ($column === null) {
+        return;
+    }
+    [$table, $col] = $column;
+    $stmt = $db->prepare("UPDATE {$table} SET {$col} = ? WHERE id = ?");
+    $stmt->execute([$newOwnerId, $item['item_id']]);
+
+    $action = $newOwnerId === (int) $performedBy['id'] ? 'taken_over' : 'reassigned';
+    log_offboarding_action('user', $subjectUserId, $item['item_type'], $item['item_id'], $item['label'], $action, $newOwnerId, null, $performedBy);
+}
+
 function audit_status_class(string $status): string {
     return match ($status) {
         'Gennemført' => 'badge badge-success',

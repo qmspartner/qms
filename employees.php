@@ -80,7 +80,13 @@ render_header(t('employees.title'));
             <td><?= h($e['title'] ?: '—') ?></td>
             <td><?= h($e['department'] ?: '—') ?></td>
             <td><?= h($e['manager_name'] ?: '—') ?></td>
-            <td><?= $e['active'] ? h(t('employees.active')) : h(t('employees.inactive')) ?></td>
+            <td>
+                <?php if ($e['deactivation_requested_at']): ?>
+                    <span class="badge badge-warning"><?= h(t('offboard.pending_badge')) ?></span>
+                <?php else: ?>
+                    <?= $e['active'] ? h(t('employees.active')) : h(t('employees.inactive')) ?>
+                <?php endif; ?>
+            </td>
             <td><a href="edit_employee.php?id=<?= (int) $e['id'] ?>"><?= h(t('employees.edit')) ?></a></td>
         </tr>
     <?php endforeach; ?>

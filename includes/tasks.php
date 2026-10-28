@@ -153,6 +153,44 @@ function get_my_tasks(array $user): array {
         ];
     }
 
+    $isAdmin = $user['role'] === 'admin' ? 1 : 0;
+    $stmt = $db->prepare("
+        SELECT id, name
+        FROM employees
+        WHERE organization_id = ? AND active = 1 AND deactivation_requested_at IS NOT NULL
+            AND (manager_user_id = ? OR (manager_user_id IS NULL AND ? = 1))
+    ");
+    $stmt->execute([$orgId, $userId, $isAdmin]);
+    foreach ($stmt->fetchAll() as $e) {
+        $tasks[] = [
+            'urgency' => 'warning',
+            'icon' => 'ti-user-x',
+            'label' => t('tasks.offboarding_employee'),
+            'title' => $e['name'],
+            'link' => 'offboard_employee.php?id=' . $e['id'],
+            'sort' => 0,
+        ];
+    }
+
+    if ($user['role'] === 'admin') {
+        $stmt = $db->prepare("
+            SELECT id, name
+            FROM users
+            WHERE organization_id = ? AND active = 1 AND deactivation_requested_at IS NOT NULL AND id != ?
+        ");
+        $stmt->execute([$orgId, $userId]);
+        foreach ($stmt->fetchAll() as $u) {
+            $tasks[] = [
+                'urgency' => 'warning',
+                'icon' => 'ti-user-x',
+                'label' => t('tasks.offboarding_user'),
+                'title' => $u['name'],
+                'link' => 'offboard_user.php?id=' . $u['id'],
+                'sort' => 0,
+            ];
+        }
+    }
+
     usort($tasks, fn($a, $b) => $a['sort'] <=> $b['sort']);
 
     return $tasks;
