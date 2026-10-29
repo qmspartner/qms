@@ -206,6 +206,7 @@ render_header(t('help.title'));
             <p style="margin:0 0 8px;"><?= h(t('help.documents.search')) ?></p>
             <p style="margin:0 0 8px;"><?= h(t('help.documents.step1')) ?></p>
             <p style="margin:0 0 8px;"><?= h(t('help.documents.draft')) ?></p>
+            <p style="margin:0 0 8px;"><?= h(t('help.documents.versioning')) ?></p>
             <p style="margin:0 0 8px;"><?= h(t('help.documents.step2')) ?></p>
             <p style="margin:0 0 8px;"><?= h(t('help.documents.step3')) ?></p>
             <p style="margin:0 0 8px;"><?= h(t('help.documents.config')) ?></p>

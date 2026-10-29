@@ -257,6 +257,7 @@ CREATE TABLE `document_versions` (
   `original_approver` varchar(255) DEFAULT NULL,
   `original_approval_date` date DEFAULT NULL,
   `import_source_reference` varchar(255) DEFAULT NULL,
+  `revision_type` enum('major','minor') DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `document_id` (`document_id`),
   KEY `uploaded_by` (`uploaded_by`),

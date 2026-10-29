@@ -77,6 +77,19 @@ $stmt = $db->prepare('
 $stmt->execute([$id]);
 $versions = $stmt->fetchAll();
 
+// "Nuværende version" skal følge den rent faktisk godkendte version (current_version_id),
+// ikke bare den seneste upload — ellers ville en ny version der afventer eller er blevet
+// afvist fejlagtigt få det til at se ud som om dokumentet har mistet sin godkendte version.
+$currentVersionNumber = null;
+if ($doc['current_version_id']) {
+    foreach ($versions as $v) {
+        if ((int) $v['id'] === (int) $doc['current_version_id']) {
+            $currentVersionNumber = $v['version_number'];
+            break;
+        }
+    }
+}
+
 $stmt = $db->prepare('
     SELECT a.*, u.name AS user_name
     FROM audit_log a
@@ -171,7 +184,7 @@ render_header($doc['title']);
     <div class="meta-grid">
         <div><p class="meta-label"><?= h(t('doc.owner')) ?></p><p><?= h($doc['owner_name']) ?></p></div>
         <div><p class="meta-label"><?= h(t('doc.next_review')) ?></p><p><?= format_date($doc['next_review_date']) ?></p></div>
-        <div><p class="meta-label"><?= h(t('doc.current_version')) ?></p><p><?= $versions ? h($versions[0]['version_number']) : '—' ?></p></div>
+        <div><p class="meta-label"><?= h(t('doc.current_version')) ?></p><p><?= h($currentVersionNumber ?? '0.0') ?></p></div>
         <?php if ($doc['is_configuration_item']): ?>
             <div><p class="meta-label"><?= h(t('doc.config_item')) ?></p><p><?= h(t('common.yes')) ?><?= $doc['baseline_reference'] ? ' — ' . h($doc['baseline_reference']) : '' ?></p></div>
         <?php endif; ?>

@@ -73,6 +73,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // fil nu. "own" er default for bagudkompatibilitet (fx når JS er slået fra).
     $useTemplateCopy = !$existingDoc && $currentTemplateDoc && (($_POST['file_source'] ?? 'own') === 'template');
 
+    // Versionsnummeret er normalt automatisk: det sættes først til et rigtigt tal, når versionen
+    // rent faktisk bliver godkendt (se approve.php). Indtil da gemmes en pladsholder ('0.0').
+    // Undtagelser hvor brugeren selv skal angive et tal med det samme:
+    // 1) Importerede dokumenter (deres historiske nummer kan ikke udregnes af systemet).
+    // 2) "Ny version" af et dokument hvis seneste godkendte versionsnummer ikke følger
+    //    "tal.tal"-formatet (fx en uregelmæssig værdi fra en tidligere import) — vi kan ikke
+    //    udregne "mindre/større ændring" ud fra noget vi ikke kan tolke.
+    $priorVersionNumber = null;
+    if ($existingDoc && $existingDoc['current_version_id']) {
+        $stmt = $db->prepare('SELECT version_number FROM document_versions WHERE id = ?');
+        $stmt->execute([$existingDoc['current_version_id']]);
+        $priorVersionNumber = $stmt->fetchColumn();
+        if ($priorVersionNumber === false) {
+            $priorVersionNumber = null;
+        }
+    }
+    $priorVersionParses = $priorVersionNumber !== null && preg_match('/^(\d+)\.(\d+)$/', $priorVersionNumber, $priorVersionParts);
+    $offerRevisionChoice = $existingDoc && $priorVersionNumber !== null && $priorVersionParses;
+    $needsManualVersionFallback = $existingDoc && $priorVersionNumber !== null && !$priorVersionParses;
+    $minorPreview = $offerRevisionChoice ? ($priorVersionParts[1] . '.' . ((int) $priorVersionParts[2] + 1)) : null;
+    $majorPreview = $offerRevisionChoice ? (((int) $priorVersionParts[1] + 1) . '.0') : null;
+
+    $versionNumberRequired = (!$existingDoc && $isImported) || $needsManualVersionFallback;
+
+    $revisionType = $_POST['revision_type'] ?? null;
+    if (!in_array($revisionType, ['major', 'minor'], true)) {
+        $revisionType = null;
+    }
+
     if ($existingDoc) {
         $docNumber = $existingDoc['doc_number'];
     } elseif ($usesStructuredId) {
@@ -98,6 +127,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = t('upload.error.doc_number_duplicate');
     } elseif (!$isDraftCreate && !$selectedApprover) {
         $error = t('upload.error.invalid_approver');
+    } elseif ($versionNumberRequired && $versionNumber === '') {
+        $error = t('upload.error.version_required');
+    } elseif ($offerRevisionChoice && !$revisionType) {
+        $error = t('upload.error.revision_type_required');
     } elseif ($existingDoc && $existingDoc['is_configuration_item'] && $comment === '') {
         $error = t('upload.error.change_description_required');
     } elseif (!$existingDoc && $currentTemplateDoc && !$useTemplateCopy && !$templateConfirmed) {
@@ -136,6 +169,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if ($fileReady) {
+            $finalVersionNumber = $versionNumberRequired ? $versionNumber : '0.0';
+            $finalRevisionType = $offerRevisionChoice ? $revisionType : null;
+
             $db->beginTransaction();
                 try {
                     if ($existingDoc) {
@@ -155,13 +191,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
 
                     $stmt = $db->prepare('
-                        INSERT INTO document_versions (document_id, version_number, stored_filename, original_filename, uploaded_by, assigned_approver_id, comment, status)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                        INSERT INTO document_versions (document_id, version_number, stored_filename, original_filename, uploaded_by, assigned_approver_id, comment, status, revision_type)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ');
                     $stmt->execute([
-                        $docId, $versionNumber, $storedName, $originalFilename, $user['id'],
+                        $docId, $finalVersionNumber, $storedName, $originalFilename, $user['id'],
                         $isDraftCreate ? null : $selectedApprover['id'], $comment ?: null,
                         $isDraftCreate ? 'Kladde' : 'Til godkendelse',
+                        $finalRevisionType,
                     ]);
                     $versionId = (int) $db->lastInsertId();
 
@@ -172,18 +209,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     $db->commit();
 
+                    // Et "rigtigt" versionsnummer (0.0 er en pladsholder) nævnes kun i log/e-mail
+                    // når det faktisk er kendt allerede nu (import eller manuelt fallback).
+                    $knownVersionNumber = $finalVersionNumber !== '0.0' ? $finalVersionNumber : '';
+
                     if ($isDraftCreate) {
-                        log_action($docId, $versionId, 'Dokument oprettet', 'Oprettet som kladde (version ' . $versionNumber . ')');
+                        log_action($docId, $versionId, 'Dokument oprettet', $knownVersionNumber !== '' ? ('Oprettet som kladde (version ' . $knownVersionNumber . ')') : 'Oprettet som kladde');
                         header('Location: index.php');
                         exit;
                     }
 
-                    log_action($docId, $versionId, 'Ny version uploadet', 'Version ' . $versionNumber . ' sendt til godkendelse hos ' . $selectedApprover['name']);
+                    log_action($docId, $versionId, 'Ny version uploadet', $knownVersionNumber !== '' ? ('Version ' . $knownVersionNumber . ' sendt til godkendelse hos ' . $selectedApprover['name']) : ('Sendt til godkendelse hos ' . $selectedApprover['name']));
 
                     require_once __DIR__ . '/includes/notifications.php';
                     $docTitle = $existingDoc ? $existingDoc['title'] : $title;
                     $finalDocNumber = $existingDoc ? $existingDoc['doc_number'] : $docNumber;
-                    notify_assigned_approver($selectedApprover, $docId, $docTitle, $finalDocNumber, $versionNumber, $user['name']);
+                    notify_assigned_approver($selectedApprover, $docId, $docTitle, $finalDocNumber, $knownVersionNumber, $user['name']);
 
                     header('Location: index.php');
                     exit;
@@ -248,6 +289,9 @@ $categories = list_active_values('document_category');
                     <label><?= h(t('upload.field.original_issue_date')) ?>
                         <input type="date" name="original_issue_date">
                     </label>
+                    <label><?= h(t('upload.field.version')) ?>
+                        <input type="text" name="version_number" id="version_input" placeholder="fx 1.0">
+                    </label>
                 </div>
 
                 <div id="structured-id-field" style="display:none;">
@@ -285,9 +329,26 @@ $categories = list_active_values('document_category');
                 </div>
             <?php endif; ?>
 
-            <label><?= h(t('upload.field.version')) ?>
-                <input type="text" name="version_number" placeholder="fx 1.0" required>
-            </label>
+            <?php if ($needsManualVersionFallback): ?>
+                <div class="field">
+                    <label><?= h(t('upload.field.version')) ?></label>
+                    <input type="text" name="version_number" placeholder="fx 1.0" required>
+                    <p class="muted" style="margin:6px 0 14px; font-size:12px;"><?= h(t('upload.field.version_manual_fallback_hint', ['current' => $priorVersionNumber])) ?></p>
+                </div>
+            <?php elseif ($offerRevisionChoice): ?>
+                <div class="field" style="margin-bottom:16px;">
+                    <label style="margin-bottom:10px;"><?= h(t('upload.field.revision_type_label')) ?></label>
+                    <label style="display:flex; align-items:flex-start; gap:10px; border:1px solid #d7dae0; border-radius:8px; padding:12px 14px; margin-bottom:8px; cursor:pointer; font-weight:400;">
+                        <input type="radio" name="revision_type" value="minor" required style="width:auto; margin-top:2px;">
+                        <span><?= h(t('upload.field.revision_type_minor', ['from' => $priorVersionNumber, 'to' => $minorPreview])) ?></span>
+                    </label>
+                    <label style="display:flex; align-items:flex-start; gap:10px; border:1px solid #d7dae0; border-radius:8px; padding:12px 14px; cursor:pointer; font-weight:400;">
+                        <input type="radio" name="revision_type" value="major" required style="width:auto; margin-top:2px;">
+                        <span><?= h(t('upload.field.revision_type_major', ['from' => $priorVersionNumber, 'to' => $majorPreview])) ?></span>
+                    </label>
+                </div>
+            <?php endif; ?>
+
             <label><?= h(t('upload.field.approver')) ?><?php if (!$existingDoc): ?> <span class="muted" style="font-weight:400;">(<?= h(t('upload.field.approver_optional_hint')) ?>)</span><?php endif; ?>
                 <select name="approver_id" id="approver_select" <?= $existingDoc ? 'required' : '' ?>>
                     <option value=""><?= h(t('upload.field.approver_choose')) ?></option>
@@ -335,6 +396,7 @@ function updateIdFields() {
     document.getElementById('doc_number_input').required = !useStructured;
     document.getElementById('section_input').required = useStructured;
     document.getElementById('operation_input').required = useStructured;
+    document.getElementById('version_input').required = imported;
 
     if (useStructured) { updatePreview(); }
 

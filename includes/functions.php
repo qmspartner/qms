@@ -1337,6 +1337,8 @@ function render_footer(): void {
                             } else {
                                 el.checked = !!val;
                             }
+                        } else if (el.type === 'radio') {
+                            el.checked = (el.value === val);
                         } else if (el.tagName === 'SELECT' && el.multiple) {
                             Array.prototype.forEach.call(el.options, function (opt) {
                                 opt.selected = val.indexOf(opt.value) !== -1;
@@ -1365,6 +1367,8 @@ function render_footer(): void {
                     } else {
                         data[el.name] = el.checked;
                     }
+                } else if (el.type === 'radio') {
+                    if (el.checked) data[el.name] = el.value;
                 } else if (el.tagName === 'SELECT' && el.multiple) {
                     data[el.name] = Array.prototype.map.call(el.selectedOptions, function (o) { return o.value; });
                 } else {

@@ -11,8 +11,11 @@ function notify_assigned_approver(array $approver, int $documentId, string $docT
     $link = rtrim(SITE_URL, '/') . '/document.php?id=' . $documentId;
     $subject = 'Godkendelse påkrævet: ' . $docTitle . ' (' . $docNumber . ')';
 
+    // Versionsnummeret kendes først når dokumentet rent faktisk bliver godkendt (se approve.php),
+    // så her er det ofte tomt ("0.0" fra kaldestedet er allerede oversat til '' før kaldet).
+    $docRef = $versionNumber !== '' ? ($docNumber . ', version ' . $versionNumber) : $docNumber;
     $body = "Hej " . $approver['name'] . ",\n\n"
-        . $uploadedByName . " har uploadet version " . $versionNumber . " af dokumentet \"" . $docTitle . "\" (" . $docNumber . "), som nu venter på din godkendelse.\n\n"
+        . $uploadedByName . " har uploadet en ny version af dokumentet \"" . $docTitle . "\" (" . $docRef . "), som nu venter på din godkendelse.\n\n"
         . "Åbn dokumentet her:\n" . $link . "\n\n"
         . "Denne besked er sendt automatisk af QMS Dokumentstyring.";
 

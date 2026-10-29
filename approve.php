@@ -20,7 +20,7 @@ if (!in_array($decision, ['approve', 'reject'], true)) {
     exit;
 }
 
-$stmt = $db->prepare('SELECT id, title, doc_number, is_configuration_item FROM documents WHERE id = ? AND organization_id = ?');
+$stmt = $db->prepare('SELECT id, title, doc_number, is_configuration_item, current_version_id FROM documents WHERE id = ? AND organization_id = ?');
 $stmt->execute([$documentId, $user['organization_id']]);
 $document = $stmt->fetch();
 if (!$document) {
@@ -43,8 +43,39 @@ if ($decision === 'reject' && $reason === '') {
 $db->beginTransaction();
 try {
     if ($decision === 'approve') {
-        $stmt = $db->prepare("UPDATE document_versions SET status = 'Godkendt', approved_by = ?, approved_at = NOW(), review_comment = ? WHERE id = ?");
-        $stmt->execute([$user['id'], $reason ?: null, $versionId]);
+        // Versionsnummeret er normalt kun en pladsholder ("0.0") indtil nu — det er først ved
+        // selve godkendelsen, at det rigtige nummer kendes. Undtagelse: hvis der allerede ligger
+        // et rigtigt tal (import, eller manuelt fallback ved uregelmæssige tidligere numre),
+        // beholdes det uændret.
+        $stmt = $db->prepare('SELECT version_number, revision_type FROM document_versions WHERE id = ?');
+        $stmt->execute([$versionId]);
+        $approvingVersion = $stmt->fetch();
+        $newVersionNumber = $approvingVersion['version_number'] ?? '0.0';
+
+        if ($newVersionNumber === '0.0') {
+            $priorVersionNumber = null;
+            if ($document['current_version_id']) {
+                $stmt = $db->prepare('SELECT version_number FROM document_versions WHERE id = ?');
+                $stmt->execute([$document['current_version_id']]);
+                $priorVersionNumber = $stmt->fetchColumn() ?: null;
+            }
+
+            if ($priorVersionNumber === null) {
+                // Aldrig godkendt før — første godkendelse er altid 1.0.
+                $newVersionNumber = '1.0';
+            } elseif (preg_match('/^(\d+)\.(\d+)$/', $priorVersionNumber, $m) && in_array($approvingVersion['revision_type'] ?? null, ['major', 'minor'], true)) {
+                $newVersionNumber = $approvingVersion['revision_type'] === 'major'
+                    ? (((int) $m[1]) + 1) . '.0'
+                    : $m[1] . '.' . (((int) $m[2]) + 1);
+            } else {
+                // Burde ikke kunne ske (uploadsiden tvinger manuel indtastning i de tilfælde) —
+                // men hellere beholde det forrige kendte tal end at gætte forkert.
+                $newVersionNumber = $priorVersionNumber;
+            }
+        }
+
+        $stmt = $db->prepare("UPDATE document_versions SET status = 'Godkendt', approved_by = ?, approved_at = NOW(), review_comment = ?, version_number = ? WHERE id = ?");
+        $stmt->execute([$user['id'], $reason ?: null, $newVersionNumber, $versionId]);
 
         // Arkivér tidligere godkendte versioner af samme dokument
         $stmt = $db->prepare("UPDATE document_versions SET status = 'Arkiveret' WHERE document_id = ? AND id != ? AND status = 'Godkendt'");
