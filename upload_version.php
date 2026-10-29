@@ -174,7 +174,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     if ($isDraftCreate) {
                         log_action($docId, $versionId, 'Dokument oprettet', 'Oprettet som kladde (version ' . $versionNumber . ')');
-                        header('Location: document.php?id=' . $docId);
+                        header('Location: index.php');
                         exit;
                     }
 
