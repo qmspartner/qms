@@ -243,7 +243,8 @@ render_header(t('help.title'));
         <div class="card" style="margin-bottom:1.5rem;">
             <p style="margin:0 0 8px;"><?= h(t('help.templates.p1')) ?></p>
             <p style="margin:0 0 8px;"><?= h(t('help.templates.p2')) ?></p>
-            <p style="margin:0;"><?= h(t('help.templates.p3')) ?></p>
+            <p style="margin:0 0 8px;"><?= h(t('help.templates.p3')) ?></p>
+            <p style="margin:0;"><?= h(t('help.templates.p4')) ?></p>
         </div>
         <?php endif; ?>
 

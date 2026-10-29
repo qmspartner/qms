@@ -68,6 +68,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $currentTemplateDoc = !$existingDoc ? get_latest_template_document($category) : null;
     $templateConfirmed = isset($_POST['template_confirmed']);
 
+    // Når der findes en godkendt skabelon i kategorien, kan brugeren vælge at få en kopi af
+    // skabelonen brugt som vedhæftet fil med det samme, i stedet for selv at skulle uploade en
+    // fil nu. "own" er default for bagudkompatibilitet (fx når JS er slået fra).
+    $useTemplateCopy = !$existingDoc && $currentTemplateDoc && (($_POST['file_source'] ?? 'own') === 'template');
+
     if ($existingDoc) {
         $docNumber = $existingDoc['doc_number'];
     } elseif ($usesStructuredId) {
@@ -95,22 +100,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = t('upload.error.invalid_approver');
     } elseif ($existingDoc && $existingDoc['is_configuration_item'] && $comment === '') {
         $error = t('upload.error.change_description_required');
-    } elseif (!$existingDoc && $currentTemplateDoc && !$templateConfirmed) {
+    } elseif (!$existingDoc && $currentTemplateDoc && !$useTemplateCopy && !$templateConfirmed) {
         $error = t('upload.error.template_confirmation_required');
-    } elseif (!$file || $file['error'] !== UPLOAD_ERR_OK) {
+    } elseif (!$useTemplateCopy && (!$file || $file['error'] !== UPLOAD_ERR_OK)) {
         $error = t('upload.error.choose_file');
-    } elseif ($file['size'] > MAX_FILE_SIZE) {
+    } elseif (!$useTemplateCopy && $file['size'] > MAX_FILE_SIZE) {
         $error = t('upload.error.too_large');
     } else {
-        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-        if (!in_array($ext, ALLOWED_EXTENSIONS, true)) {
-            $error = t('upload.error.bad_type') . ' ' . implode(', ', ALLOWED_EXTENSIONS);
-        } else {
-            $storedName = bin2hex(random_bytes(16)) . '.' . $ext;
-            if (!move_uploaded_file($file['tmp_name'], UPLOAD_DIR . $storedName)) {
-                $error = t('upload.error.save_failed');
+        $fileReady = false;
+        $originalFilename = '';
+
+        if ($useTemplateCopy) {
+            $templatePath = UPLOAD_DIR . $currentTemplateDoc['stored_filename'];
+            $templateExt = strtolower(pathinfo($currentTemplateDoc['original_filename'], PATHINFO_EXTENSION));
+            $storedName = bin2hex(random_bytes(16)) . ($templateExt !== '' ? '.' . $templateExt : '');
+            $originalFilename = $currentTemplateDoc['original_filename'];
+            if (!is_file($templatePath) || !copy($templatePath, UPLOAD_DIR . $storedName)) {
+                $error = t('upload.error.template_file_missing');
             } else {
-                $db->beginTransaction();
+                $fileReady = true;
+            }
+        } else {
+            $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+            $originalFilename = $file['name'];
+            if (!in_array($ext, ALLOWED_EXTENSIONS, true)) {
+                $error = t('upload.error.bad_type') . ' ' . implode(', ', ALLOWED_EXTENSIONS);
+            } else {
+                $storedName = bin2hex(random_bytes(16)) . '.' . $ext;
+                if (!move_uploaded_file($file['tmp_name'], UPLOAD_DIR . $storedName)) {
+                    $error = t('upload.error.save_failed');
+                } else {
+                    $fileReady = true;
+                }
+            }
+        }
+
+        if ($fileReady) {
+            $db->beginTransaction();
                 try {
                     if ($existingDoc) {
                         $docId = $existingDoc['id'];
@@ -133,7 +159,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                     ');
                     $stmt->execute([
-                        $docId, $versionNumber, $storedName, $file['name'], $user['id'],
+                        $docId, $versionNumber, $storedName, $originalFilename, $user['id'],
                         $isDraftCreate ? null : $selectedApprover['id'], $comment ?: null,
                         $isDraftCreate ? 'Kladde' : 'Til godkendelse',
                     ]);
@@ -165,7 +191,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $db->rollBack();
                     $error = t('upload.error.generic');
                 }
-            }
         }
     }
 }
@@ -196,7 +221,7 @@ $categories = list_active_values('document_category');
                     </select>
                 </label>
 
-                <div id="template-nudge-box" style="display:none; background:#f6f6f6; border-radius:6px; padding:10px 12px; margin-bottom:14px;"></div>
+                <div id="file-source-choice" style="display:none; margin-bottom:14px;"></div>
 
                 <label style="display:flex; align-items:flex-start; gap:10px; background:#eef4ff; border:1px solid #c3d6fb; border-radius:8px; padding:12px 14px; margin-bottom:14px; flex-direction:row; font-weight:400;">
                     <input type="checkbox" name="is_template" id="is_template" value="1" style="width:auto; margin-top:2px;" onchange="updateIdFields();">
@@ -275,9 +300,11 @@ $categories = list_active_values('document_category');
             <label><?= h($isConfigUpdate ? t('upload.field.comment_config') : t('upload.field.comment')) ?>
                 <textarea name="comment" rows="3" <?= $isConfigUpdate ? 'required' : '' ?>></textarea>
             </label>
-            <label><?= h(t('upload.field.file')) ?>
-                <input type="file" name="file" required>
-            </label>
+            <div id="file-field">
+                <label><?= h(t('upload.field.file')) ?>
+                    <input type="file" name="file" required>
+                </label>
+            </div>
             <div class="button-row">
                 <?php if ($existingDoc): ?>
                     <button type="submit" name="save_mode" value="send"><?= h(t('upload.submit')) ?></button>
@@ -316,27 +343,74 @@ function updateIdFields() {
 
 function updateTemplateNudge() {
     const category = document.getElementById('category-select').value;
-    const box = document.getElementById('template-nudge-box');
+    const box = document.getElementById('file-source-choice');
+    const fileField = document.getElementById('file-field');
     const info = templateInfo[category];
 
     if (!info) {
         box.style.display = 'none';
         box.innerHTML = '';
+        fileField.style.display = 'block';
+        fileField.querySelector('input[type="file"]').required = true;
         return;
     }
 
     box.style.display = 'block';
 
     const version = info.version ? ' v' + info.version : '';
+    const titleEsc = info.title.replace(/</g, '&lt;');
+
     box.innerHTML =
-        '<div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">' +
-        '<span style="font-size:13px;"><strong><?= h(t('upload.template_box.title')) ?></strong> ' +
-        info.title.replace(/</g, '&lt;') + version + '</span>' +
+        '<div class="muted" style="font-size:12px; font-weight:600; margin-bottom:8px; text-transform:uppercase; letter-spacing:.02em;"><?= h(t('upload.field.file_source_label')) ?></div>' +
+        '<label class="file-source-card" style="display:flex; gap:10px; align-items:flex-start; border:1.5px solid #ccc; border-radius:8px; padding:12px 14px; margin-bottom:8px; cursor:pointer; font-weight:400;">' +
+        '<input type="radio" name="file_source" value="template" checked style="width:auto; margin-top:3px;" onchange="updateFileSourceMode()">' +
+        '<span><strong><?= h(t('upload.field.file_source_template')) ?></strong><br>' +
+        '<span class="muted" style="font-size:12.5px;">' + titleEsc + version + '</span></span>' +
+        '</label>' +
+        '<label class="file-source-card" style="display:flex; gap:10px; align-items:flex-start; border:1.5px solid #ccc; border-radius:8px; padding:12px 14px; margin-bottom:10px; cursor:pointer; font-weight:400;">' +
+        '<input type="radio" name="file_source" value="own" style="width:auto; margin-top:3px;" onchange="updateFileSourceMode()">' +
+        '<span><strong><?= h(t('upload.field.file_source_own')) ?></strong></span>' +
+        '</label>' +
+        '<div id="own-file-confirm-box" style="display:none;">' +
+        '<div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; background:#eef4ff; border:1px solid #c3d6fb; border-radius:8px; padding:10px 12px;">' +
+        '<span style="font-size:13px;"><strong><?= h(t('upload.template_box.title')) ?></strong> ' + titleEsc + version + '</span>' +
         '<a href="download_template.php?version_id=' + info.versionId + '" class="button-secondary" style="padding:5px 10px; font-size:12px;" target="_blank"><?= h(t('upload.template_box.download')) ?></a>' +
         '</div>' +
         '<label style="display:flex; align-items:flex-start; gap:8px; margin-top:10px; font-weight:400; font-size:12.5px;">' +
-        '<input type="checkbox" name="template_confirmed" value="1" required style="width:auto; margin-top:2px;">' +
-        '<span><?= h(t('upload.template_box.confirm_label')) ?></span></label>';
+        '<input type="checkbox" name="template_confirmed" value="1" style="width:auto; margin-top:2px;">' +
+        '<span><?= h(t('upload.template_box.confirm_label')) ?></span></label>' +
+        '</div>';
+
+    updateFileSourceMode();
+}
+
+function updateFileSourceMode() {
+    const radios = document.getElementsByName('file_source');
+    let mode = 'template';
+    for (const r of radios) { if (r.checked) { mode = r.value; } }
+
+    document.querySelectorAll('.file-source-card').forEach(function (card) {
+        const radio = card.querySelector('input[type="radio"]');
+        card.style.borderColor = radio.checked ? '#2a5fd6' : '#ccc';
+        card.style.background = radio.checked ? '#eef4ff' : 'transparent';
+    });
+
+    const fileField = document.getElementById('file-field');
+    const fileInput = fileField.querySelector('input[type="file"]');
+    const confirmBox = document.getElementById('own-file-confirm-box');
+    const confirmCheckbox = confirmBox ? confirmBox.querySelector('input[name="template_confirmed"]') : null;
+
+    if (mode === 'template') {
+        fileField.style.display = 'none';
+        fileInput.required = false;
+        if (confirmBox) { confirmBox.style.display = 'none'; }
+        if (confirmCheckbox) { confirmCheckbox.required = false; }
+    } else {
+        fileField.style.display = 'block';
+        fileInput.required = true;
+        if (confirmBox) { confirmBox.style.display = 'block'; }
+        if (confirmCheckbox) { confirmCheckbox.required = true; }
+    }
 }
 
 function updatePreview() {
