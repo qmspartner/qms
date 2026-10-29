@@ -978,13 +978,14 @@ function get_user_log_entries(PDO $db, array $targetUser): array {
     $stmt->execute([$uid]);
     foreach ($stmt->fetchAll() as $row) {
         $isCreated = $row['action'] === 'Bruger oprettet';
+        $isAttachment = str_starts_with($row['action'], 'Fil ');
         $entries[] = [
             'created_at' => $row['created_at'],
             'actor' => $row['actor_name'],
             'title' => $row['action'],
             'detail' => $row['details'] ?: null,
-            'category' => $isCreated ? 'account' : 'access',
-            'tone' => $isCreated ? 'neutral' : 'info',
+            'category' => $isCreated ? 'account' : ($isAttachment ? 'attachment' : 'access'),
+            'tone' => $isCreated ? 'neutral' : ($isAttachment ? 'attachment' : 'info'),
         ];
     }
 
@@ -1023,13 +1024,15 @@ function get_employee_log_entries(PDO $db, array $employee): array {
     $stmt->execute([$employeeId]);
     foreach ($stmt->fetchAll() as $row) {
         $isQualification = $row['action'] === 'Kvalifikation tildelt';
+        $isAttachment = str_starts_with($row['action'], 'Fil ');
+        $category = $isQualification ? 'qualification' : ($isAttachment ? 'attachment' : 'account');
         $entries[] = [
             'created_at' => $row['created_at'],
             'actor' => $row['actor_name'],
             'title' => $row['action'],
             'detail' => $row['details'] ?: null,
-            'category' => $isQualification ? 'qualification' : 'account',
-            'tone' => $isQualification ? 'qualification' : 'neutral',
+            'category' => $category,
+            'tone' => $isQualification ? 'qualification' : ($isAttachment ? 'attachment' : 'neutral'),
         ];
     }
 

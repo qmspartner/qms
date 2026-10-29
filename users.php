@@ -11,6 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
     $role = $_POST['role'] ?? 'user';
+    $managerUserId = (int) ($_POST['manager_user_id'] ?? 0) ?: null;
     $gqarContracts = array_values(array_filter((array) ($_POST['gqar_contracts'] ?? [])));
     $allowedRoles = ['admin', 'editor', 'approver', 'user', 'gqar'];
 
@@ -22,22 +23,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = t('users.error.gqar_contract_required');
     } else {
         try {
-            $stmt = $db->prepare('INSERT INTO users (organization_id, name, email, password_hash, role) VALUES (?, ?, ?, ?, ?)');
-            $stmt->execute([$user['organization_id'], $name, $email, password_hash($password, PASSWORD_DEFAULT), $role]);
+            $stmt = $db->prepare('INSERT INTO users (organization_id, name, email, password_hash, role, manager_user_id) VALUES (?, ?, ?, ?, ?, ?)');
+            $stmt->execute([$user['organization_id'], $name, $email, password_hash($password, PASSWORD_DEFAULT), $role, $managerUserId]);
             $newUserId = (int) $db->lastInsertId();
             if ($role === 'gqar') {
                 save_entity_contracts('gqar_contracts', 'user_id', $newUserId, $gqarContracts);
             }
-            log_user_action($newUserId, 'Bruger oprettet', 'Rolle: ' . role_label($role));
+            $createDetails = 'Rolle: ' . role_label($role);
+            if ($managerUserId) {
+                $stmt = $db->prepare('SELECT name FROM users WHERE id = ? AND organization_id = ?');
+                $stmt->execute([$managerUserId, $user['organization_id']]);
+                $managerName = $stmt->fetchColumn();
+                if ($managerName) {
+                    $createDetails .= ' · Leder: ' . $managerName;
+                }
+            }
+            log_user_action($newUserId, 'Bruger oprettet', $createDetails);
         } catch (PDOException $e) {
             $error = t('users.error.exists');
         }
     }
 }
 
-$stmt = $db->prepare('SELECT id, name, email, role, active, deactivation_requested_at FROM users WHERE organization_id = ? ORDER BY name');
+$stmt = $db->prepare('
+    SELECT u.id, u.name, u.email, u.role, u.active, u.deactivation_requested_at, m.name AS manager_name
+    FROM users u
+    LEFT JOIN users m ON m.id = u.manager_user_id
+    WHERE u.organization_id = ?
+    ORDER BY u.name
+');
 $stmt->execute([$user['organization_id']]);
 $users = $stmt->fetchAll();
+
+$stmt = $db->prepare('SELECT id, name FROM users WHERE organization_id = ? AND active = 1 ORDER BY name');
+$stmt->execute([$user['organization_id']]);
+$managerOptions = $stmt->fetchAll();
 
 $messages = [
     'updated' => t('users.msg.updated'),
@@ -73,6 +93,12 @@ render_header(t('users.title'));
                 <option value="<?= h($ref) ?>"><?= h($ref) ?></option>
             <?php endforeach; ?>
         </select>
+        <select name="manager_user_id" title="<?= h(t('users.field.manager')) ?>">
+            <option value=""><?= h(t('users.field.manager_choose')) ?></option>
+            <?php foreach ($managerOptions as $m): ?>
+                <option value="<?= (int) $m['id'] ?>"><?= h($m['name']) ?></option>
+            <?php endforeach; ?>
+        </select>
         <button type="submit"><?= h(t('users.create')) ?></button>
     </form>
 </div>
@@ -82,6 +108,7 @@ render_header(t('users.title'));
         <th><?= h(t('users.table.name')) ?></th>
         <th><?= h(t('users.table.email')) ?></th>
         <th><?= h(t('users.table.role')) ?></th>
+        <th><?= h(t('users.table.manager')) ?></th>
         <th><?= h(t('users.table.status')) ?></th>
         <th><?= h(t('users.table.actions')) ?></th>
     </tr></thead>
@@ -91,6 +118,7 @@ render_header(t('users.title'));
             <td><?= h($u['name']) ?></td>
             <td><?= h($u['email']) ?></td>
             <td><?= h(role_label($u['role'])) ?></td>
+            <td><?= h($u['manager_name'] ?: '—') ?></td>
             <td>
                 <?php if ($u['deactivation_requested_at']): ?>
                     <span class="badge badge-warning"><?= h(t('offboard.pending_badge')) ?></span>

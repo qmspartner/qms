@@ -328,7 +328,9 @@ render_header(t('help.title'));
             <p style="margin:0 0 8px;"><?= h(t('help.users.step1')) ?></p>
             <p style="margin:0 0 8px;"><?= h(t('help.users.step2')) ?></p>
             <p style="margin:0 0 8px;"><?= h(t('help.users.step3')) ?></p>
-            <p style="margin:0;"><?= h(t('help.users.step4')) ?></p>
+            <p style="margin:0 0 8px;"><?= h(t('help.users.step4')) ?></p>
+            <p style="margin:0 0 8px;"><?= h(t('help.users.step5')) ?></p>
+            <p style="margin:0;"><?= h(t('help.users.step6')) ?></p>
         </div>
         <?php endif; ?>
 
@@ -340,7 +342,8 @@ render_header(t('help.title'));
             <p style="margin:0 0 8px;"><?= h(t('help.employees.step3')) ?></p>
             <p style="margin:0 0 8px;"><?= h(t('help.employees.step4')) ?></p>
             <p style="margin:0 0 8px;"><?= h(t('help.employees.step5')) ?></p>
-            <p style="margin:0;"><?= h(t('help.employees.step6')) ?></p>
+            <p style="margin:0 0 8px;"><?= h(t('help.employees.step6')) ?></p>
+            <p style="margin:0;"><?= h(t('help.employees.step7')) ?></p>
         </div>
         <?php endif; ?>
 

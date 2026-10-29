@@ -149,6 +149,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
         }
+    } elseif ($action === 'add_attachment' && $isLocked) {
+        $error = t('offboard.error.locked');
+    } elseif ($action === 'add_attachment') {
+        $label = trim($_POST['label'] ?? '');
+        $file = $_FILES['attachment'] ?? null;
+
+        if ($label === '') {
+            $error = t('attachments.error.label_required');
+        } elseif (!$file || ($file['error'] === UPLOAD_ERR_NO_FILE)) {
+            $error = t('upload.error.choose_file');
+        } elseif ($file['error'] !== UPLOAD_ERR_OK) {
+            $error = t('upload.error.generic');
+        } elseif ($file['size'] > MAX_FILE_SIZE) {
+            $error = t('upload.error.too_large');
+        } else {
+            $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+            if (!in_array($ext, ALLOWED_EXTENSIONS, true)) {
+                $error = t('upload.error.bad_type') . ' ' . implode(', ', ALLOWED_EXTENSIONS);
+            } else {
+                $storedName = bin2hex(random_bytes(16)) . '.' . $ext;
+                if (!move_uploaded_file($file['tmp_name'], UPLOAD_DIR . $storedName)) {
+                    $error = t('upload.error.save_failed');
+                } else {
+                    $stmt = $db->prepare('
+                        INSERT INTO employee_attachments (organization_id, target_employee_id, label, stored_filename, original_filename, uploaded_by)
+                        VALUES (?, ?, ?, ?, ?, ?)
+                    ');
+                    $stmt->execute([$user['organization_id'], $id, $label, $storedName, $file['name'], $user['id']]);
+                    log_employee_action($id, 'Fil vedhæftet', $label . ' (' . $file['name'] . ')');
+
+                    header('Location: edit_employee.php?id=' . $id . '&msg=attachment_added');
+                    exit;
+                }
+            }
+        }
     }
 }
 
@@ -172,6 +207,16 @@ $stmt = $db->prepare("SELECT id, name FROM users WHERE organization_id = ? AND a
 $stmt->execute([$user['organization_id']]);
 $managerOptions = $stmt->fetchAll();
 
+$stmt = $db->prepare('
+    SELECT a.*, u.name AS uploader_name
+    FROM employee_attachments a
+    JOIN users u ON u.id = a.uploaded_by
+    WHERE a.target_employee_id = ? AND a.organization_id = ?
+    ORDER BY a.created_at DESC
+');
+$stmt->execute([$id, $user['organization_id']]);
+$attachments = $stmt->fetchAll();
+
 render_header($employee['name']);
 ?>
 <p class="breadcrumb"><a href="competence.php"><?= h(t('competence.title')) ?></a> &raquo; <a href="employees.php"><?= h(t('employees.title')) ?></a> &raquo; <?= h($employee['name']) ?></p>
@@ -181,6 +226,7 @@ render_header($employee['name']);
 <?php if (($_GET['msg'] ?? '') === 'offboarding_cancelled'): ?><p class="alert alert-success"><?= h(t('offboard.msg.cancelled')) ?></p><?php endif; ?>
 <?php if (($_GET['msg'] ?? '') === 'deactivated'): ?><p class="alert alert-success"><?= h(t('offboard.msg.deactivated')) ?></p><?php endif; ?>
 <?php if (($_GET['msg'] ?? '') === 'reactivated'): ?><p class="alert alert-success"><?= h(t('offboard.msg.reactivated')) ?></p><?php endif; ?>
+<?php if (($_GET['msg'] ?? '') === 'attachment_added'): ?><p class="alert alert-success"><?= h(t('attachments.msg.added')) ?></p><?php endif; ?>
 
 <?php if ($employee['deactivation_requested_at']): ?>
     <p class="alert alert-warning">
@@ -308,6 +354,57 @@ render_header($employee['name']);
             <input type="file" name="evidence">
         </label>
         <button type="submit"><?= h(t('employees.add_qualification')) ?></button>
+    </form>
+</div>
+<?php endif; ?>
+
+<h2><?= h(t('attachments.title')) ?></h2>
+<div class="card">
+    <table class="doc-table">
+        <thead><tr>
+            <th><?= h(t('attachments.col.label')) ?></th>
+            <th><?= h(t('attachments.col.file')) ?></th>
+            <th><?= h(t('attachments.col.uploaded')) ?></th>
+            <th></th>
+        </tr></thead>
+        <tbody>
+        <?php foreach ($attachments as $a): ?>
+            <tr>
+                <td><?= h($a['label']) ?></td>
+                <td><a href="download_employee_attachment.php?id=<?= (int) $a['id'] ?>"><?= h($a['original_filename']) ?></a></td>
+                <td class="muted" style="font-size:13px;"><?= h($a['uploader_name']) ?> · <?= h(format_date(substr($a['created_at'], 0, 10))) ?></td>
+                <td>
+                    <?php if (!$isLocked): ?>
+                        <form method="post" action="delete_employee_attachment.php" class="inline-form" onsubmit="return confirm('<?= h(t('attachments.delete_confirm')) ?>');">
+    <?= csrf_field() ?>
+                            <input type="hidden" name="id" value="<?= (int) $a['id'] ?>">
+                            <input type="hidden" name="employee_id" value="<?= (int) $id ?>">
+                            <button type="submit" class="button-small button-danger"><?= h(t('attachments.delete')) ?></button>
+                        </form>
+                    <?php endif; ?>
+                </td>
+            </tr>
+        <?php endforeach; ?>
+        <?php if (!$attachments): ?>
+            <tr><td colspan="4" class="muted"><?= h(t('attachments.empty')) ?></td></tr>
+        <?php endif; ?>
+        </tbody>
+    </table>
+</div>
+
+<?php if (!$isLocked): ?>
+<h2><?= h(t('attachments.add')) ?></h2>
+<div class="card">
+    <form method="post" enctype="multipart/form-data">
+    <?= csrf_field() ?>
+        <input type="hidden" name="action" value="add_attachment">
+        <label><?= h(t('attachments.field.label')) ?>
+            <input type="text" name="label" required>
+        </label>
+        <label><?= h(t('attachments.field.file')) ?>
+            <input type="file" name="attachment" required>
+        </label>
+        <button type="submit"><?= h(t('attachments.add')) ?></button>
     </form>
 </div>
 <?php endif; ?>

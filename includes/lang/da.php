@@ -363,6 +363,7 @@ return [
     'users.table.role' => 'Rolle',
     'users.table.status' => 'Status',
     'users.table.actions' => 'Handlinger',
+    'users.table.manager' => 'Nærmeste leder',
     'users.active' => 'Aktiv',
     'users.inactive' => 'Deaktiveret',
     'users.edit' => 'Rediger',
@@ -949,6 +950,9 @@ return [
     'help.employees.step4' => 'Kun Administrator kan oprette og redigere medarbejdere og deres kvalifikationer; andre roller kan se kompetencematrixen, hvis den er aktiveret for dem under Adgangsstyring.',
     'help.employees.step5' => 'Når en medarbejder fratræder, deaktiveres vedkommende via "Rediger". Har medarbejderen åbne punkter (udløbne eller udløbende kvalifikationer, manglende kvittering for et læst dokument), skal medarbejderens nærmeste leder — eller en administrator — først lukke hvert punkt med en begrundelse ("ikke relevant, medarbejder fratrådt"), før deaktiveringen kan gennemføres. Ved en hurtig exit (fx bortvisning) kan alle punkter lukkes med samme begrundelse på én gang.',
     'help.employees.step6' => 'En deaktiveret medarbejder kan genaktiveres med knappen "Genaktiver" på redigeringssiden. "Log"-linket fra medarbejderlisten viser den fulde historik for medarbejderen — oprettelse, kvalifikationer og fratrædelse — i ét samlet, kronologisk forløb.',
+    'help.employees.step7' => 'Under medarbejderens redigeringsside kan der vedhæftes filer, fx jobbeskrivelse, ansættelseskontrakt eller udviklingsmål — hver fil gemmes med en kort beskrivelse, hvem der har uploadet den, og hvornår. Vedhæftninger logges også i medarbejderens historik og kan filtreres frem der.',
+    'help.users.step5' => 'En bruger kan ligesom en medarbejder have en "Nærmeste leder" (en anden systembruger), angivet ved oprettelse eller under "Rediger". Feltet er til organisatorisk overblik og log — det ændrer ikke, hvem der må administrere brugeren, som fortsat kun er Administrator.',
+    'help.users.step6' => 'Under brugerens redigeringsside kan der vedhæftes filer, fx jobbeskrivelse, ansættelseskontrakt eller udviklingsmål — hver fil gemmes med en kort beskrivelse, hvem der har uploadet den, og hvornår. Vedhæftninger logges også i brugerens historik og kan filtreres frem der.',
 
     'help.section.access_control' => 'Adgangsstyring',
     'help.access_control.p1' => 'Under Indstillinger → Adgangsstyring kan du finjustere, hvad hver rolle (Redaktør, Godkender, Bruger) må gøre i hvert modul: Se, Opret, Rediger og Slet, hver for sig. Administrator er ikke vist og kan ikke begrænses — rollen har altid fuld adgang overalt.',
@@ -998,6 +1002,8 @@ return [
     'case.contract_reference' => 'Kontraktreference',
 
     'users.field.contract_reference' => 'Kontraktreference (kun for GQAR)',
+    'users.field.manager' => 'Nærmeste leder',
+    'users.field.manager_choose' => '— Ingen —',
     'users.field.contract_reference_none' => 'Ikke relevant',
     'users.error.gqar_contract_required' => 'Vælg en kontraktreference for GQAR-rollen.',
 
@@ -1379,10 +1385,12 @@ return [
     'log.filter.all' => 'Alle hændelser',
     'log.filter.access' => 'Kun adgang & rolle',
     'log.filter.qualification' => 'Kun kvalifikationer',
+    'log.filter.attachment' => 'Kun vedhæftede filer',
     'log.filter.offboarding' => 'Kun fratrædelse',
     'log.category.account' => 'Konto',
     'log.category.access' => 'Adgang & rolle',
     'log.category.qualification' => 'Kvalifikation',
+    'log.category.attachment' => 'Vedhæftet fil',
     'log.category.offboarding' => 'Fratrædelse',
     'log.category.reactivated' => 'Genaktiveret',
     'log.empty' => 'Ingen hændelser i denne kategori.',
@@ -1474,4 +1482,17 @@ return [
 
     'case.field.effectiveness_review_due' => 'Dato for effektivitetstjek',
     'case.field.closure_requirements_hint' => 'Rodårsag, korrigerende handling, forebyggende handling og dato for effektivitetstjek skal udfyldes, før kvalitetshændelsen kan lukkes.',
+
+    'attachments.title' => 'Vedhæftede filer',
+    'attachments.empty' => 'Ingen filer vedhæftet endnu.',
+    'attachments.add' => 'Vedhæft fil',
+    'attachments.col.label' => 'Beskrivelse',
+    'attachments.col.file' => 'Fil',
+    'attachments.col.uploaded' => 'Uploadet',
+    'attachments.field.label' => 'Beskrivelse (fx jobbeskrivelse, kontrakt, udviklingsmål)',
+    'attachments.field.file' => 'Fil',
+    'attachments.delete' => 'Slet',
+    'attachments.delete_confirm' => 'Er du sikker på, at du vil slette denne fil?',
+    'attachments.error.label_required' => 'Angiv en kort beskrivelse af filen.',
+    'attachments.msg.added' => 'Filen er vedhæftet.',
 ];

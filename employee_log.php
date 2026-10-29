@@ -26,7 +26,7 @@ if (!can_manage_employee_offboarding($user, $employee)) {
     exit;
 }
 
-$allowedFilters = ['all', 'qualification', 'offboarding'];
+$allowedFilters = ['all', 'qualification', 'attachment', 'offboarding'];
 $filter = $_GET['filter'] ?? 'all';
 if (!in_array($filter, $allowedFilters, true)) {
     $filter = 'all';
@@ -42,6 +42,7 @@ if ($filter !== 'all') {
 $toneColors = [
     'neutral' => '#64748B',
     'qualification' => '#0D9488',
+    'attachment' => '#7C3AED',
     'warn' => '#B45309',
     'danger' => '#DC2626',
     'success' => '#16A34A',
@@ -80,6 +81,7 @@ render_header(t('employeelog.title', ['name' => $employee['name']]));
                 <select name="filter" onchange="this.form.submit()">
                     <option value="all" <?= $filter === 'all' ? 'selected' : '' ?>><?= h(t('log.filter.all')) ?></option>
                     <option value="qualification" <?= $filter === 'qualification' ? 'selected' : '' ?>><?= h(t('log.filter.qualification')) ?></option>
+                    <option value="attachment" <?= $filter === 'attachment' ? 'selected' : '' ?>><?= h(t('log.filter.attachment')) ?></option>
                     <option value="offboarding" <?= $filter === 'offboarding' ? 'selected' : '' ?>><?= h(t('log.filter.offboarding')) ?></option>
                 </select>
             </label>
@@ -88,7 +90,7 @@ render_header(t('employeelog.title', ['name' => $employee['name']]));
     <p class="muted"><?= h(t('log.intro.employee')) ?></p>
 
     <div style="display:flex; gap:16px; flex-wrap:wrap; margin:12px 0 20px; padding-bottom:16px; border-bottom:1px solid #EEF0F3;">
-        <?php foreach (['account' => 'neutral', 'qualification' => 'qualification', 'offboarding' => 'warn', 'reactivated' => 'success'] as $cat => $tone): ?>
+        <?php foreach (['account' => 'neutral', 'qualification' => 'qualification', 'attachment' => 'attachment', 'offboarding' => 'warn', 'reactivated' => 'success'] as $cat => $tone): ?>
             <div style="display:flex; align-items:center; gap:6px; font-size:12px;" class="muted">
                 <span style="width:8px; height:8px; border-radius:999px; background:<?= h($toneColors[$tone]) ?>; display:inline-block;"></span> <?= h(t('log.category.' . $cat)) ?>
             </div>

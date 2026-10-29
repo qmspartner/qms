@@ -39,11 +39,14 @@ CREATE TABLE `users` (
   `gqar_contract_reference` varchar(255) DEFAULT NULL,
   `reset_token_hash` varchar(64) DEFAULT NULL,
   `reset_token_expires` datetime DEFAULT NULL,
+  `manager_user_id` int DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`),
   KEY `fk_users_org` (`organization_id`),
+  KEY `manager_user_id` (`manager_user_id`),
   CONSTRAINT `fk_users_org` FOREIGN KEY (`organization_id`) REFERENCES `organizations` (`id`),
-  CONSTRAINT `fk_users_deactivation_by` FOREIGN KEY (`deactivation_requested_by`) REFERENCES `users` (`id`)
+  CONSTRAINT `fk_users_deactivation_by` FOREIGN KEY (`deactivation_requested_by`) REFERENCES `users` (`id`),
+  CONSTRAINT `fk_users_manager` FOREIGN KEY (`manager_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
@@ -840,6 +843,42 @@ CREATE TABLE `user_log` (
   CONSTRAINT `fk_userlog_org` FOREIGN KEY (`organization_id`) REFERENCES `organizations` (`id`),
   CONSTRAINT `fk_userlog_target` FOREIGN KEY (`target_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_userlog_performed_by` FOREIGN KEY (`performed_by`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `user_attachments` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `organization_id` int NOT NULL,
+  `target_user_id` int NOT NULL,
+  `label` varchar(255) NOT NULL,
+  `stored_filename` varchar(255) NOT NULL,
+  `original_filename` varchar(255) NOT NULL,
+  `uploaded_by` int NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `organization_id` (`organization_id`),
+  KEY `target_user_id` (`target_user_id`),
+  KEY `uploaded_by` (`uploaded_by`),
+  CONSTRAINT `fk_userattach_org` FOREIGN KEY (`organization_id`) REFERENCES `organizations` (`id`),
+  CONSTRAINT `fk_userattach_target` FOREIGN KEY (`target_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_userattach_uploaded_by` FOREIGN KEY (`uploaded_by`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `employee_attachments` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `organization_id` int NOT NULL,
+  `target_employee_id` int NOT NULL,
+  `label` varchar(255) NOT NULL,
+  `stored_filename` varchar(255) NOT NULL,
+  `original_filename` varchar(255) NOT NULL,
+  `uploaded_by` int NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `organization_id` (`organization_id`),
+  KEY `target_employee_id` (`target_employee_id`),
+  KEY `uploaded_by` (`uploaded_by`),
+  CONSTRAINT `fk_employeeattach_org` FOREIGN KEY (`organization_id`) REFERENCES `organizations` (`id`),
+  CONSTRAINT `fk_employeeattach_target` FOREIGN KEY (`target_employee_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_employeeattach_uploaded_by` FOREIGN KEY (`uploaded_by`) REFERENCES `users` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------

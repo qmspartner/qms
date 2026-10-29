@@ -363,6 +363,7 @@ return [
     'users.table.role' => 'Role',
     'users.table.status' => 'Status',
     'users.table.actions' => 'Actions',
+    'users.table.manager' => 'Line manager',
     'users.active' => 'Active',
     'users.inactive' => 'Deactivated',
     'users.edit' => 'Edit',
@@ -949,6 +950,9 @@ return [
     'help.employees.step4' => 'Only Administrator can create and edit employees and their qualifications; other roles can see the competence matrix if it has been enabled for them under Access control.',
     'help.employees.step5' => 'When an employee leaves, they are deactivated via "Edit". If the employee has open items (expired or expiring qualifications, a missing acknowledgment for a read document), the employee\'s line manager — or an administrator — must first close each item with a reason ("not relevant, employee has left") before deactivation can complete. For a quick exit (e.g. summary dismissal), all items can be closed with the same reason at once.',
     'help.employees.step6' => 'A deactivated employee can be reactivated with the "Reactivate" button on the edit page. The "Log" link from the employee list shows the full history for the employee — creation, qualifications and offboarding — as one combined, chronological timeline.',
+    'help.employees.step7' => 'Files can be attached on the employee\'s edit page, such as a job description, employment contract or development goals — each file is saved with a short description, who uploaded it, and when. Attachments are also logged in the employee\'s history and can be filtered there.',
+    'help.users.step5' => 'Like an employee, a user can have a "Line manager" (another system user), set when the user is created or under "Edit". The field is for organizational overview and logging — it does not change who may administer the user, which remains Administrator only.',
+    'help.users.step6' => 'Files can be attached on the user\'s edit page, such as a job description, employment contract or development goals — each file is saved with a short description, who uploaded it, and when. Attachments are also logged in the user\'s history and can be filtered there.',
 
     'help.section.access_control' => 'Access control',
     'help.access_control.p1' => 'Under Settings → Access control you can fine-tune what each role (Editor, Approver, User) may do in each module: View, Create, Edit, and Delete, individually. Administrator is not shown and cannot be restricted — the role always has full access everywhere.',
@@ -998,6 +1002,8 @@ return [
     'case.contract_reference' => 'Contract reference',
 
     'users.field.contract_reference' => 'Contract reference (GQAR only)',
+    'users.field.manager' => 'Line manager',
+    'users.field.manager_choose' => '— None —',
     'users.field.contract_reference_none' => 'Not applicable',
     'users.error.gqar_contract_required' => 'Choose a contract reference for the GQAR role.',
 
@@ -1379,10 +1385,12 @@ return [
     'log.filter.all' => 'All events',
     'log.filter.access' => 'Access & role only',
     'log.filter.qualification' => 'Qualifications only',
+    'log.filter.attachment' => 'Attachments only',
     'log.filter.offboarding' => 'Offboarding only',
     'log.category.account' => 'Account',
     'log.category.access' => 'Access & role',
     'log.category.qualification' => 'Qualification',
+    'log.category.attachment' => 'Attached file',
     'log.category.offboarding' => 'Offboarding',
     'log.category.reactivated' => 'Reactivated',
     'log.empty' => 'No events in this category.',
@@ -1474,4 +1482,17 @@ return [
 
     'case.field.effectiveness_review_due' => 'Effectiveness check date',
     'case.field.closure_requirements_hint' => 'Root cause, corrective action, preventive action and an effectiveness check date must be filled in before the quality event can be closed.',
+
+    'attachments.title' => 'Attachments',
+    'attachments.empty' => 'No files attached yet.',
+    'attachments.add' => 'Attach file',
+    'attachments.col.label' => 'Description',
+    'attachments.col.file' => 'File',
+    'attachments.col.uploaded' => 'Uploaded',
+    'attachments.field.label' => 'Description (e.g. job description, contract, development goal)',
+    'attachments.field.file' => 'File',
+    'attachments.delete' => 'Delete',
+    'attachments.delete_confirm' => 'Are you sure you want to delete this file?',
+    'attachments.error.label_required' => 'Enter a short description of the file.',
+    'attachments.msg.added' => 'File attached.',
 ];
