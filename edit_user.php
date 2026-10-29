@@ -227,7 +227,7 @@ render_header(t('edituser.title'));
             <input type="password" name="password" minlength="8" <?= $isLocked ? 'disabled' : '' ?>>
         </label>
         <label><?= h(t('edituser.field.role')) ?>
-            <select name="role" <?= $isLocked ? 'disabled' : '' ?>>
+            <select name="role" id="edit-user-role" <?= $isLocked ? 'disabled' : '' ?>>
                 <option value="user" <?= $editUser['role'] === 'user' ? 'selected' : '' ?>><?= h(role_label('user')) ?></option>
                 <option value="editor" <?= $editUser['role'] === 'editor' ? 'selected' : '' ?>><?= h(role_label('editor')) ?></option>
                 <option value="approver" <?= $editUser['role'] === 'approver' ? 'selected' : '' ?>><?= h(role_label('approver')) ?></option>
@@ -236,13 +236,15 @@ render_header(t('edituser.title'));
             </select>
         </label>
         <?php $currentGqarContracts = get_entity_contracts('gqar_contracts', 'user_id', (int) $editUser['id']); ?>
-        <label><?= h(t('users.field.contract_reference')) ?>
-            <select name="gqar_contracts[]" multiple size="4" <?= $isLocked ? 'disabled' : '' ?>>
-                <?php foreach (list_active_values('contract_reference') as $ref): ?>
-                    <option value="<?= h($ref) ?>" <?= in_array($ref, $currentGqarContracts, true) ? 'selected' : '' ?>><?= h($ref) ?></option>
-                <?php endforeach; ?>
-            </select>
-        </label>
+        <div id="edit-user-gqar-contracts" class="checkbox-group" style="display:none;">
+            <span class="muted" style="font-size:12px; display:block; margin-bottom:4px;"><?= h(t('users.field.contract_reference')) ?></span>
+            <?php foreach (list_active_values('contract_reference') as $ref): ?>
+                <label style="display:flex; align-items:center; gap:6px; font-weight:normal; font-size:13px; margin-bottom:2px;">
+                    <input type="checkbox" name="gqar_contracts[]" value="<?= h($ref) ?>" <?= in_array($ref, $currentGqarContracts, true) ? 'checked' : '' ?> <?= $isLocked ? 'disabled' : '' ?> style="width:auto;">
+                    <?= h($ref) ?>
+                </label>
+            <?php endforeach; ?>
+        </div>
         <label><?= h(t('users.field.manager')) ?>
             <select name="manager_user_id" <?= $isLocked ? 'disabled' : '' ?>>
                 <option value=""><?= h(t('users.field.manager_choose')) ?></option>
@@ -327,5 +329,20 @@ render_header(t('edituser.title'));
     </form>
 </div>
 <?php endif; ?>
+
+<script>
+(function () {
+    var roleSelect = document.getElementById('edit-user-role');
+    var contractsGroup = document.getElementById('edit-user-gqar-contracts');
+    if (!roleSelect || !contractsGroup) {
+        return;
+    }
+    function toggle() {
+        contractsGroup.style.display = roleSelect.value === 'gqar' ? '' : 'none';
+    }
+    roleSelect.addEventListener('change', toggle);
+    toggle();
+})();
+</script>
 
 <?php render_footer(); ?>

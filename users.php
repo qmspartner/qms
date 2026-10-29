@@ -81,17 +81,12 @@ render_header(t('users.title'));
         <input type="text" name="name" placeholder="<?= h(t('users.field.name_ph')) ?>" required>
         <input type="email" name="email" placeholder="<?= h(t('users.field.email_ph')) ?>" required>
         <input type="password" name="password" placeholder="<?= h(t('users.field.password_ph')) ?>" required minlength="8">
-        <select name="role">
+        <select name="role" id="new-user-role">
             <option value="user"><?= h(role_label('user')) ?></option>
             <option value="editor"><?= h(role_label('editor')) ?></option>
             <option value="approver"><?= h(role_label('approver')) ?></option>
             <option value="admin"><?= h(role_label('admin')) ?></option>
             <option value="gqar"><?= h(role_label('gqar')) ?></option>
-        </select>
-        <select name="gqar_contracts[]" multiple size="3" title="<?= h(t('users.field.contract_reference')) ?>">
-            <?php foreach (list_active_values('contract_reference') as $ref): ?>
-                <option value="<?= h($ref) ?>"><?= h($ref) ?></option>
-            <?php endforeach; ?>
         </select>
         <select name="manager_user_id" title="<?= h(t('users.field.manager')) ?>">
             <option value=""><?= h(t('users.field.manager_choose')) ?></option>
@@ -99,9 +94,33 @@ render_header(t('users.title'));
                 <option value="<?= (int) $m['id'] ?>"><?= h($m['name']) ?></option>
             <?php endforeach; ?>
         </select>
+        <div id="new-user-gqar-contracts" class="checkbox-group" style="display:none;">
+            <span class="muted" style="font-size:12px; display:block; margin-bottom:4px;"><?= h(t('users.field.contract_reference')) ?></span>
+            <?php foreach (list_active_values('contract_reference') as $ref): ?>
+                <label style="display:flex; align-items:center; gap:6px; font-weight:normal; font-size:13px; margin-bottom:2px;">
+                    <input type="checkbox" name="gqar_contracts[]" value="<?= h($ref) ?>" style="width:auto;">
+                    <?= h($ref) ?>
+                </label>
+            <?php endforeach; ?>
+        </div>
         <button type="submit"><?= h(t('users.create')) ?></button>
     </form>
 </div>
+
+<script>
+(function () {
+    var roleSelect = document.getElementById('new-user-role');
+    var contractsGroup = document.getElementById('new-user-gqar-contracts');
+    if (!roleSelect || !contractsGroup) {
+        return;
+    }
+    function toggle() {
+        contractsGroup.style.display = roleSelect.value === 'gqar' ? '' : 'none';
+    }
+    roleSelect.addEventListener('change', toggle);
+    toggle();
+})();
+</script>
 
 <table class="doc-table">
     <thead><tr>

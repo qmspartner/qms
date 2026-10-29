@@ -1209,7 +1209,7 @@ function render_header(string $title): void {
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title><?= h($title) ?> - <?= h(t('brand.name')) ?></title>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
-        <link rel="stylesheet" href="css/style.css?v=50">
+        <link rel="stylesheet" href="css/style.css?v=51">
     </head>
     <body>
     <?php if (is_impersonating()): ?>
@@ -1332,7 +1332,11 @@ function render_footer(): void {
                         var val = saved[el.name];
                         if (val === undefined) return;
                         if (el.type === 'checkbox') {
-                            el.checked = !!val;
+                            if (el.name.slice(-2) === '[]') {
+                                el.checked = Array.isArray(val) && val.indexOf(el.value) !== -1;
+                            } else {
+                                el.checked = !!val;
+                            }
                         } else if (el.tagName === 'SELECT' && el.multiple) {
                             Array.prototype.forEach.call(el.options, function (opt) {
                                 opt.selected = val.indexOf(opt.value) !== -1;
@@ -1355,7 +1359,12 @@ function render_footer(): void {
             Array.prototype.forEach.call(form.elements, function (el) {
                 if (!el.name || el.type === 'file' || el.type === 'submit' || el.type === 'hidden') return;
                 if (el.type === 'checkbox') {
-                    data[el.name] = el.checked;
+                    if (el.name.slice(-2) === '[]') {
+                        if (!data[el.name]) data[el.name] = [];
+                        if (el.checked) data[el.name].push(el.value);
+                    } else {
+                        data[el.name] = el.checked;
+                    }
                 } else if (el.tagName === 'SELECT' && el.multiple) {
                     data[el.name] = Array.prototype.map.call(el.selectedOptions, function (o) { return o.value; });
                 } else {
