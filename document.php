@@ -136,6 +136,9 @@ render_header($doc['title']);
 <?php if ($renameError): ?>
     <p class="alert alert-danger"><?= h($renameError) ?></p>
 <?php endif; ?>
+<?php if (($_GET['msg'] ?? '') === 'sent_for_approval'): ?>
+    <p class="alert alert-success"><?= h(t('sendforapproval.msg.sent')) ?></p>
+<?php endif; ?>
 
 <div class="card">
     <div class="doc-header">
@@ -188,6 +191,10 @@ render_header($doc['title']);
             <a class="button" href="quality_plan_detail.php?version_id=<?= (int)$versions[0]['id'] ?>"><?= h(t('doc.open_quality_plan')) ?></a>
         <?php endif; ?>
         <?php $isQualityPlan = $doc['category'] === 'Leverance-kvalitetsplan'; ?>
+        <?php $isDraftReadyToSend = $doc['status'] === 'Kladde' && $versions && $versions[0]['status'] === 'Kladde'; ?>
+        <?php if ($canEdit && $isDraftReadyToSend): ?>
+            <a class="button" href="send_for_approval.php?id=<?= (int)$doc['id'] ?>"><?= h(t('sendforapproval.action')) ?></a>
+        <?php endif; ?>
         <?php if ($canEdit): ?>
             <a class="button button-secondary" href="<?= $isQualityPlan ? 'new_quality_plan.php' : 'upload_version.php' ?>?document_id=<?= (int)$doc['id'] ?>"><?= h(t('doc.upload_new_version')) ?></a>
         <?php endif; ?>

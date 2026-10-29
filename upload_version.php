@@ -43,10 +43,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $file = $_FILES['file'] ?? null;
 
+    // "Opret dokument" (uden at sende til godkendelse) findes kun ved oprettelse af et helt nyt
+    // dokument, aldrig ved upload af en ny version af et eksisterende. Kladder sendes til
+    // godkendelse senere, fra dokumentsiden (send_for_approval.php).
+    $isDraftCreate = !$existingDoc && (($_POST['save_mode'] ?? 'send') === 'draft');
+
     // Bekræft at den valgte godkender rent faktisk er en aktiv godkender i samme organisation
-    $stmt = $db->prepare("SELECT id, name, email FROM users WHERE id = ? AND organization_id = ? AND role = 'approver' AND active = 1");
-    $stmt->execute([$approverId, $user['organization_id']]);
-    $selectedApprover = $stmt->fetch();
+    // — ikke nødvendigt når dokumentet blot gemmes som kladde.
+    $selectedApprover = null;
+    if (!$isDraftCreate) {
+        $stmt = $db->prepare("SELECT id, name, email FROM users WHERE id = ? AND organization_id = ? AND role = 'approver' AND active = 1");
+        $stmt->execute([$approverId, $user['organization_id']]);
+        $selectedApprover = $stmt->fetch();
+    }
 
     // Beregn dokument-ID (kun relevant for nye dokumenter — ID'et er låst for eksisterende)
     // Skabeloner får altid præfikset TMP, uanset kategoriens eget præfiks (eller mangel på samme)
@@ -82,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = t('upload.error.doc_number_required');
     } elseif ($docNumberDuplicate) {
         $error = t('upload.error.doc_number_duplicate');
-    } elseif (!$selectedApprover) {
+    } elseif (!$isDraftCreate && !$selectedApprover) {
         $error = t('upload.error.invalid_approver');
     } elseif ($existingDoc && $existingDoc['is_configuration_item'] && $comment === '') {
         $error = t('upload.error.change_description_required');
@@ -111,7 +120,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         ');
                         $stmt->execute([
-                            $user['organization_id'], $docNumber, $title, $category, $isTemplate, $requiresAcknowledgment, $isoClause ?: null, $user['id'], 'Til godkendelse',
+                            $user['organization_id'], $docNumber, $title, $category, $isTemplate, $requiresAcknowledgment, $isoClause ?: null, $user['id'], $isDraftCreate ? 'Kladde' : 'Til godkendelse',
                             $isConfigItem, $isConfigItem ? ($baselineRef ?: null) : null,
                             $usesStructuredId ? $section : null, $usesStructuredId ? $operation : null,
                             $isImported, ($isImported && $originalIssueDate !== '') ? $originalIssueDate : null,
@@ -120,16 +129,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
 
                     $stmt = $db->prepare('
-                        INSERT INTO document_versions (document_id, version_number, stored_filename, original_filename, uploaded_by, assigned_approver_id, comment)
-                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                        INSERT INTO document_versions (document_id, version_number, stored_filename, original_filename, uploaded_by, assigned_approver_id, comment, status)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                     ');
-                    $stmt->execute([$docId, $versionNumber, $storedName, $file['name'], $user['id'], $selectedApprover['id'], $comment ?: null]);
+                    $stmt->execute([
+                        $docId, $versionNumber, $storedName, $file['name'], $user['id'],
+                        $isDraftCreate ? null : $selectedApprover['id'], $comment ?: null,
+                        $isDraftCreate ? 'Kladde' : 'Til godkendelse',
+                    ]);
                     $versionId = (int) $db->lastInsertId();
 
-                    $stmt = $db->prepare("UPDATE documents SET status = 'Til godkendelse' WHERE id = ?");
-                    $stmt->execute([$docId]);
+                    if (!$isDraftCreate) {
+                        $stmt = $db->prepare("UPDATE documents SET status = 'Til godkendelse' WHERE id = ?");
+                        $stmt->execute([$docId]);
+                    }
 
                     $db->commit();
+
+                    if ($isDraftCreate) {
+                        log_action($docId, $versionId, 'Dokument oprettet', 'Oprettet som kladde (version ' . $versionNumber . ')');
+                        header('Location: document.php?id=' . $docId);
+                        exit;
+                    }
+
                     log_action($docId, $versionId, 'Ny version uploadet', 'Version ' . $versionNumber . ' sendt til godkendelse hos ' . $selectedApprover['name']);
 
                     require_once __DIR__ . '/includes/notifications.php';
@@ -241,8 +263,8 @@ $categories = list_active_values('document_category');
             <label><?= h(t('upload.field.version')) ?>
                 <input type="text" name="version_number" placeholder="fx 1.0" required>
             </label>
-            <label><?= h(t('upload.field.approver')) ?>
-                <select name="approver_id" required>
+            <label><?= h(t('upload.field.approver')) ?><?php if (!$existingDoc): ?> <span class="muted" style="font-weight:400;">(<?= h(t('upload.field.approver_optional_hint')) ?>)</span><?php endif; ?>
+                <select name="approver_id" id="approver_select" <?= $existingDoc ? 'required' : '' ?>>
                     <option value=""><?= h(t('upload.field.approver_choose')) ?></option>
                     <?php foreach ($approvers as $approver): ?>
                         <option value="<?= (int) $approver['id'] ?>"><?= h($approver['name']) ?></option>
@@ -256,7 +278,14 @@ $categories = list_active_values('document_category');
             <label><?= h(t('upload.field.file')) ?>
                 <input type="file" name="file" required>
             </label>
-            <button type="submit"><?= h(t('upload.submit')) ?></button>
+            <div class="button-row">
+                <?php if ($existingDoc): ?>
+                    <button type="submit" name="save_mode" value="send"><?= h(t('upload.submit')) ?></button>
+                <?php else: ?>
+                    <button type="submit" name="save_mode" value="draft" class="button-secondary" onclick="document.getElementById('approver_select').required = false;"><?= h(t('upload.submit_draft')) ?></button>
+                    <button type="submit" name="save_mode" value="send" onclick="document.getElementById('approver_select').required = true;"><?= h(t('upload.submit_new_and_send')) ?></button>
+                <?php endif; ?>
+            </div>
         </form>
     <?php endif; ?>
 </div>

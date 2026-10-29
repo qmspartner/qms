@@ -249,7 +249,7 @@ CREATE TABLE `document_versions` (
   `uploaded_by` int NOT NULL,
   `assigned_approver_id` int DEFAULT NULL,
   `uploaded_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `status` enum('Til godkendelse','Godkendt','Afvist','Arkiveret') NOT NULL DEFAULT 'Til godkendelse',
+  `status` enum('Kladde','Til godkendelse','Godkendt','Afvist','Arkiveret') NOT NULL DEFAULT 'Til godkendelse',
   `approved_by` int DEFAULT NULL,
   `approved_at` datetime DEFAULT NULL,
   `review_comment` text,
