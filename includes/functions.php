@@ -530,6 +530,14 @@ function can_approve_documents(array $user): bool {
     return in_array($user['role'], ['admin', 'approver'], true);
 }
 
+// Almindelige brugere ("user") skal kun se dokumenter i deres gyldige, godkendte form —
+// kladder, dokumenter til godkendelse og udgåede dokumenter er "arbejdsgangen", som kun
+// redaktør, godkender og admin skal forholde sig til. GQAR styres af sin egen, separate
+// kontraktbegrænsning og indgår ikke her.
+function can_view_all_document_statuses(array $user): bool {
+    return in_array($user['role'], ['admin', 'editor', 'approver'], true);
+}
+
 function can_manage_cases(array $user): bool {
     return has_permission($user, 'cases', 'edit');
 }

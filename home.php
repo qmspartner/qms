@@ -29,6 +29,11 @@ if ($gqar) {
     $stmt->execute([$user['organization_id']]);
 }
 $docStats = $stmt->fetch();
+if (!$gqar && !can_view_all_document_statuses($user)) {
+    // Almindelige brugere skal ikke bekymre sig om dokumenter under udarbejdelse —
+    // "afventer godkendelse" hører til redaktør/godkender/admins arbejdsgang.
+    $docStats['pending'] = 0;
+}
 
 if ($gqar) {
     [$clause, $clauseParams] = contract_in_clause('contract_reference', $gqarContracts);

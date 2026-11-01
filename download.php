@@ -7,7 +7,8 @@ $db = get_db();
 
 $versionId = (int) ($_GET['version_id'] ?? 0);
 $stmt = $db->prepare('
-    SELECT v.*, d.current_version_id, d.title AS document_title
+    SELECT v.*, d.current_version_id, d.title AS document_title, d.status AS document_status,
+           d.is_configuration_item, d.baseline_reference
     FROM document_versions v
     JOIN documents d ON d.id = v.document_id
     WHERE v.id = ? AND d.organization_id = ?
@@ -18,6 +19,18 @@ $version = $stmt->fetch();
 if (!$version) {
     http_response_code(404);
     exit('Filen blev ikke fundet.');
+}
+
+// Samme adgangsregler som dokumentsiden: en direkte fil-URL må ikke kunne
+// omgå dem. GQAR må kun hente godkendte konfigurationsstyrede dokumenter
+// inden for egen kontrakt; almindelige brugere må kun hente godkendte filer.
+if (is_gqar($user) && (!$version['is_configuration_item'] || $version['document_status'] !== 'Godkendt' || !user_has_contract($user, $version['baseline_reference']))) {
+    http_response_code(403);
+    exit(t('error.forbidden'));
+}
+if (!is_gqar($user) && !can_view_all_document_statuses($user) && $version['document_status'] !== 'Godkendt') {
+    http_response_code(403);
+    exit(t('error.forbidden'));
 }
 
 $path = UPLOAD_DIR . $version['stored_filename'];

@@ -26,8 +26,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $linkedDocId = null;
         if ($linkedDocumentId) {
-            $stmt = $db->prepare('SELECT id FROM documents WHERE id = ? AND organization_id = ?');
-            $stmt->execute([$linkedDocumentId, $user['organization_id']]);
+            $checkSql = 'SELECT id FROM documents WHERE id = ? AND organization_id = ?';
+            $checkParams = [$linkedDocumentId, $user['organization_id']];
+            if (!can_view_all_document_statuses($user)) {
+                $checkSql .= " AND status = 'Godkendt'";
+            }
+            $stmt = $db->prepare($checkSql);
+            $stmt->execute($checkParams);
             if ($stmt->fetch()) {
                 $linkedDocId = $linkedDocumentId;
             }
@@ -51,8 +56,14 @@ $stmt = $db->prepare("SELECT id, name FROM users WHERE organization_id = ? AND a
 $stmt->execute([$user['organization_id']]);
 $orgUsers = $stmt->fetchAll();
 
-$stmt = $db->prepare('SELECT id, title, doc_number FROM documents WHERE organization_id = ? ORDER BY title');
-$stmt->execute([$user['organization_id']]);
+$docSql = 'SELECT id, title, doc_number FROM documents WHERE organization_id = ?';
+$docParams = [$user['organization_id']];
+if (!can_view_all_document_statuses($user)) {
+    $docSql .= " AND status = 'Godkendt'";
+}
+$docSql .= ' ORDER BY title';
+$stmt = $db->prepare($docSql);
+$stmt->execute($docParams);
 $documents = $stmt->fetchAll();
 
 render_header(t('newaudit.title'));

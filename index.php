@@ -46,6 +46,9 @@ if (is_gqar($user)) {
     [$clause, $clauseParams] = contract_in_clause('d.baseline_reference', $user['gqar_contract_references']);
     $sql .= " AND d.is_configuration_item = 1 AND d.status = 'Godkendt' AND {$clause}";
     $params = array_merge($params, $clauseParams);
+} elseif (!can_view_all_document_statuses($user)) {
+    // Almindelige brugere ser kun den gyldige, godkendte version af dokumentregistret.
+    $sql .= " AND d.status = 'Godkendt'";
 }
 if (!$showTemplates) {
     $sql .= ' AND d.is_template = 0';
@@ -56,6 +59,7 @@ $stmt = $db->prepare($sql);
 $stmt->execute($params);
 $documents = $stmt->fetchAll();
 
+$canSeeWorkflowStats = can_view_all_document_statuses($user) && !is_gqar($user);
 $stmt = $db->prepare("
     SELECT
         SUM(status = 'Godkendt') AS active,
@@ -68,7 +72,8 @@ $stmt->execute([$user['organization_id']]);
 $stats = $stmt->fetch();
 
 $categories = list_active_values('document_category');
-$statuses = ['Kladde', 'Til godkendelse', 'Godkendt', 'Udgået'];
+// Almindelige brugere kan kun filtrere på den ene status, de overhovedet kan se.
+$statuses = $canSeeWorkflowStats ? ['Kladde', 'Til godkendelse', 'Godkendt', 'Udgået'] : ['Godkendt'];
 
 $activeChips = [];
 if ($search !== '') {
@@ -106,8 +111,10 @@ render_header(t('documents.title'));
 <div>
 <div class="stat-grid">
     <div class="stat-card"><p class="stat-label"><?= h(t('documents.stat.approved')) ?></p><p class="stat-value"><?= (int)($stats['active'] ?? 0) ?></p></div>
+    <?php if ($canSeeWorkflowStats): ?>
     <div class="stat-card"><p class="stat-label"><?= h(t('documents.stat.pending')) ?></p><p class="stat-value stat-warning"><?= (int)($stats['pending'] ?? 0) ?></p></div>
     <div class="stat-card"><p class="stat-label"><?= h(t('documents.stat.expiring')) ?></p><p class="stat-value stat-danger"><?= (int)($stats['expiring'] ?? 0) ?></p></div>
+    <?php endif; ?>
 </div>
 
 <form method="get" class="filter-bar" id="doc-search-form">

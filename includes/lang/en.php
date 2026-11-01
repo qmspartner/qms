@@ -452,9 +452,10 @@ return [
     'help.role.admin.desc' => 'Full access: creates users, uploads/edits documents, quality events and records, and can approve.',
     'help.role.editor.desc' => 'Can create and upload documents, quality events and records, but cannot approve them.',
     'help.role.approver.desc' => 'Can approve or reject document versions that have been sent for approval.',
-    'help.role.user.desc' => 'Can view, search and download documents, quality events and records, and register new quality events.',
+    'help.role.user.desc' => 'Can view, search and download the approved, valid documents, and view and register quality events and records. Documents still in progress (draft, awaiting approval) or retired documents are only shown to Editors, Approvers and Administrators.',
 
     'help.section.documents' => 'How document approval works',
+    'help.documents.visibility' => 'Regular users only see documents with "Approved" status — drafts, documents awaiting approval and retired documents are not shown in the document list, cannot be opened directly, and cannot be downloaded. This also applies when a document is selected as a reference on an audit or a case. Editors, Approvers and Administrators see all statuses.',
     'help.documents.search' => 'The search box on the document overview updates the list automatically, shortly after you stop typing — there is no need to press "Search" or Enter. The search runs directly against the database (not just what is already shown), so it stays fast no matter how large the register grows. The search term still shows as a removable filter chip and is part of the page address, so a search result can be shared or bookmarked.',
     'help.documents.step1' => 'An Editor or Administrator uploads a new version and chooses an Approver.',
     'help.documents.draft' => 'When creating a new document, you can instead choose "Create document" to save it as a draft without sending it for approval. A draft can be updated later via the "Update draft" button on the document page — you can optionally attach an updated file and choose an approver in the same step.',

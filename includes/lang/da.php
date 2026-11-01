@@ -452,9 +452,10 @@ return [
     'help.role.admin.desc' => 'Fuld adgang: opretter brugere, uploader/redigerer dokumenter, kvalitetshændelser og optegnelser, og kan godkende.',
     'help.role.editor.desc' => 'Kan oprette og uploade dokumenter, kvalitetshændelser og optegnelser, men kan ikke selv godkende.',
     'help.role.approver.desc' => 'Kan godkende eller afvise dokumentversioner, der er sendt til godkendelse.',
-    'help.role.user.desc' => 'Kan se, søge og downloade dokumenter, kvalitetshændelser og optegnelser, samt registrere nye kvalitetshændelser.',
+    'help.role.user.desc' => 'Kan se, søge og downloade de godkendte, gyldige dokumenter, samt se og registrere kvalitetshændelser og optegnelser. Dokumenter under udarbejdelse (kladde, til godkendelse) eller udgåede dokumenter vises kun for Redaktør, Godkender og Administrator.',
 
     'help.section.documents' => 'Sådan fungerer dokumentgodkendelse',
+    'help.documents.visibility' => 'Almindelige brugere ser kun dokumenter med status "Godkendt" — kladder, dokumenter til godkendelse og udgåede dokumenter vises ikke i dokumentlisten, kan ikke åbnes direkte, og kan ikke downloades. Det gælder også, når et dokument vælges som reference på en revision eller en sag. Redaktør, Godkender og Administrator ser alle statusser.',
     'help.documents.search' => 'Søgefeltet på dokumentoversigten opdaterer listen automatisk, et kort øjeblik efter du er stoppet med at skrive — du behøver ikke trykke "Søg" eller Enter. Søgningen slår op direkte i databasen (ikke kun i det, der allerede vises), så den virker lige godt uanset hvor mange dokumenter registret vokser til. Søgeordet vises stadig som et fjernbart filter-chip og indgår i sidens adresse, så et søgeresultat kan deles eller gemmes som bogmærke.',
     'help.documents.step1' => 'En Redaktør eller Administrator uploader en ny version og vælger en Godkender.',
     'help.documents.draft' => 'Ved oprettelse af et nyt dokument kan man i stedet vælge "Opret dokument" for at gemme det som kladde uden at sende det til godkendelse. En kladde kan opdateres senere via knappen "Opdater kladde" på dokumentsiden — her kan man valgfrit vedhæfte en opdateret fil og vælge en godkender i samme trin.',

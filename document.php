@@ -26,6 +26,17 @@ if (is_gqar($user) && (!$doc['is_configuration_item'] || $doc['status'] !== 'God
     exit;
 }
 
+// Almindelige brugere ser kun dokumenter i deres gyldige, godkendte form —
+// en kladde, en version til godkendelse eller et udgået dokument hører til
+// arbejdsgangen og er ikke noget en almindelig bruger skal forholde sig til.
+if (!is_gqar($user) && !can_view_all_document_statuses($user) && $doc['status'] !== 'Godkendt') {
+    http_response_code(403);
+    render_header(t('error.forbidden'));
+    echo '<div class="card">' . h(t('error.forbidden')) . '</div>';
+    render_footer();
+    exit;
+}
+
 $renameError = '';
 if ($user['role'] === 'admin' && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'rename') {
     $newTitle = trim($_POST['title'] ?? '');
