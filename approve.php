@@ -89,8 +89,12 @@ try {
         $stmt = $db->prepare("UPDATE document_versions SET status = 'Afvist', approved_by = ?, approved_at = NOW(), review_comment = ? WHERE id = ?");
         $stmt->execute([$user['id'], $reason, $versionId]);
 
-        $stmt = $db->prepare("UPDATE documents SET status = 'Kladde' WHERE id = ?");
-        $stmt->execute([$documentId]);
+        // Har dokumentet allerede en gyldig, tidligere godkendt version (current_version_id),
+        // falder det tilbage til "Godkendt" ved en afvisning — den godkendte version er
+        // stadig i kraft. Kun hvis dokumentet aldrig har været godkendt før, bliver det en kladde.
+        $fallbackStatus = $document['current_version_id'] ? 'Godkendt' : 'Kladde';
+        $stmt = $db->prepare('UPDATE documents SET status = ? WHERE id = ?');
+        $stmt->execute([$fallbackStatus, $documentId]);
 
         $action = 'Version afvist';
     }
