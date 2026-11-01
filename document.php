@@ -164,6 +164,17 @@ render_header($doc['title']);
     <p class="alert alert-success"><?= h(t('sendforapproval.msg.sent')) ?></p>
 <?php endif; ?>
 
+<?php $isSkeleton = $versions && $versions[0]['status'] === 'Kladde' && !$versions[0]['stored_filename']; ?>
+<?php if ($isSkeleton): ?>
+    <div class="alert alert-warning" style="display:flex; gap:12px; align-items:flex-start;">
+        <span>⚠</span>
+        <div>
+            <strong><?= h(t('doc.skeleton.title')) ?></strong>
+            <p style="margin:4px 0 0;"><?= h(t('doc.skeleton.intro')) ?></p>
+        </div>
+    </div>
+<?php endif; ?>
+
 <div class="card">
     <div class="doc-header">
         <div>
@@ -189,7 +200,10 @@ render_header($doc['title']);
             <?php endif; ?>
             <p class="muted"><?= h($doc['doc_number']) ?> &middot; <?= h(category_label($doc['category'])) ?><?= $doc['iso_clause'] ? ' &middot; ' . h($doc['iso_clause']) : '' ?></p>
         </div>
-        <span class="<?= status_badge_class($doc['status']) ?>"><?= h(status_label($doc['status'])) ?></span>
+        <span style="display:flex; align-items:center; gap:6px;">
+            <span class="<?= status_badge_class($doc['status']) ?>"><?= h(status_label($doc['status'])) ?></span>
+            <?php if ($isSkeleton): ?><span class="badge badge-neutral"><?= h(t('doc.skeleton.badge')) ?></span><?php endif; ?>
+        </span>
     </div>
 
     <div class="meta-grid">
@@ -207,6 +221,14 @@ render_header($doc['title']);
         <?php endif; ?>
     </div>
 
+    <?php if ($isSkeleton): ?>
+        <div style="border:1.5px dashed #d7a93e; border-radius:8px; padding:18px; margin-bottom:16px; background:#fffaf0; display:flex; flex-direction:column; align-items:center; gap:8px; text-align:center;">
+            <p style="margin:0; font-size:13.5px; color:#8a6a1e;"><?= h(t('doc.skeleton.no_file')) ?></p>
+            <?php if ($canEdit): ?>
+                <a class="button" href="send_for_approval.php?id=<?= (int)$doc['id'] ?>"><?= h(t('doc.skeleton.attach_file')) ?></a>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
     <div class="button-row">
         <?php if ($versions && $versions[0]['stored_filename']): ?>
             <a class="button" href="download.php?version_id=<?= (int)$versions[0]['id'] ?>"><?= h(t('doc.download_latest')) ?></a>
@@ -216,7 +238,7 @@ render_header($doc['title']);
         <?php endif; ?>
         <?php $isQualityPlan = $doc['category'] === 'Leverance-kvalitetsplan'; ?>
         <?php $isDraftReadyToSend = $doc['status'] === 'Kladde' && $versions && $versions[0]['status'] === 'Kladde'; ?>
-        <?php if ($canEdit && $isDraftReadyToSend): ?>
+        <?php if ($canEdit && $isDraftReadyToSend && !$isSkeleton): ?>
             <a class="button" href="send_for_approval.php?id=<?= (int)$doc['id'] ?>"><?= h(t('sendforapproval.action')) ?></a>
         <?php endif; ?>
         <?php if ($canEdit): ?>
@@ -318,6 +340,8 @@ render_header($doc['title']);
                     <?php endif; ?>
                 <?php elseif ($v['assigned_approver_name']): ?>
                     <p class="muted"><?= h(t('doc.awaiting_approval')) ?> <?= h($v['assigned_approver_name']) ?></p>
+                <?php elseif ($v['status'] === 'Kladde' && !$v['stored_filename']): ?>
+                    <p class="muted"><?= h(t('doc.skeleton.version_note')) ?></p>
                 <?php endif; ?>
             </div>
             <div class="timeline-actions">

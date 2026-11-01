@@ -32,7 +32,7 @@
             <td><?= h($doc['doc_number']) ?></td>
             <td><?= h(category_label($doc['category'])) ?></td>
             <td><?= h($doc['owner_name']) ?></td>
-            <td><span class="<?= status_badge_class($doc['status']) ?>"><?= h(status_label($doc['status'])) ?></span></td>
+            <td><span class="<?= status_badge_class($doc['status']) ?>"><?= h(status_label($doc['status'])) ?></span> <?php if ($doc['no_file']): ?><span class="badge badge-neutral"><?= h(t('doc.skeleton.badge')) ?></span><?php endif; ?></td>
             <td><?= format_date($doc['next_review_date']) ?></td>
         </tr>
     <?php endforeach; ?>

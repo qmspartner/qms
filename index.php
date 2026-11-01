@@ -26,7 +26,9 @@ if (!isset($sortColumns[$sortCol])) {
 }
 $sortDir = ($_GET['dir'] ?? 'asc') === 'desc' ? 'DESC' : 'ASC';
 
-$sql = 'SELECT d.*, u.name AS owner_name FROM documents d JOIN users u ON u.id = d.owner_id WHERE d.organization_id = ?';
+$sql = "SELECT d.*, u.name AS owner_name,
+    NOT EXISTS (SELECT 1 FROM document_versions v WHERE v.document_id = d.id AND v.stored_filename IS NOT NULL) AS no_file
+    FROM documents d JOIN users u ON u.id = d.owner_id WHERE d.organization_id = ?";
 $params = [$user['organization_id']];
 
 if ($search !== '') {

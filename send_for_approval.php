@@ -33,10 +33,14 @@ $stmt = $db->prepare("SELECT id, name FROM users WHERE organization_id = ? AND r
 $stmt->execute([$user['organization_id']]);
 $approvers = $stmt->fetchAll();
 
+// En "skal" (oprettet uden fil, fx via "Jeg har ikke filen klar endnu") har slet ingen fil at
+// beholde — her er det ikke valgfrit at vedhæfte en fil, det er den eneste måde at komme videre.
+$isSkeleton = !$version['stored_filename'];
+
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $approverId = (int) ($_POST['approver_id'] ?? 0);
-    $attachNewFile = isset($_POST['attach_new_file']);
+    $attachNewFile = $isSkeleton || isset($_POST['attach_new_file']);
     $file = $_FILES['file'] ?? null;
 
     $stmt = $db->prepare("SELECT id, name, email FROM users WHERE id = ? AND organization_id = ? AND role = 'approver' AND active = 1");
@@ -95,14 +99,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-render_header(t('sendforapproval.title', ['title' => $doc['title']]));
+render_header($isSkeleton ? t('sendforapproval.title_attach', ['title' => $doc['title']]) : t('sendforapproval.title', ['title' => $doc['title']]));
 ?>
-<p class="breadcrumb"><a href="document.php?id=<?= (int) $id ?>"><?= h($doc['title']) ?></a> &raquo; <?= h(t('sendforapproval.title', ['title' => $doc['title']])) ?></p>
+<p class="breadcrumb"><a href="document.php?id=<?= (int) $id ?>"><?= h($doc['title']) ?></a> &raquo; <?= h($isSkeleton ? t('sendforapproval.title_attach', ['title' => $doc['title']]) : t('sendforapproval.title', ['title' => $doc['title']])) ?></p>
 
 <div class="card login-card">
-    <h1><?= h(t('sendforapproval.title', ['title' => $doc['title']])) ?></h1>
+    <h1><?= h($isSkeleton ? t('sendforapproval.title_attach', ['title' => $doc['title']]) : t('sendforapproval.title', ['title' => $doc['title']])) ?></h1>
     <?php if ($error): ?><p class="alert alert-danger"><?= h($error) ?></p><?php endif; ?>
-    <p class="muted"><?= h(t('sendforapproval.intro')) ?></p>
+    <p class="muted"><?= h($isSkeleton ? t('sendforapproval.intro_attach') : t('sendforapproval.intro')) ?></p>
 
     <?php if (!$approvers): ?>
         <p class="alert alert-danger"><?= h(t('upload.no_approvers')) ?></p>
@@ -111,25 +115,32 @@ render_header(t('sendforapproval.title', ['title' => $doc['title']]));
     <?= csrf_field() ?>
             <input type="hidden" name="id" value="<?= (int) $id ?>">
 
-            <?php if ($version['stored_filename']): ?>
-                <div style="background: #fff; border: 1px solid #e3e5ea; border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; font-size: 13px;">
-                    <strong><?= h(t('sendforapproval.current_file')) ?></strong> <?= h($version['original_filename']) ?>
+            <?php if ($isSkeleton): ?>
+                <div class="field">
+                    <label><?= h(t('upload.field.file')) ?></label>
+                    <input type="file" name="file" required>
+                </div>
+            <?php else: ?>
+                <?php if ($version['stored_filename']): ?>
+                    <div style="background: #fff; border: 1px solid #e3e5ea; border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; font-size: 13px;">
+                        <strong><?= h(t('sendforapproval.current_file')) ?></strong> <?= h($version['original_filename']) ?>
+                    </div>
+                <?php endif; ?>
+
+                <label style="display:flex; align-items:flex-start; gap:10px; border:1px solid #d7dae0; border-radius:8px; padding:12px 14px; margin-bottom:14px; cursor:pointer; font-weight:400;">
+                    <input type="checkbox" name="attach_new_file" id="attach_new_file" value="1" style="width:auto; margin-top:2px;" onchange="document.getElementById('new-file-field').style.display = this.checked ? 'block' : 'none';">
+                    <span style="font-size:13.5px;">
+                        <strong><?= h(t('sendforapproval.field.attach_file')) ?></strong><br>
+                        <span class="muted" style="font-size:12px;"><?= h(t('sendforapproval.field.attach_file_help')) ?></span>
+                    </span>
+                </label>
+
+                <div id="new-file-field" style="display:none;">
+                    <label><?= h(t('upload.field.file')) ?>
+                        <input type="file" name="file">
+                    </label>
                 </div>
             <?php endif; ?>
-
-            <label style="display:flex; align-items:flex-start; gap:10px; border:1px solid #d7dae0; border-radius:8px; padding:12px 14px; margin-bottom:14px; cursor:pointer; font-weight:400;">
-                <input type="checkbox" name="attach_new_file" id="attach_new_file" value="1" style="width:auto; margin-top:2px;" onchange="document.getElementById('new-file-field').style.display = this.checked ? 'block' : 'none';">
-                <span style="font-size:13.5px;">
-                    <strong><?= h(t('sendforapproval.field.attach_file')) ?></strong><br>
-                    <span class="muted" style="font-size:12px;"><?= h(t('sendforapproval.field.attach_file_help')) ?></span>
-                </span>
-            </label>
-
-            <div id="new-file-field" style="display:none;">
-                <label><?= h(t('upload.field.file')) ?>
-                    <input type="file" name="file">
-                </label>
-            </div>
 
             <label><?= h(t('upload.field.approver')) ?>
                 <select name="approver_id" required>

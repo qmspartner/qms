@@ -43,10 +43,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $file = $_FILES['file'] ?? null;
 
+    // En "skal" er et nyt dokument uden fil endnu — kun metadata (titel, nummer, kategori).
+    // Filen vedhæftes senere, direkte på dokumentsiden (send_for_approval.php), hvor
+    // godkenderen også først vælges på det tidspunkt.
+    $isSkeletonCreate = !$existingDoc && isset($_POST['no_file_yet']);
+
     // "Opret dokument" (uden at sende til godkendelse) findes kun ved oprettelse af et helt nyt
     // dokument, aldrig ved upload af en ny version af et eksisterende. Kladder sendes til
-    // godkendelse senere, fra dokumentsiden (send_for_approval.php).
-    $isDraftCreate = !$existingDoc && (($_POST['save_mode'] ?? 'send') === 'draft');
+    // godkendelse senere, fra dokumentsiden (send_for_approval.php). En skal er altid en kladde.
+    $isDraftCreate = !$existingDoc && (($_POST['save_mode'] ?? 'send') === 'draft' || $isSkeletonCreate);
 
     // Bekræft at den valgte godkender rent faktisk er en aktiv godkender i samme organisation
     // — ikke nødvendigt når dokumentet blot gemmes som kladde.
@@ -133,17 +138,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = t('upload.error.revision_type_required');
     } elseif ($existingDoc && $existingDoc['is_configuration_item'] && $comment === '') {
         $error = t('upload.error.change_description_required');
-    } elseif (!$existingDoc && $currentTemplateDoc && !$useTemplateCopy && !$templateConfirmed) {
+    } elseif (!$isSkeletonCreate && !$existingDoc && $currentTemplateDoc && !$useTemplateCopy && !$templateConfirmed) {
         $error = t('upload.error.template_confirmation_required');
-    } elseif (!$useTemplateCopy && (!$file || $file['error'] !== UPLOAD_ERR_OK)) {
+    } elseif (!$isSkeletonCreate && !$useTemplateCopy && (!$file || $file['error'] !== UPLOAD_ERR_OK)) {
         $error = t('upload.error.choose_file');
-    } elseif (!$useTemplateCopy && $file['size'] > MAX_FILE_SIZE) {
+    } elseif (!$isSkeletonCreate && !$useTemplateCopy && $file['size'] > MAX_FILE_SIZE) {
         $error = t('upload.error.too_large');
     } else {
         $fileReady = false;
-        $originalFilename = '';
+        $storedName = null;
+        $originalFilename = null;
 
-        if ($useTemplateCopy) {
+        if ($isSkeletonCreate) {
+            // Ingen fil at behandle — det er hele pointen med en skal.
+            $fileReady = true;
+        } elseif ($useTemplateCopy) {
             $templatePath = UPLOAD_DIR . $currentTemplateDoc['stored_filename'];
             $templateExt = strtolower(pathinfo($currentTemplateDoc['original_filename'], PATHINFO_EXTENSION));
             $storedName = bin2hex(random_bytes(16)) . ($templateExt !== '' ? '.' . $templateExt : '');
@@ -264,6 +273,18 @@ $categories = list_active_values('document_category');
 
                 <div id="file-source-choice" style="display:none; margin-bottom:14px;"></div>
 
+                <label style="display:flex; align-items:flex-start; gap:10px; border:1.5px solid #ccc; border-radius:8px; padding:12px 14px; margin-bottom:14px; flex-direction:row; font-weight:400;">
+                    <input type="checkbox" name="no_file_yet" id="no_file_yet" value="1" style="width:auto; margin-top:2px;" onchange="updateSkeletonMode();">
+                    <span style="font-size:13.5px;">
+                        <strong><?= h(t('upload.field.no_file_yet')) ?></strong><br>
+                        <span class="muted" style="font-size:12px;"><?= h(t('upload.field.no_file_yet_help')) ?></span>
+                    </span>
+                </label>
+
+                <div id="skeleton-info-box" style="display:none; background:#fff8e8; border:1px solid #f0c75e; border-radius:8px; padding:14px 16px; margin-bottom:18px; font-size:13px; color:#6b4600; line-height:1.5;">
+                    <?= h(t('upload.field.no_file_yet_notice')) ?>
+                </div>
+
                 <label style="display:flex; align-items:flex-start; gap:10px; background:#eef4ff; border:1px solid #c3d6fb; border-radius:8px; padding:12px 14px; margin-bottom:14px; flex-direction:row; font-weight:400;">
                     <input type="checkbox" name="is_template" id="is_template" value="1" style="width:auto; margin-top:2px;" onchange="updateIdFields();">
                     <span style="font-size:13.5px;">
@@ -280,6 +301,7 @@ $categories = list_active_values('document_category');
                     </span>
                 </label>
 
+                <div id="imported-section">
                 <label style="display:flex; align-items:center; gap:8px; flex-direction:row;">
                     <input type="checkbox" name="is_imported" id="is_imported" value="1" style="width:auto;" onchange="updateIdFields();">
                     <?= h(t('upload.field.is_imported')) ?>
@@ -292,6 +314,7 @@ $categories = list_active_values('document_category');
                     <label><?= h(t('upload.field.version')) ?>
                         <input type="text" name="version_number" id="version_input" placeholder="fx 1.0">
                     </label>
+                </div>
                 </div>
 
                 <div id="structured-id-field" style="display:none;">
@@ -349,6 +372,7 @@ $categories = list_active_values('document_category');
                 </div>
             <?php endif; ?>
 
+            <div id="approver-field">
             <label><?= h(t('upload.field.approver')) ?><?php if (!$existingDoc): ?> <span class="muted" style="font-weight:400;">(<?= h(t('upload.field.approver_optional_hint')) ?>)</span><?php endif; ?>
                 <select name="approver_id" id="approver_select" <?= $existingDoc ? 'required' : '' ?>>
                     <option value=""><?= h(t('upload.field.approver_choose')) ?></option>
@@ -357,6 +381,7 @@ $categories = list_active_values('document_category');
                     <?php endforeach; ?>
                 </select>
             </label>
+            </div>
             <?php $isConfigUpdate = $existingDoc && $existingDoc['is_configuration_item']; ?>
             <label><?= h($isConfigUpdate ? t('upload.field.comment_config') : t('upload.field.comment')) ?>
                 <textarea name="comment" rows="3" <?= $isConfigUpdate ? 'required' : '' ?>></textarea>
@@ -370,8 +395,8 @@ $categories = list_active_values('document_category');
                 <?php if ($existingDoc): ?>
                     <button type="submit" name="save_mode" value="send"><?= h(t('upload.submit')) ?></button>
                 <?php else: ?>
-                    <button type="submit" name="save_mode" value="draft" class="button-secondary" onclick="document.getElementById('approver_select').required = false;"><?= h(t('upload.submit_draft')) ?></button>
-                    <button type="submit" name="save_mode" value="send" onclick="document.getElementById('approver_select').required = true;"><?= h(t('upload.submit_new_and_send')) ?></button>
+                    <button type="submit" name="save_mode" value="draft" class="button-secondary" id="draft-submit-btn" onclick="document.getElementById('approver_select').required = false;"><?= h(t('upload.submit_draft')) ?></button>
+                    <button type="submit" name="save_mode" value="send" id="send-submit-btn" onclick="document.getElementById('approver_select').required = true;"><?= h(t('upload.submit_new_and_send')) ?></button>
                 <?php endif; ?>
             </div>
         </form>
@@ -381,6 +406,21 @@ $categories = list_active_values('document_category');
 <script>
 const categoryPrefixes = <?= json_encode(document_category_prefixes_map()) ?>;
 const templateInfo = <?= json_encode(document_category_template_info_map()) ?>;
+const draftSubmitLabel = <?= json_encode(t('upload.submit_draft')) ?>;
+const skeletonSubmitLabel = <?= json_encode(t('upload.submit_skeleton')) ?>;
+
+function updateSkeletonMode() {
+    const skeleton = document.getElementById('no_file_yet').checked;
+    if (skeleton) {
+        document.getElementById('is_imported').checked = false;
+    }
+    document.getElementById('skeleton-info-box').style.display = skeleton ? 'block' : 'none';
+    document.getElementById('imported-section').style.display = skeleton ? 'none' : '';
+    document.getElementById('approver-field').style.display = skeleton ? 'none' : '';
+    document.getElementById('send-submit-btn').style.display = skeleton ? 'none' : '';
+    document.getElementById('draft-submit-btn').textContent = skeleton ? skeletonSubmitLabel : draftSubmitLabel;
+    updateIdFields();
+}
 
 function updateIdFields() {
     const imported = document.getElementById('is_imported').checked;
@@ -407,6 +447,15 @@ function updateTemplateNudge() {
     const category = document.getElementById('category-select').value;
     const box = document.getElementById('file-source-choice');
     const fileField = document.getElementById('file-field');
+
+    if (document.getElementById('no_file_yet').checked) {
+        box.style.display = 'none';
+        box.innerHTML = '';
+        fileField.style.display = 'none';
+        fileField.querySelector('input[type="file"]').required = false;
+        return;
+    }
+
     const info = templateInfo[category];
 
     if (!info) {
