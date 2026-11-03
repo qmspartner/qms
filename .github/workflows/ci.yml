@@ -1,0 +1,49 @@
+name: CI
+
+# Kører automatisk det, der hidtil har været en manuel rutine før hver levering
+# (se "Validering før enhver levering" i CLAUDE.md): php -l på alle filer,
+# sprog-parity mellem da.php/en.php, og den lille test-suite i tests/. Rører
+# aldrig den levende server eller database — kører udelukkende på GitHubs
+# egne maskiner, mod koden i dette repo.
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sæt PHP op
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+
+      - name: php -l på alle PHP-filer
+        run: |
+          status=0
+          while IFS= read -r -d '' file; do
+            if ! php -l "$file" > /tmp/lint_output 2>&1; then
+              cat /tmp/lint_output
+              status=1
+            fi
+          done < <(find . -name '*.php' -not -path './.git/*' -print0)
+          exit $status
+
+      - name: Sprog-parity (da.php / en.php)
+        run: |
+          php -r '
+          $da = include "includes/lang/da.php";
+          $en = include "includes/lang/en.php";
+          echo "da: " . count($da) . ", en: " . count($en) . "\n";
+          $onlyDa = array_diff(array_keys($da), array_keys($en));
+          $onlyEn = array_diff(array_keys($en), array_keys($da));
+          if ($onlyDa) { echo "Kun i da.php:\n"; print_r($onlyDa); }
+          if ($onlyEn) { echo "Kun i en.php:\n"; print_r($onlyEn); }
+          if ($onlyDa || $onlyEn) { exit(1); }
+          '
+
+      - name: Test-suite
+        run: php tests/run_tests.php

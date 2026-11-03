@@ -50,9 +50,48 @@ skulle genopfinde dem.
    print_r(array_diff(array_keys($en), array_keys($da)));
    '
    ```
-3. **`help.php` opdateres proaktivt**, hver gang en ny funktion eller en
+3. `php tests/run_tests.php` — den (endnu begrænsede) test-suite for de rene,
+   DB-fri rettigheds-/synlighedsfunktioner. Se "Tests og CI" nedenfor.
+4. **`help.php` opdateres proaktivt**, hver gang en ny funktion eller en
    større ændring bygges — uden at skulle bedes om det. Både dansk og
    engelsk tekst (`help.*`-nøgler i begge sprogfiler).
+
+Alle tre af punkt 1-3 køres også automatisk af GitHub Actions på hvert push
+(`.github/workflows/ci.yml`) — se "Tests og CI" nedenfor. Det er stadig god
+praksis at køre dem lokalt før en levering, så eventuelle fejl opdages før
+der leveres en zip, ikke bagefter.
+
+## Tests og CI
+
+- **`tests/run_tests.php`**: en lille, afhængighedsfri test-runner (almindeligt
+  PHP, ingen PHPUnit, ingen databaseforbindelse). Dækker i dag de rene
+  rettigheds-/synlighedsfunktioner i `includes/functions.php`
+  (`document_visibility_sql()`, `document_is_visible()`,
+  `can_view_all_document_statuses()`, `can_approve_documents()`, `is_gqar()`,
+  `user_has_contract()`, `contract_in_clause()`). Udvides med flere test-filer
+  i `tests/`, efterhånden som flere rene (ikke-DB-afhængige) funktioner får
+  dækning — funktioner der selv slår op i databasen (som `has_permission()`
+  for ikke-admin-roller) kræver et test-skema og er bevidst ikke dækket endnu.
+  Køres med `php tests/run_tests.php`.
+- **`.github/workflows/ci.yml`**: kører automatisk på hvert push/PR til
+  GitHub — `php -l` på alle filer, sprog-parity-tjekket, og test-suiten.
+  Rører aldrig den levende server eller database; kører udelukkende på
+  GitHubs egne maskiner mod koden i repoet. Dette er ikke en erstatning for
+  at køre validering lokalt før en levering, men et sikkerhedsnet, der også
+  fanger regressioner hvis koden redigeres et andet sted end i en
+  Claude-session.
+
+## Migrationer
+
+- Alle skemaændringer udover `schema.sql` ligger nummereret i `migrations/`
+  (`NNN_kort_beskrivelse.sql`), i den orden de skal køres i — se
+  `migrations/README.md` for den fulde konvention. Der er ingen automatisk
+  runner; Lennart kører hver fil manuelt i phpMyAdmin, som hidtil, og SQL
+  vises altid også som ren tekst i chat-svaret (se ovenfor).
+- En `schema_migrations`-tabel (oprettet af `migrations/010_...sql`) holder
+  styr på hvilke migrationsfiler der faktisk er kørt på den konkrete
+  database. Hver ny migrationsfil skal slutte med en
+  `INSERT INTO schema_migrations (filename) VALUES ('NNN_...sql');`-linje.
 
 ## Arkitektur
 
