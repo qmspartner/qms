@@ -14,8 +14,14 @@
  */
 
 $_SESSION = [];
+// Normalt sat af config.php, som denne test-runner ikke loader (ingen database, ingen
+// grund til resten af config.php's opsætning) — case_stats() bruger den i sin SQL.
+if (!defined('EFFECTIVENESS_DUE_SOON_DAYS')) {
+    define('EFFECTIVENESS_DUE_SOON_DAYS', 60);
+}
 require_once __DIR__ . '/../includes/functions.php';
 require_once __DIR__ . '/../includes/documents.php';
+require_once __DIR__ . '/../includes/cases.php';
 require_once __DIR__ . '/fake_pdo.php';
 
 $passed = 0;
@@ -190,6 +196,70 @@ $db->rowsToReturn = [['id' => 3]];
 assert_equal(3, document_validate_link($db, $user, 3), 'document_validate_link() returnerer id\'et når dokumentet findes og er synligt');
 $db->rowsToReturn = [];
 assert_equal(null, document_validate_link($db, $user, 3), 'document_validate_link() returnerer null når intet matcher (ikke synligt/ikke fundet)');
+
+// --- includes/cases.php: sags-repository (via FakePdo) ------------------------
+
+// case_visibility_sql() / case_is_visible() — sager har ingen "almindelig bruger
+// ser mindre"-regel, kun GQAR-begrænsningen.
+[$sql, $params] = case_visibility_sql($admin);
+assert_equal('', $sql, 'case_visibility_sql() giver admin fuld adgang');
+
+[$sql, $params] = case_visibility_sql($user);
+assert_equal('', $sql, 'case_visibility_sql() giver også en almindelig bruger fuld adgang (ingen caseregel for user-rollen)');
+
+[$sql, $params] = case_visibility_sql($gqarWithContract);
+assert_equal(" AND c.requires_customer_notification = 1 AND c.contract_reference IN (?)", $sql, 'case_visibility_sql() begrænser gqar til kundenotifikations-sager på egen kontrakt');
+assert_equal(['K-1001'], $params, 'case_visibility_sql() binder gqars kontraktreferencer');
+
+$notifiedCase = ['requires_customer_notification' => 1, 'contract_reference' => 'K-1001'];
+$internalCase = ['requires_customer_notification' => 0, 'contract_reference' => null];
+
+assert_true(case_is_visible($user, $internalCase), 'en almindelig bruger ser en intern sag (ingen caseregel for user-rollen)');
+assert_true(case_is_visible($gqarWithContract, $notifiedCase), 'gqar ser en kundenotifikations-sag på egen kontrakt');
+assert_true(!case_is_visible($gqarWithContract, $internalCase), 'gqar ser ikke en intern sag uden kundenotifikation');
+assert_true(!case_is_visible($gqarNoContract, $notifiedCase), 'gqar uden den konkrete kontrakt ser ikke sagen, selv med kundenotifikation');
+
+// case_find() — bygger den forventede SQL og binder [id, organization_id].
+$db->rowsToReturn = [['id' => 12, 'requires_customer_notification' => 0]];
+$case = case_find($db, 12, 1);
+assert_true(str_contains($db->lastStatement->sql, 'c.id = ? AND c.organization_id = ?'), 'case_find() filtrerer på id og organisation');
+assert_equal([12, 1], $db->lastStatement->boundParams, 'case_find() binder [id, organization_id] i den rækkefølge');
+assert_equal(12, $case['id'] ?? null, 'case_find() returnerer den fundne række');
+
+$db->rowsToReturn = [];
+assert_equal(null, case_find($db, 999, 1), 'case_find() returnerer null når intet findes');
+
+// case_list() — tjekker filtre, synlighed og udelukkelsen af "Opfølgningspunkt".
+$db->rowsToReturn = [['id' => 1], ['id' => 2]];
+case_list($db, $gqarWithContract, [
+    'types' => ['Afvigelse'],
+    'severities' => ['Høj', 'Mellem'],
+    'statuses' => ['Registreret'],
+    'supplierId' => 9,
+    'sortColumn' => 'c.due_date',
+    'sortDirection' => 'ASC',
+]);
+$sql = $db->lastStatement->sql;
+$params = $db->lastStatement->boundParams;
+assert_true(str_contains($sql, "c.type != 'Opfølgningspunkt'"), 'case_list() udelukker altid Opfølgningspunkt-typen');
+assert_true(str_contains($sql, 'c.type IN (?)'), 'case_list() tilføjer type-filter');
+assert_true(str_contains($sql, 'c.severity IN (?,?)'), 'case_list() tilføjer sværhedsgrad-filter med korrekt antal pladsholdere');
+assert_true(str_contains($sql, 'c.status IN (?)'), 'case_list() tilføjer status-filter');
+assert_true(str_contains($sql, 'c.supplier_id = ?'), 'case_list() tilføjer leverandør-filter');
+assert_true(str_contains($sql, 'c.requires_customer_notification = 1'), 'case_list() anvender gqar-synlighedsregel');
+assert_true(str_contains($sql, 'ORDER BY c.due_date ASC'), 'case_list() sorterer efter den angivne kolonne/retning');
+assert_equal([1, 'Afvigelse', 'Høj', 'Mellem', 'Registreret', 9, 'K-1001'], $params, 'case_list() binder parametre i forventet rækkefølge: org, type, sværhedsgrader, status, leverandør, gqar-kontrakt');
+
+case_list($db, $user, []);
+$sql = $db->lastStatement->sql;
+assert_true(!str_contains($sql, 'requires_customer_notification'), 'case_list() uden filtre/gqar tilføjer intet synligheds-fragment for en almindelig bruger');
+
+// case_stats() — ren opslags-SQL, ingen filtre at teste udover organisationsbinding.
+$db->rowsToReturn = [['open_count' => 3]];
+$caseStats = case_stats($db, 1);
+assert_equal([1], $db->lastStatement->boundParams, 'case_stats() binder kun organization_id');
+assert_true(str_contains($db->lastStatement->sql, "type != 'Opfølgningspunkt'"), 'case_stats() udelukker Opfølgningspunkt-typen ligesom case_list()');
+assert_equal(3, $caseStats['open_count'] ?? null, 'case_stats() returnerer den hentede række');
 
 // --- Resultat ------------------------------------------------------------------
 

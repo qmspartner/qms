@@ -181,6 +181,15 @@ forespørgsel).
   (document_versions JOIN documents) og `home.php`s dashboard-statistik er
   bevidst IKKE flyttet herind — de har en anden form (version-centreret,
   hhv. et andet sæt tal pr. rolle) og passer ikke ind i de samme funktioner.
+- **`includes/cases.php`** er det andet modul: et sags-repository for
+  `cases`, der kapsler de forespørgsler der var genskrevet i `cases.php` og
+  `case.php`: `case_find()`, `case_list()`, `case_stats()`, samt den
+  centrale GQAR-synlighedsregel `case_visibility_sql()`/`case_is_visible()`
+  (sager har ingen "almindelig bruger ser mindre"-regel — kun GQAR er
+  begrænset, til sager med `requires_customer_notification = 1` inden for
+  egen kontrakt). `home.php`s og `contract_overview.php`s statistik bruger
+  samme grundregel i en anden forespørgselsform og er bevidst IKKE flyttet
+  herind, af samme grund som `document_stats()`/`home.php` ovenfor.
 - Nye moduler følger samme mønster: en fil `includes/<modul>.php`, der
   requirer `includes/functions.php` selv (så den er selvstændig), og
   almindelige funktioner — ikke klasser, for at matche resten af kodebasens

@@ -1,27 +1,13 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/cases.php';
 
 $user = require_permission_allow_gqar('cases');
 $db = get_db();
 
 $id = (int) ($_GET['id'] ?? 0);
-
-$stmt = $db->prepare('
-    SELECT c.*, r.name AS reported_by_name, a.name AS assigned_to_name, d.title AS linked_document_title, d.doc_number AS linked_document_number,
-           au.title AS linked_audit_title, sup.name AS linked_supplier_name, cust.name AS customer_name, sr.title AS source_record_title, sr.type AS source_record_type
-    FROM cases c
-    JOIN users r ON r.id = c.reported_by
-    LEFT JOIN users a ON a.id = c.assigned_to
-    LEFT JOIN documents d ON d.id = c.linked_document_id
-    LEFT JOIN audits au ON au.id = c.audit_id
-    LEFT JOIN suppliers sup ON sup.id = c.supplier_id
-    LEFT JOIN customers cust ON cust.id = c.customer_id
-    LEFT JOIN records sr ON sr.id = c.source_record_id
-    WHERE c.id = ? AND c.organization_id = ?
-');
-$stmt->execute([$id, $user['organization_id']]);
-$case = $stmt->fetch();
+$case = case_find($db, $id, $user['organization_id']);
 
 if (!$case) {
     http_response_code(404);
@@ -31,7 +17,9 @@ if (!$case) {
     exit;
 }
 
-if (is_gqar($user) && (!$case['requires_customer_notification'] || !user_has_contract($user, $case['contract_reference']))) {
+// Central synlighedsregel (GQAR-kontraktbegrænsning / fuld adgang for andre roller) —
+// se case_is_visible() i includes/cases.php, det ene sted reglen er defineret.
+if (!case_is_visible($user, $case)) {
     http_response_code(403);
     render_header(t('error.forbidden'));
     echo '<div class="card">' . h(t('error.forbidden')) . '</div>';

@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/cases.php';
 require_once __DIR__ . '/includes/tasks.php';
 
 $user = require_permission_allow_gqar('cases');
@@ -25,60 +26,20 @@ if (!isset($sortColumns[$sortCol])) {
 }
 $sortDir = ($_GET['dir'] ?? 'desc') === 'asc' ? 'ASC' : 'DESC';
 
-$sql = "
-    SELECT c.*, r.name AS reported_by_name, a.name AS assigned_to_name
-    FROM cases c
-    JOIN users r ON r.id = c.reported_by
-    LEFT JOIN users a ON a.id = c.assigned_to
-    WHERE c.organization_id = ? AND c.type != 'Opfølgningspunkt'
-";
-$params = [$user['organization_id']];
-
-if ($selectedTypes) {
-    $sql .= ' AND c.type IN (' . implode(',', array_fill(0, count($selectedTypes), '?')) . ')';
-    $params = array_merge($params, $selectedTypes);
-}
-if ($selectedSeverities) {
-    $sql .= ' AND c.severity IN (' . implode(',', array_fill(0, count($selectedSeverities), '?')) . ')';
-    $params = array_merge($params, $selectedSeverities);
-}
-if ($selectedStatuses) {
-    $sql .= ' AND c.status IN (' . implode(',', array_fill(0, count($selectedStatuses), '?')) . ')';
-    $params = array_merge($params, $selectedStatuses);
-}
+// Sagslisten og -statistikken hentes via det centrale sags-repository
+// (includes/cases.php) i stedet for at bygge SQL direkte her — se den fil for den
+// fulde forklaring og den centrale GQAR-synlighedsregel (case_visibility_sql()).
 $filterSupplierId = (int) ($_GET['supplier_id'] ?? 0);
-if ($filterSupplierId) {
-    $sql .= ' AND c.supplier_id = ?';
-    $params[] = $filterSupplierId;
-}
-if (is_gqar($user)) {
-    [$clause, $clauseParams] = contract_in_clause('c.contract_reference', $user['gqar_contract_references']);
-    $sql .= " AND c.requires_customer_notification = 1 AND {$clause}";
-    $params = array_merge($params, $clauseParams);
-}
-$sql .= ' ORDER BY ' . $sortColumns[$sortCol] . ' ' . $sortDir;
+$cases = case_list($db, $user, [
+    'types' => $selectedTypes,
+    'severities' => $selectedSeverities,
+    'statuses' => $selectedStatuses,
+    'supplierId' => $filterSupplierId,
+    'sortColumn' => $sortColumns[$sortCol],
+    'sortDirection' => $sortDir,
+]);
 
-$stmt = $db->prepare($sql);
-$stmt->execute($params);
-$cases = $stmt->fetchAll();
-
-$stmt = $db->prepare("
-    SELECT
-        SUM(status != 'Lukket') AS open_count,
-        SUM(type = 'Afvigelse') AS deviation_count,
-        SUM(type = 'Forslag') AS suggestion_count,
-        SUM(due_date IS NOT NULL AND due_date < CURDATE() AND status != 'Lukket') AS overdue_count,
-        SUM(requires_customer_notification = 1 AND status != 'Lukket') AS notification_count,
-        SUM(type = 'Kundeklage' AND status != 'Lukket') AS complaint_count,
-        SUM(type = 'Mistænkt forfalsket del' AND status != 'Lukket') AS counterfeit_count,
-        SUM(type = 'Leverandør reklamation' AND status != 'Lukket') AS supplier_complaint_count,
-        SUM(status = 'Lukket' AND corrective_action IS NOT NULL AND corrective_action != '' AND effectiveness_result IS NULL AND effectiveness_review_due IS NULL) AS effectiveness_pending_date_count,
-        SUM(status = 'Lukket' AND corrective_action IS NOT NULL AND corrective_action != '' AND effectiveness_result IS NULL AND effectiveness_review_due IS NOT NULL AND effectiveness_review_due <= CURDATE() + INTERVAL " . EFFECTIVENESS_DUE_SOON_DAYS . " DAY) AS effectiveness_due_count
-    FROM cases
-    WHERE organization_id = ? AND type != 'Opfølgningspunkt'
-");
-$stmt->execute([$user['organization_id']]);
-$stats = $stmt->fetch();
+$stats = case_stats($db, $user['organization_id']);
 
 $types = ['Afvigelse', 'Forslag', 'Observation', 'Audit fund', 'Kundeklage', 'Mistænkt forfalsket del', 'Leverandør reklamation'];
 $severities = ['Høj', 'Mellem', 'Lav'];
