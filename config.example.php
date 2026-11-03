@@ -1,5 +1,9 @@
 <?php
 
+// Dette er en SKABELON. Kopiér filen til "config.php" (som ikke committes til Git,
+// se .gitignore) og udfyld dine egne værdier dernede. Se CLAUDE.md for baggrunden —
+// den rigtige config.php må aldrig committes, da den indeholder databasens adgangskode.
+
 // Fejl i produktion må aldrig vises til brugeren (kan lække filstier, SQL og lignende).
 // De logges i stedet til webhotellets normale PHP-fejllog.
 ini_set('display_errors', '0');
@@ -19,9 +23,9 @@ if (!$isHttps && php_sapi_name() !== 'cli') {
 
 // Udfyld disse med oplysningerne fra dit webhotels kontrolpanel (cPanel -> MySQL databases).
 define('DB_HOST', 'localhost');
-define('DB_NAME', 'qmspartner_DB1');
-define('DB_USER', 'qmspartner_admin');
-define('DB_PASS', 'Aqua1165QMS');
+define('DB_NAME', 'sæt-dit-eget-databasenavn-her');
+define('DB_USER', 'sæt-dit-eget-databasebrugernavn-her');
+define('DB_PASS', 'sæt-dit-eget-password-her');
 
 // Mappe hvor uploadede dokumenter gemmes (skal have skriverettigheder, fx chmod 755/775).
 define('UPLOAD_DIR', __DIR__ . '/uploads/');
@@ -31,7 +35,7 @@ define('ALLOWED_EXTENSIONS', ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'jpg', 'jpeg'
 
 // Maks. filstørrelse i bytes (10 MB).
 define('MAX_FILE_SIZE', 10 * 1024 * 1024);
-define('MAIL_FROM', 'noreply@qmspartner.dk'); define('SITE_URL', 'https://qmspartner.dk/qms');
+define('MAIL_FROM', 'noreply@dit-domæne.dk'); define('SITE_URL', 'https://dit-domæne.dk/qms');
 date_default_timezone_set('Europe/Copenhagen');
 
 // Antal dage før udløb en kvalifikation/kompetence regnes som "udløber snart" (samme

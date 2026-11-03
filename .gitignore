@@ -1,3 +1,7 @@
 uploads/*
 !uploads/.gitkeep
 !uploads/.htaccess
+
+# Indeholder databasens adgangskode og andre miljøspecifikke værdier — committes aldrig.
+# Kopiér config.example.php til config.php og udfyld dine egne værdier.
+config.php

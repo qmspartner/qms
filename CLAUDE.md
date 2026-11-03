@@ -23,6 +23,12 @@ skulle genopfinde dem.
   ikke kun i en leveret fil — Lennart kører dem manuelt i phpMyAdmin, og
   fil-links er ikke altid praktiske for ham. Dette gælder både
   skema-migrationer og engangs-data-reparationsscripts.
+- **`config.php` committes ALDRIG** — den indeholder databasens rigtige
+  adgangskode og er derfor i `.gitignore`. Skabelonen ligger i
+  `config.example.php` (committet, med pladsholder-værdier). Den rigtige
+  `config.php` findes kun direkte på serveren (og i en sessions lokale
+  klon, hvis den er nødvendig til udvikling/test her) — den leveres aldrig
+  til Lennart og ændres aldrig via en leveret zip-fil.
 - **GitHub:** `github.com/qmspartner/qms` (privat). Push med
   `git push origin master:main` (lokal branch hedder `master`, remote
   default er `main`). Commit-beskeder afslutter med en attributionsfodnote
