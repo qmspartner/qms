@@ -538,6 +538,44 @@ function can_view_all_document_statuses(array $user): bool {
     return in_array($user['role'], ['admin', 'editor', 'approver'], true);
 }
 
+/**
+ * Hvilke dokumenter må $user se, udtrykt som et SQL-fragment der kan lægges til en
+ * forespørgsels WHERE-klausul (starter med " AND ..." eller er en tom streng for fuld
+ * adgang), plus de ekstra bind-parametre fragmentet kræver (GQAR's kontraktliste).
+ * Dette er det ENE sted, der afgør dokumentsynlighed i lister/dropdowns — alle
+ * forespørgsler, der henter flere dokumenter på én gang, skal bruge denne i stedet
+ * for selv at genskrive reglen.
+ */
+function document_visibility_sql(array $user, string $alias = 'd'): array {
+    if (is_gqar($user)) {
+        [$clause, $params] = contract_in_clause("{$alias}.baseline_reference", $user['gqar_contract_references']);
+        return [" AND {$alias}.is_configuration_item = 1 AND {$alias}.status = 'Godkendt' AND {$clause}", $params];
+    }
+    if (can_view_all_document_statuses($user)) {
+        return ['', []];
+    }
+    return [" AND {$alias}.status = 'Godkendt'", []];
+}
+
+/**
+ * Samme regel som document_visibility_sql(), men for ét allerede hentet dokument —
+ * brugt når man tjekker adgang til en enkelt side (dokumentside, download) i stedet
+ * for at filtrere en liste. $doc skal mindst indeholde status, is_configuration_item
+ * og baseline_reference (for dokumentets egen status — se kaldestedets kommentar i
+ * download.php, hvor felterne er omdøbt pga. en navnekollision med versionens status).
+ */
+function document_is_visible(array $user, array $doc): bool {
+    if (is_gqar($user)) {
+        return (bool) ($doc['is_configuration_item'] ?? false)
+            && ($doc['status'] ?? null) === 'Godkendt'
+            && user_has_contract($user, $doc['baseline_reference'] ?? null);
+    }
+    if (can_view_all_document_statuses($user)) {
+        return true;
+    }
+    return ($doc['status'] ?? null) === 'Godkendt';
+}
+
 function can_manage_cases(array $user): bool {
     return has_permission($user, 'cases', 'edit');
 }

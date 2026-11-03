@@ -44,14 +44,12 @@ if ($selectedStatuses) {
     $sql .= ' AND d.status IN (' . implode(',', array_fill(0, count($selectedStatuses), '?')) . ')';
     $params = array_merge($params, $selectedStatuses);
 }
-if (is_gqar($user)) {
-    [$clause, $clauseParams] = contract_in_clause('d.baseline_reference', $user['gqar_contract_references']);
-    $sql .= " AND d.is_configuration_item = 1 AND d.status = 'Godkendt' AND {$clause}";
-    $params = array_merge($params, $clauseParams);
-} elseif (!can_view_all_document_statuses($user)) {
-    // Almindelige brugere ser kun den gyldige, godkendte version af dokumentregistret.
-    $sql .= " AND d.status = 'Godkendt'";
-}
+// Central synlighedsregel (GQAR-kontraktbegrænsning / kun-godkendt for almindelige
+// brugere / fuld adgang for admin/editor/approver) — se document_visibility_sql()
+// i includes/functions.php, det ene sted reglen er defineret.
+[$visibilityClause, $visibilityParams] = document_visibility_sql($user);
+$sql .= $visibilityClause;
+$params = array_merge($params, $visibilityParams);
 if (!$showTemplates) {
     $sql .= ' AND d.is_template = 0';
 }

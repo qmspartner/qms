@@ -18,18 +18,10 @@ if (!$doc) {
     exit;
 }
 
-if (is_gqar($user) && (!$doc['is_configuration_item'] || $doc['status'] !== 'Godkendt' || !user_has_contract($user, $doc['baseline_reference']))) {
-    http_response_code(403);
-    render_header(t('error.forbidden'));
-    echo '<div class="card">' . h(t('error.forbidden')) . '</div>';
-    render_footer();
-    exit;
-}
-
-// Almindelige brugere ser kun dokumenter i deres gyldige, godkendte form —
-// en kladde, en version til godkendelse eller et udgået dokument hører til
-// arbejdsgangen og er ikke noget en almindelig bruger skal forholde sig til.
-if (!is_gqar($user) && !can_view_all_document_statuses($user) && $doc['status'] !== 'Godkendt') {
+// Central synlighedsregel (GQAR-kontraktbegrænsning / kun-godkendt for almindelige
+// brugere / fuld adgang for admin/editor/approver) — se document_is_visible() i
+// includes/functions.php, det ene sted reglen er defineret.
+if (!document_is_visible($user, $doc)) {
     http_response_code(403);
     render_header(t('error.forbidden'));
     echo '<div class="card">' . h(t('error.forbidden')) . '</div>';

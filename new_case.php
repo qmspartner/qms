@@ -82,11 +82,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$error) {
         $linkedDocId = null;
         if ($linkedDocumentId) {
-            $checkSql = 'SELECT id FROM documents WHERE id = ? AND organization_id = ?';
-            $checkParams = [$linkedDocumentId, $user['organization_id']];
-            if (!can_view_all_document_statuses($user)) {
-                $checkSql .= " AND status = 'Godkendt'";
-            }
+            [$visibilityClause, $visibilityParams] = document_visibility_sql($user, 'documents');
+            $checkSql = 'SELECT id FROM documents WHERE id = ? AND organization_id = ?' . $visibilityClause;
+            $checkParams = array_merge([$linkedDocumentId, $user['organization_id']], $visibilityParams);
             $stmt = $db->prepare($checkSql);
             $stmt->execute($checkParams);
             if ($stmt->fetch()) {
@@ -152,12 +150,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$docSql = 'SELECT id, title, doc_number FROM documents WHERE organization_id = ?';
-$docParams = [$user['organization_id']];
-if (!can_view_all_document_statuses($user)) {
-    $docSql .= " AND status = 'Godkendt'";
-}
-$docSql .= ' ORDER BY title';
+[$visibilityClause, $visibilityParams] = document_visibility_sql($user, 'documents');
+$docSql = 'SELECT id, title, doc_number FROM documents WHERE organization_id = ?' . $visibilityClause . ' ORDER BY title';
+$docParams = array_merge([$user['organization_id']], $visibilityParams);
 $stmt = $db->prepare($docSql);
 $stmt->execute($docParams);
 $documents = $stmt->fetchAll();

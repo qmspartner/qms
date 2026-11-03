@@ -21,14 +21,17 @@ if (!$version) {
     exit('Filen blev ikke fundet.');
 }
 
-// Samme adgangsregler som dokumentsiden: en direkte fil-URL må ikke kunne
-// omgå dem. GQAR må kun hente godkendte konfigurationsstyrede dokumenter
-// inden for egen kontrakt; almindelige brugere må kun hente godkendte filer.
-if (is_gqar($user) && (!$version['is_configuration_item'] || $version['document_status'] !== 'Godkendt' || !user_has_contract($user, $version['baseline_reference']))) {
-    http_response_code(403);
-    exit(t('error.forbidden'));
-}
-if (!is_gqar($user) && !can_view_all_document_statuses($user) && $version['document_status'] !== 'Godkendt') {
+// Samme centrale synlighedsregel som dokumentsiden (document_is_visible() i
+// includes/functions.php) — en direkte fil-URL må ikke kunne omgå den. $version
+// har dokumentets status under et andet navn (document_status), fordi v.* allerede
+// bringer versionens EGEN status med som 'status' — byg derfor et lille
+// dokument-formet array til funktionen i stedet for at genbruge $version direkte.
+$docForVisibility = [
+    'status' => $version['document_status'],
+    'is_configuration_item' => $version['is_configuration_item'],
+    'baseline_reference' => $version['baseline_reference'],
+];
+if (!document_is_visible($user, $docForVisibility)) {
     http_response_code(403);
     exit(t('error.forbidden'));
 }
