@@ -15,6 +15,8 @@
 
 $_SESSION = [];
 require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/documents.php';
+require_once __DIR__ . '/fake_pdo.php';
 
 $passed = 0;
 $failed = 0;
@@ -127,6 +129,67 @@ assert_true(!document_is_visible($gqarNoContract, $approvedDoc), 'gqar uden den 
 
 // Felter, der helt mangler i $doc, må aldrig give en PHP-fejl eller falsk "synlig".
 assert_true(!document_is_visible($user, []), 'et tomt dokument-array behandles som ikke-synligt, ikke som en fejl');
+
+// --- includes/documents.php: dokument-repository (via FakePdo, se fake_pdo.php) ----
+
+$db = new FakePdo();
+
+// document_find() — bygger den forventede SQL og binder [id, organization_id].
+$db->rowsToReturn = [['id' => 7, 'status' => 'Godkendt', 'owner_name' => 'Test']];
+$doc = document_find($db, 7, 1);
+assert_true(str_contains($db->lastStatement->sql, 'd.id = ? AND d.organization_id = ?'), 'document_find() filtrerer på id og organisation');
+assert_equal([7, 1], $db->lastStatement->boundParams, 'document_find() binder [id, organization_id] i den rækkefølge');
+assert_equal(7, $doc['id'] ?? null, 'document_find() returnerer den fundne række');
+
+$db->rowsToReturn = [];
+assert_equal(null, document_find($db, 999, 1), 'document_find() returnerer null når intet findes');
+
+// document_list() — tjekker at hvert filter sætter sit forventede SQL-fragment og
+// binder parametrene i den rækkefølge koden bygger dem (søgning, kategori, status,
+// synlighed, skabelon, sortering).
+$db->rowsToReturn = [['id' => 1], ['id' => 2]];
+document_list($db, $user, [
+    'search' => 'kvalitet',
+    'categories' => ['Politik', 'Procedure'],
+    'statuses' => ['Godkendt'],
+    'showTemplates' => false,
+    'sortColumn' => 'd.title',
+    'sortDirection' => 'DESC',
+]);
+$sql = $db->lastStatement->sql;
+$params = $db->lastStatement->boundParams;
+assert_true(str_contains($sql, 'd.title LIKE ? OR d.doc_number LIKE ?'), 'document_list() tilføjer søgefilter når search er sat');
+assert_true(str_contains($sql, 'd.category IN (?,?)'), 'document_list() tilføjer kategori-filter med korrekt antal pladsholdere');
+assert_true(str_contains($sql, "d.status IN (?)"), 'document_list() tilføjer status-filter');
+assert_true(str_contains($sql, "d.status = 'Godkendt'"), 'document_list() anvender den centrale synlighedsregel for en almindelig bruger');
+assert_true(str_contains($sql, 'd.is_template = 0'), 'document_list() udelukker skabeloner når showTemplates er falsk');
+assert_true(str_contains($sql, 'ORDER BY d.title DESC'), 'document_list() sorterer efter den angivne kolonne/retning');
+assert_equal([1, '%kvalitet%', '%kvalitet%', 'Politik', 'Procedure', 'Godkendt'], $params, 'document_list() binder parametre i forventet rækkefølge: org, søgning x2, kategorier, statusser');
+
+document_list($db, $admin, ['showTemplates' => true]);
+$sql = $db->lastStatement->sql;
+assert_true(!str_contains($sql, 'is_template = 0'), 'document_list() lader skabeloner blive med når showTemplates er sand');
+assert_true(!str_contains($sql, "status = 'Godkendt'"), 'document_list() giver admin fuld adgang uden synligheds-filter');
+
+// document_stats() — ren opslags-SQL, ingen filtre at teste udover organisationsbinding.
+$db->rowsToReturn = [['active' => 5, 'pending' => 2, 'expiring' => 1]];
+$stats = document_stats($db, 1);
+assert_equal([1], $db->lastStatement->boundParams, 'document_stats() binder kun organization_id');
+assert_equal(5, $stats['active'] ?? null, 'document_stats() returnerer den hentede række');
+
+// document_list_for_linking() — samme synlighedsregel som document_list(), men uden
+// kategori/status/søgning, og med 'documents' som alias (intet join i den forespørgsel).
+$db->rowsToReturn = [['id' => 3, 'title' => 'Indkøbspolitik']];
+document_list_for_linking($db, $user);
+assert_true(str_contains($db->lastStatement->sql, "documents.status = 'Godkendt'"), 'document_list_for_linking() bruger synlighedsregel med documents-alias (intet join)');
+
+// document_validate_link() — skal afvise id 0 uden overhovedet at spørge databasen,
+// og ellers slå op med samme synlighedsregel.
+assert_equal(null, document_validate_link($db, $user, 0), 'document_validate_link() afviser id 0 uden databaseopslag');
+$db->rowsToReturn = [['id' => 3]];
+assert_equal(3, document_validate_link($db, $user, 3), 'document_validate_link() returnerer id\'et når dokumentet findes og er synligt');
+$db->rowsToReturn = [];
+assert_equal(null, document_validate_link($db, $user, 3), 'document_validate_link() returnerer null når intet matcher (ikke synligt/ikke fundet)');
 
 // --- Resultat ------------------------------------------------------------------
 

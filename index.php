@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/documents.php';
 require_once __DIR__ . '/includes/tasks.php';
 
 $user = require_permission_allow_gqar('documents');
@@ -26,50 +27,20 @@ if (!isset($sortColumns[$sortCol])) {
 }
 $sortDir = ($_GET['dir'] ?? 'asc') === 'desc' ? 'DESC' : 'ASC';
 
-$sql = "SELECT d.*, u.name AS owner_name,
-    NOT EXISTS (SELECT 1 FROM document_versions v WHERE v.document_id = d.id AND v.stored_filename IS NOT NULL) AS no_file
-    FROM documents d JOIN users u ON u.id = d.owner_id WHERE d.organization_id = ?";
-$params = [$user['organization_id']];
-
-if ($search !== '') {
-    $sql .= ' AND (d.title LIKE ? OR d.doc_number LIKE ?)';
-    $params[] = "%$search%";
-    $params[] = "%$search%";
-}
-if ($selectedCategories) {
-    $sql .= ' AND d.category IN (' . implode(',', array_fill(0, count($selectedCategories), '?')) . ')';
-    $params = array_merge($params, $selectedCategories);
-}
-if ($selectedStatuses) {
-    $sql .= ' AND d.status IN (' . implode(',', array_fill(0, count($selectedStatuses), '?')) . ')';
-    $params = array_merge($params, $selectedStatuses);
-}
-// Central synlighedsregel (GQAR-kontraktbegrænsning / kun-godkendt for almindelige
-// brugere / fuld adgang for admin/editor/approver) — se document_visibility_sql()
-// i includes/functions.php, det ene sted reglen er defineret.
-[$visibilityClause, $visibilityParams] = document_visibility_sql($user);
-$sql .= $visibilityClause;
-$params = array_merge($params, $visibilityParams);
-if (!$showTemplates) {
-    $sql .= ' AND d.is_template = 0';
-}
-$sql .= ' ORDER BY ' . $sortColumns[$sortCol] . ' ' . $sortDir;
-
-$stmt = $db->prepare($sql);
-$stmt->execute($params);
-$documents = $stmt->fetchAll();
+// Dokumentlisten og -statistikken hentes via det centrale dokument-repository
+// (includes/documents.php) i stedet for at bygge SQL direkte her — se den fil for
+// den fulde forklaring og den centrale synlighedsregel (document_visibility_sql()).
+$documents = document_list($db, $user, [
+    'search' => $search,
+    'categories' => $selectedCategories,
+    'statuses' => $selectedStatuses,
+    'showTemplates' => $showTemplates,
+    'sortColumn' => $sortColumns[$sortCol],
+    'sortDirection' => $sortDir,
+]);
 
 $canSeeWorkflowStats = can_view_all_document_statuses($user) && !is_gqar($user);
-$stmt = $db->prepare("
-    SELECT
-        SUM(status = 'Godkendt') AS active,
-        SUM(status = 'Til godkendelse') AS pending,
-        SUM(next_review_date IS NOT NULL AND next_review_date <= CURDATE() + INTERVAL 60 DAY) AS expiring
-    FROM documents
-    WHERE organization_id = ?
-");
-$stmt->execute([$user['organization_id']]);
-$stats = $stmt->fetch();
+$stats = document_stats($db, $user['organization_id']);
 
 $categories = list_active_values('document_category');
 // Almindelige brugere kan kun filtrere på den ene status, de overhovedet kan se.

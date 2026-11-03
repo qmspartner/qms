@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/documents.php';
 
 $user = require_permission('audits', 'create');
 $db = get_db();
@@ -24,17 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($auditType === 'Eksternt' && $contractReference === '') {
         $error = t('newaudit.error.contract_reference_required');
     } else {
-        $linkedDocId = null;
-        if ($linkedDocumentId) {
-            [$visibilityClause, $visibilityParams] = document_visibility_sql($user, 'documents');
-            $checkSql = 'SELECT id FROM documents WHERE id = ? AND organization_id = ?' . $visibilityClause;
-            $checkParams = array_merge([$linkedDocumentId, $user['organization_id']], $visibilityParams);
-            $stmt = $db->prepare($checkSql);
-            $stmt->execute($checkParams);
-            if ($stmt->fetch()) {
-                $linkedDocId = $linkedDocumentId;
-            }
-        }
+        $linkedDocId = document_validate_link($db, $user, $linkedDocumentId);
 
         $stmt = $db->prepare('
             INSERT INTO audits (organization_id, title, auditor_id, planned_date, linked_document_id, created_by, audit_type, contract_reference)
@@ -54,12 +45,7 @@ $stmt = $db->prepare("SELECT id, name FROM users WHERE organization_id = ? AND a
 $stmt->execute([$user['organization_id']]);
 $orgUsers = $stmt->fetchAll();
 
-[$visibilityClause, $visibilityParams] = document_visibility_sql($user, 'documents');
-$docSql = 'SELECT id, title, doc_number FROM documents WHERE organization_id = ?' . $visibilityClause . ' ORDER BY title';
-$docParams = array_merge([$user['organization_id']], $visibilityParams);
-$stmt = $db->prepare($docSql);
-$stmt->execute($docParams);
-$documents = $stmt->fetchAll();
+$documents = document_list_for_linking($db, $user);
 
 render_header(t('newaudit.title'));
 ?>

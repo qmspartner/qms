@@ -1,14 +1,13 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/documents.php';
 
 $user = require_permission_allow_gqar('documents');
 $db = get_db();
 
 $id = (int) ($_GET['id'] ?? 0);
-$stmt = $db->prepare('SELECT d.*, u.name AS owner_name FROM documents d JOIN users u ON u.id = d.owner_id WHERE d.id = ? AND d.organization_id = ?');
-$stmt->execute([$id, $user['organization_id']]);
-$doc = $stmt->fetch();
+$doc = document_find($db, $id, $user['organization_id']);
 
 if (!$doc) {
     http_response_code(404);

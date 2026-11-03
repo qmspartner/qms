@@ -163,6 +163,34 @@ der leveres en zip, ikke bagefter.
   den opretter ikke en ny række, for at undgå at ophobe flere
   "Kladde"-rækker pr. dokument ved gentagne redigeringer.
 
+## Data-/servicelag — modul for modul
+
+Systemets ældre kode har al forretningslogik, databaseadgang og præsentation
+smeltet sammen i hver enkelt scriptfil (se arkitekturproblem #1 fra
+softwarearkitektur-gennemgangen i Claudes hukommelse). Det rettes IKKE i ét
+stort ryk, men modul for modul — et modul flyttes kun til sit eget lag, når
+der er en konkret anledning (typisk at flere filer allerede genskriver samme
+forespørgsel).
+
+- **`includes/documents.php`** er det første modul: et dokument-repository
+  der kapsler de forespørgsler mod `documents`, der ellers var genskrevet i
+  `index.php`, `document.php`, `new_audit.php` og `new_case.php`:
+  `document_find()`, `document_list()`, `document_stats()`,
+  `document_list_for_linking()`, `document_validate_link()`. Scriptfilerne
+  kalder disse i stedet for selv at bygge SQL. `download.php`s forespørgsel
+  (document_versions JOIN documents) og `home.php`s dashboard-statistik er
+  bevidst IKKE flyttet herind — de har en anden form (version-centreret,
+  hhv. et andet sæt tal pr. rolle) og passer ikke ind i de samme funktioner.
+- Nye moduler følger samme mønster: en fil `includes/<modul>.php`, der
+  requirer `includes/functions.php` selv (så den er selvstændig), og
+  almindelige funktioner — ikke klasser, for at matche resten af kodebasens
+  stil.
+- Når et moduls logik flyttes, udvides `tests/run_tests.php` (eller en ny
+  fil i `tests/`) med dækning af det, der flyttes — se `tests/fake_pdo.php`
+  for hvordan repository-funktioner, der tager en `PDO`, testes uden en
+  rigtig database (en simpel stub, der husker den byggede SQL og de bundne
+  parametre, i stedet for at udføre dem).
+
 ## Standard-hjælpefunktioner (`includes/functions.php` m.fl.)
 
 `t($key, $vars=[])` / `h()` (htmlspecialchars) / `csrf_field()` /

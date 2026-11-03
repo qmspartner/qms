@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/documents.php';
 
 $user = require_permission('cases', 'create');
 $db = get_db();
@@ -80,17 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$error) {
-        $linkedDocId = null;
-        if ($linkedDocumentId) {
-            [$visibilityClause, $visibilityParams] = document_visibility_sql($user, 'documents');
-            $checkSql = 'SELECT id FROM documents WHERE id = ? AND organization_id = ?' . $visibilityClause;
-            $checkParams = array_merge([$linkedDocumentId, $user['organization_id']], $visibilityParams);
-            $stmt = $db->prepare($checkSql);
-            $stmt->execute($checkParams);
-            if ($stmt->fetch()) {
-                $linkedDocId = $linkedDocumentId;
-            }
-        }
+        $linkedDocId = document_validate_link($db, $user, $linkedDocumentId);
 
         $linkedSupplierIdValid = null;
         if ($linkedSupplierId) {
@@ -150,12 +141,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-[$visibilityClause, $visibilityParams] = document_visibility_sql($user, 'documents');
-$docSql = 'SELECT id, title, doc_number FROM documents WHERE organization_id = ?' . $visibilityClause . ' ORDER BY title';
-$docParams = array_merge([$user['organization_id']], $visibilityParams);
-$stmt = $db->prepare($docSql);
-$stmt->execute($docParams);
-$documents = $stmt->fetchAll();
+$documents = document_list_for_linking($db, $user);
 
 $stmt = $db->prepare('SELECT id, name FROM suppliers WHERE organization_id = ? ORDER BY name');
 $stmt->execute([$user['organization_id']]);
