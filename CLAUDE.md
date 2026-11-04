@@ -266,20 +266,20 @@ forespørgsel).
   `quality_objective_measurement_add()`, `quality_objective_all_period_ends()`.
   Modulet har desuden et sæt RENE, DB-fri periode-/påmindelsesfunktioner
   (`quality_objective_period_step()`, `quality_objective_period_ends_until()`,
-  `quality_objective_next_due_period()`) — brugt begge steder en kommende
-  måling skal opdages: live i `includes/tasks.php` (opgaveoversigten) og i det
-  daglige cron-job `send_quality_objective_reminders.php` (sender selve
-  e-mailen). Ny rolle, `ledelse` (Ledelse): kun den (og Administrator) har som
-  udgangspunkt adgang til modulet `quality_objectives` i rettighedsgitteret —
-  se `seed_default_permissions()`s særtilfælde for netop dette modul. Målets
+  `quality_objective_next_due_period()`), i dag kun brugt af
+  `includes/tasks.php` (live, ved hvert sidevisning) til opgaven på "Mine
+  opgaver" — der er BEVIDST ingen e-mail-påmindelse/cron-job for
+  kvalitetsmål (fravalgt af Lennart; var oprindeligt bygget som
+  `send_quality_objective_reminders.php` + `notify_quality_objective_reminder()`,
+  fjernet igen sammen med kolonnen `last_reminder_sent_period_end`, se
+  `migrations/012_fjern_kvalitetsmaal_reminder_kolonne.sql`). Ny rolle,
+  `ledelse` (Ledelse): kun den (og Administrator) har som udgangspunkt
+  adgang til modulet `quality_objectives` i rettighedsgitteret — se
+  `seed_default_permissions()`s særtilfælde for netop dette modul. Målets
   egen EJER har desuden adgang til sit eget mål uden at have modul-adgang
   (samme `can_manage_X`-mønster som `can_manage_employee()`), til at
   indberette målinger og sætte sin egen påmindelsesfrist
   (`can_manage_quality_objective()` i `includes/functions.php`).
-  **Ny driftsafhængighed:** reminder-mekanismen kræver at Lennart selv
-  opretter et dagligt cPanel Cron Job, der kører
-  `php /home/qmspartner/public_html/qms/send_quality_objective_reminders.php`
-  — dette kan ikke sættes op via kode/git, kun manuelt i cPanel.
 - Nye moduler følger samme mønster: en fil `includes/<modul>.php`, der
   requirer `includes/functions.php` selv (så den er selvstændig), og
   almindelige funktioner — ikke klasser, for at matche resten af kodebasens

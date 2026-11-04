@@ -9,13 +9,12 @@
  * (require_permission(), ingen GQAR-adgang, samme som udstyr/leverandører/kunder).
  *
  * De rene periode-/påmindelsesfunktioner nederst (quality_objective_period_ends_until(),
- * quality_objective_next_due_period()) tager ingen PDO og er brugt begge steder en
- * kommende måling skal opdages: i includes/tasks.php (live, ved hvert sidevisning) og i
- * send_quality_objective_reminders.php (et dagligt cron-job, der sender selve
- * e-mailen — se migrations/README.md og CLAUDE.md for hvordan det sættes op på
- * webhotellet). quality_objective_next_due_period() tager selv højde for
- * påmindelsesfristen (den leder kun efter perioder op til $asOf + reminder_lead_days),
- * så "returnerer en periode" OG "perioden er inden for påmindelsesvinduet" er samme ting.
+ * quality_objective_next_due_period()) tager ingen PDO. De bruges i dag kun af
+ * includes/tasks.php (live, ved hvert sidevisning, til opgaven på "Mine opgaver") —
+ * der er bevidst INGEN e-mail-påmindelse/cron-job for kvalitetsmål, kun opgaven.
+ * quality_objective_next_due_period() tager selv højde for påmindelsesfristen (den
+ * leder kun efter perioder op til $asOf + reminder_lead_days), så "returnerer en
+ * periode" OG "perioden er inden for påmindelsesvinduet" er samme ting.
  */
 
 require_once __DIR__ . '/functions.php';
