@@ -832,18 +832,21 @@ function can_manage_competence(array $user): bool {
     return $user['role'] === 'admin';
 }
 
+/**
+ * Admin har altid adgang; medarbejderens egen nærmeste leder har adgang til netop
+ * denne ene medarbejder, uden at få generel adgang til employees.php. Generel regel,
+ * ikke kun til offboarding (tidligere navn var can_manage_employee_offboarding) —
+ * bruges også til at afgøre om en leder kan se/redigere sin medarbejders
+ * kvalifikationsstatus (employee_qualification.php) og hente dens dokumentation
+ * (download_qualification_evidence.php).
+ */
+function can_manage_employee(array $user, array $employee): bool {
+    return $user['role'] === 'admin' || (int) $user['id'] === (int) ($employee['manager_user_id'] ?? 0);
+}
+
 // =====================================================================
 // Fratrædelse / offboarding — medarbejdere uden login og systembrugere
 // =====================================================================
-
-/**
- * Admin har altid adgang; medarbejderens egen nærmeste leder har adgang til
- * netop denne ene medarbejders fratrædelses-gennemgang, uden at få generel
- * adgang til employees.php.
- */
-function can_manage_employee_offboarding(array $user, array $employee): bool {
-    return $user['role'] === 'admin' || (int) $user['id'] === (int) ($employee['manager_user_id'] ?? 0);
-}
 
 /**
  * Åbne punkter for en medarbejder uden login: kvalifikationer der er udløbet

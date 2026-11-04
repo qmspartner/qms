@@ -24,6 +24,7 @@ require_once __DIR__ . '/../includes/documents.php';
 require_once __DIR__ . '/../includes/cases.php';
 require_once __DIR__ . '/../includes/audits.php';
 require_once __DIR__ . '/../includes/suppliers.php';
+require_once __DIR__ . '/../includes/employees.php';
 require_once __DIR__ . '/fake_pdo.php';
 
 $passed = 0;
@@ -366,6 +367,31 @@ $db->rowsToReturn = [['total' => 12, 'due_soon' => 3]];
 $supplierStats = supplier_stats($db, 1);
 assert_equal([1], $db->lastStatement->boundParams, 'supplier_stats() binder kun organization_id');
 assert_equal(12, $supplierStats['total'] ?? null, 'supplier_stats() returnerer den hentede række');
+
+// --- can_manage_employee(): admin eller denne medarbejders nærmeste leder ------
+// (omdøbt fra can_manage_employee_offboarding() — nu brugt af fratrædelse OG
+// kompetencesider, se includes/employees.php)
+
+$managerUser = test_user('user', ['id' => 42]);
+$otherUser = test_user('user', ['id' => 99]);
+$employeeOfManager = ['manager_user_id' => 42];
+$employeeOfSomeoneElse = ['manager_user_id' => 7];
+
+assert_true(can_manage_employee($admin, $employeeOfSomeoneElse), 'admin kan altid tilgå en medarbejder, uanset leder');
+assert_true(can_manage_employee($managerUser, $employeeOfManager), 'en bruger kan tilgå sin egen medarbejders data');
+assert_true(!can_manage_employee($otherUser, $employeeOfManager), 'en bruger kan ikke tilgå en medarbejder der ikke er deres egen');
+assert_true(!can_manage_employee($managerUser, ['manager_user_id' => null]), 'en medarbejder uden leder kan ikke tilgås af en almindelig bruger');
+
+// --- includes/employees.php: medarbejder-repository (via FakePdo) -------------
+
+$db->rowsToReturn = [['id' => 10, 'name' => 'Test Testesen']];
+$employee = employee_find($db, 10, 1);
+assert_true(str_contains($db->lastStatement->sql, 'id = ? AND organization_id = ?'), 'employee_find() filtrerer på id og organisation');
+assert_equal([10, 1], $db->lastStatement->boundParams, 'employee_find() binder [id, organization_id] i den rækkefølge');
+assert_equal(10, $employee['id'] ?? null, 'employee_find() returnerer den fundne række');
+
+$db->rowsToReturn = [];
+assert_equal(null, employee_find($db, 999, 1), 'employee_find() returnerer null når intet findes');
 
 // --- Resultat ------------------------------------------------------------------
 

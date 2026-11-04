@@ -20,8 +20,11 @@ if (!$assignment || !$assignment['stored_filename']) {
     exit('Filen blev ikke fundet.');
 }
 
-$isManager = (int) ($assignment['manager_user_id'] ?? 0) === (int) $user['id'];
-if ($user['role'] !== 'admin' && !$isManager) {
+// Central regel: admin eller denne medarbejders nærmeste leder — se
+// can_manage_employee() i includes/functions.php. $assignment har kun
+// manager_user_id med (fra joinet med employees), ikke et fuldt medarbejder-array,
+// så vi bygger et minimalt array der opfylder det funktionen kigger på.
+if (!can_manage_employee($user, ['manager_user_id' => $assignment['manager_user_id']])) {
     http_response_code(403);
     exit(t('error.forbidden'));
 }

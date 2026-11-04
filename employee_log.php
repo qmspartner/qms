@@ -1,14 +1,13 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/employees.php';
 
 $user = require_login();
 $db = get_db();
 
 $id = (int) ($_GET['id'] ?? 0);
-$stmt = $db->prepare('SELECT * FROM employees WHERE id = ? AND organization_id = ?');
-$stmt->execute([$id, $user['organization_id']]);
-$employee = $stmt->fetch();
+$employee = employee_find($db, $id, $user['organization_id']);
 
 if (!$employee) {
     http_response_code(404);
@@ -18,7 +17,7 @@ if (!$employee) {
     exit;
 }
 
-if (!can_manage_employee_offboarding($user, $employee)) {
+if (!can_manage_employee($user, $employee)) {
     http_response_code(403);
     render_header(t('error.forbidden'));
     echo '<div class="card">' . h(t('error.forbidden')) . '</div>';

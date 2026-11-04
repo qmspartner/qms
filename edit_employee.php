@@ -1,14 +1,13 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/employees.php';
 
 $user = require_role(['admin']);
 $db = get_db();
 
 $id = (int) ($_GET['id'] ?? 0);
-$stmt = $db->prepare('SELECT * FROM employees WHERE id = ? AND organization_id = ?');
-$stmt->execute([$id, $user['organization_id']]);
-$employee = $stmt->fetch();
+$employee = employee_find($db, $id, $user['organization_id']);
 
 if (!$employee) {
     http_response_code(404);

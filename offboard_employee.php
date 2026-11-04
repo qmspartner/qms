@@ -23,7 +23,7 @@ if (!$employee) {
     exit;
 }
 
-if (!can_manage_employee_offboarding($user, $employee)) {
+if (!can_manage_employee($user, $employee)) {
     http_response_code(403);
     render_header(t('error.forbidden'));
     echo '<div class="card">' . h(t('error.forbidden')) . '</div>';

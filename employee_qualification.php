@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/employees.php';
 
 $user = require_login();
 $db = get_db();
@@ -8,9 +9,7 @@ $db = get_db();
 $employeeId = (int) ($_GET['employee_id'] ?? $_POST['employee_id'] ?? 0);
 $qualificationId = (int) ($_GET['qualification_id'] ?? $_POST['qualification_id'] ?? 0);
 
-$stmt = $db->prepare('SELECT * FROM employees WHERE id = ? AND organization_id = ?');
-$stmt->execute([$employeeId, $user['organization_id']]);
-$employee = $stmt->fetch();
+$employee = employee_find($db, $employeeId, $user['organization_id']);
 
 $stmt = $db->prepare('SELECT * FROM qualifications WHERE id = ? AND organization_id = ?');
 $stmt->execute([$qualificationId, $user['organization_id']]);
@@ -26,9 +25,11 @@ if (!$employee || !$qualification) {
 
 // Admin har fuld adgang. En medarbejders nærmeste leder må se status for sin egen
 // medarbejders kvalifikation (fra "Mine opgaver"), men kan ikke redigere eller slette.
+// can_manage_employee() i includes/functions.php er den centrale "admin eller denne
+// medarbejders nærmeste leder"-regel — samme regel som fratrædelse og bevis-download
+// (download_qualification_evidence.php) bruger.
 $canEdit = $user['role'] === 'admin';
-$isManager = (int) ($employee['manager_user_id'] ?? 0) === (int) $user['id'];
-if (!$canEdit && !$isManager) {
+if (!can_manage_employee($user, $employee)) {
     http_response_code(403);
     render_header(t('error.forbidden'));
     echo '<div class="card">' . h(t('error.forbidden')) . '</div>';

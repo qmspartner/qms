@@ -209,6 +209,26 @@ forespørgsel).
   `delete_supplier.php`, `includes/functions.php`) er bevidst IKKE flyttet
   herind — de forekommer hver kun ét sted, så der er ingen duplikering at
   rydde op på.
+- **`includes/employees.php`** er det femte modul: et medarbejder-
+  repository (`employee_find()`). Bemærk navnet — ved at kigge på
+  "kompetencer" viste det sig at den egentlige duplikering ikke lå i selve
+  kvalifikations-forespørgslerne (kompetencematricen, "Mine
+  opgaver"-panelet og dashboard-statistikken henter hver sit specifikke
+  udsnit af `employee_qualifications`, ikke den samme forespørgsel igen og
+  igen, og er bevidst IKKE flyttet til noget modul), men i ét identisk
+  `SELECT * FROM employees WHERE id = ? AND organization_id = ?`-opslag,
+  skrevet tre gange (`employee_log.php`, `employee_qualification.php`,
+  `edit_employee.php`). Samtidig blev en reel navngivningsfejl fundet og
+  rettet: `can_manage_employee_offboarding($user, $employee)` i
+  `includes/functions.php` ("admin eller denne medarbejders nærmeste
+  leder") er omdøbt til `can_manage_employee()`, fordi den IKKE kun bruges
+  til fratrædelse (`offboard_employee.php`, `employee_log.php`) — den
+  samme regel var samtidig genskrevet to gange til under andre navne i
+  `employee_qualification.php` og `download_qualification_evidence.php`.
+  Den er bevidst IKKE flyttet til `includes/employees.php`, fordi den
+  bruges tværs over moduler (kompetencer og fratrædelse) og derfor hører
+  til det generelle rettighedslag i `functions.php`, samme sted som
+  `is_gqar()` m.fl.
 - Nye moduler følger samme mønster: en fil `includes/<modul>.php`, der
   requirer `includes/functions.php` selv (så den er selvstændig), og
   almindelige funktioner — ikke klasser, for at matche resten af kodebasens
