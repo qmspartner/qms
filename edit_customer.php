@@ -1,14 +1,13 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/customers.php';
 
 $user = require_permission('customers', 'edit');
 $db = get_db();
 
 $id = (int) ($_GET['id'] ?? $_POST['id'] ?? 0);
-$stmt = $db->prepare('SELECT * FROM customers WHERE id = ? AND organization_id = ?');
-$stmt->execute([$id, $user['organization_id']]);
-$customer = $stmt->fetch();
+$customer = customer_find($db, $id, $user['organization_id']);
 
 if (!$customer) {
     http_response_code(404);

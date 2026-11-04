@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/customers.php';
 
 $user = require_permission('customers', 'view');
 $db = get_db();
@@ -12,13 +13,14 @@ if (!isset($sortColumns[$sortCol])) {
 }
 $sortDir = ($_GET['dir'] ?? 'asc') === 'desc' ? 'DESC' : 'ASC';
 
-$stmt = $db->prepare('SELECT * FROM customers WHERE organization_id = ? ORDER BY ' . $sortColumns[$sortCol] . ' ' . $sortDir);
-$stmt->execute([$user['organization_id']]);
-$customers = $stmt->fetchAll();
+// Kundelisten og -statistikken hentes via det centrale kunde-repository
+// (includes/customers.php) i stedet for at bygge SQL direkte her.
+$customers = customer_list($db, $user, [
+    'sortColumn' => $sortColumns[$sortCol],
+    'sortDirection' => $sortDir,
+]);
 
-$stmt = $db->prepare('SELECT COUNT(*) AS total FROM customers WHERE organization_id = ?');
-$stmt->execute([$user['organization_id']]);
-$stats = $stmt->fetch();
+$stats = customer_stats($db, $user['organization_id']);
 
 render_header(t('customers.title'));
 ?>

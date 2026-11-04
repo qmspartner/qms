@@ -229,6 +229,14 @@ forespørgsel).
   bruges tværs over moduler (kompetencer og fratrædelse) og derfor hører
   til det generelle rettighedslag i `functions.php`, samme sted som
   `is_gqar()` m.fl.
+- **`includes/customers.php`** er det sjette modul: et kunde-repository
+  (`customer_find()`, `customer_list()`, `customer_stats()`). Som
+  leverandører har kunder ingen GQAR-synlighedsregel. Duplikeringen her
+  var mindre end i de andre moduler (kun `edit_customer.php` genskrev
+  `customer_find()`s forespørgsel ordret), men modulet følger samme
+  mønster som de øvrige for konsistens. Dropdown-/eksistens-tjekket i
+  `new_case.php`/`delete_customer.php` og den fulde CSV-eksport i
+  `export_customers_csv.php` er bevidst IKKE flyttet herind.
 - Nye moduler følger samme mønster: en fil `includes/<modul>.php`, der
   requirer `includes/functions.php` selv (så den er selvstændig), og
   almindelige funktioner — ikke klasser, for at matche resten af kodebasens

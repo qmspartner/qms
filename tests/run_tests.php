@@ -25,6 +25,7 @@ require_once __DIR__ . '/../includes/cases.php';
 require_once __DIR__ . '/../includes/audits.php';
 require_once __DIR__ . '/../includes/suppliers.php';
 require_once __DIR__ . '/../includes/employees.php';
+require_once __DIR__ . '/../includes/customers.php';
 require_once __DIR__ . '/fake_pdo.php';
 
 $passed = 0;
@@ -392,6 +393,30 @@ assert_equal(10, $employee['id'] ?? null, 'employee_find() returnerer den fundne
 
 $db->rowsToReturn = [];
 assert_equal(null, employee_find($db, 999, 1), 'employee_find() returnerer null når intet findes');
+
+// --- includes/customers.php: kunde-repository (via FakePdo) -------------------
+
+$db->rowsToReturn = [['id' => 6, 'name' => 'Kunde A/S']];
+$customer = customer_find($db, 6, 1);
+assert_true(str_contains($db->lastStatement->sql, 'id = ? AND organization_id = ?'), 'customer_find() filtrerer på id og organisation');
+assert_equal([6, 1], $db->lastStatement->boundParams, 'customer_find() binder [id, organization_id] i den rækkefølge');
+assert_equal(6, $customer['id'] ?? null, 'customer_find() returnerer den fundne række');
+
+$db->rowsToReturn = [];
+assert_equal(null, customer_find($db, 999, 1), 'customer_find() returnerer null når intet findes');
+
+$db->rowsToReturn = [['id' => 1]];
+customer_list($db, $user, ['sortColumn' => 'contact_person', 'sortDirection' => 'DESC']);
+assert_true(str_contains($db->lastStatement->sql, 'ORDER BY contact_person DESC'), 'customer_list() sorterer efter den angivne kolonne/retning');
+assert_equal([1], $db->lastStatement->boundParams, 'customer_list() binder kun organization_id (ingen filtre findes i dag)');
+
+customer_list($db, $user, []);
+assert_true(str_contains($db->lastStatement->sql, 'ORDER BY name ASC'), 'customer_list() falder tilbage til name/ASC uden filtre');
+
+$db->rowsToReturn = [['total' => 8]];
+$customerStats = customer_stats($db, 1);
+assert_equal([1], $db->lastStatement->boundParams, 'customer_stats() binder kun organization_id');
+assert_equal(8, $customerStats['total'] ?? null, 'customer_stats() returnerer den hentede række');
 
 // --- Resultat ------------------------------------------------------------------
 
