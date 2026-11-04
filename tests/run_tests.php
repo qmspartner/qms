@@ -23,6 +23,7 @@ require_once __DIR__ . '/../includes/functions.php';
 require_once __DIR__ . '/../includes/documents.php';
 require_once __DIR__ . '/../includes/cases.php';
 require_once __DIR__ . '/../includes/audits.php';
+require_once __DIR__ . '/../includes/suppliers.php';
 require_once __DIR__ . '/fake_pdo.php';
 
 $passed = 0;
@@ -326,6 +327,45 @@ assert_equal([1], $db->statements[1]->boundParams, 'audit_stats() binder kun org
 assert_equal(4, $auditStats['planned_this_year'] ?? null, 'audit_stats() returnerer planned_this_year fra audits-forespørgslen');
 assert_equal(2, $auditStats['open_findings'] ?? null, 'audit_stats() returnerer open_findings fra cases-forespørgslen');
 $db->rowsQueue = [];
+
+// --- includes/suppliers.php: leverandør-repository (via FakePdo) --------------
+
+// supplier_find() — bygger den forventede SQL og binder [id, organization_id].
+$db->rowsToReturn = [['id' => 4, 'name' => 'Test A/S']];
+$supplier = supplier_find($db, 4, 1);
+assert_true(str_contains($db->lastStatement->sql, 's.id = ? AND s.organization_id = ?'), 'supplier_find() filtrerer på id og organisation');
+assert_equal([4, 1], $db->lastStatement->boundParams, 'supplier_find() binder [id, organization_id] i den rækkefølge');
+assert_equal(4, $supplier['id'] ?? null, 'supplier_find() returnerer den fundne række');
+
+$db->rowsToReturn = [];
+assert_equal(null, supplier_find($db, 999, 1), 'supplier_find() returnerer null når intet findes');
+
+// supplier_list() — filtre og sortering. Leverandører har ingen GQAR-synlighedsregel,
+// så der er ingen synligheds-fragment at tjekke her, i modsætning til de andre moduler.
+$db->rowsToReturn = [['id' => 1]];
+supplier_list($db, $user, [
+    'categories' => ['Rådata'],
+    'criticality' => ['Kritisk'],
+    'statuses' => ['Godkendt', 'Udfaset'],
+    'sortColumn' => 's.next_evaluation_date',
+    'sortDirection' => 'DESC',
+]);
+$sql = $db->lastStatement->sql;
+$params = $db->lastStatement->boundParams;
+assert_true(str_contains($sql, 's.category IN (?)'), 'supplier_list() tilføjer kategori-filter');
+assert_true(str_contains($sql, 's.criticality IN (?)'), 'supplier_list() tilføjer kritikalitets-filter');
+assert_true(str_contains($sql, 's.status IN (?,?)'), 'supplier_list() tilføjer status-filter med korrekt antal pladsholdere');
+assert_true(str_contains($sql, 'ORDER BY s.next_evaluation_date DESC'), 'supplier_list() sorterer efter den angivne kolonne/retning');
+assert_equal([1, 'Rådata', 'Kritisk', 'Godkendt', 'Udfaset'], $params, 'supplier_list() binder parametre i forventet rækkefølge: org, kategori, kritikalitet, status');
+
+supplier_list($db, $user, []);
+assert_true(!str_contains($db->lastStatement->sql, 'IN ('), 'supplier_list() uden filtre tilføjer intet filter-fragment');
+
+// supplier_stats() — ren opslags-SQL, ingen filtre at teste udover organisationsbinding.
+$db->rowsToReturn = [['total' => 12, 'due_soon' => 3]];
+$supplierStats = supplier_stats($db, 1);
+assert_equal([1], $db->lastStatement->boundParams, 'supplier_stats() binder kun organization_id');
+assert_equal(12, $supplierStats['total'] ?? null, 'supplier_stats() returnerer den hentede række');
 
 // --- Resultat ------------------------------------------------------------------
 

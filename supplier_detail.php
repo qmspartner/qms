@@ -1,14 +1,13 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/suppliers.php';
 
 $user = require_permission('suppliers', 'view');
 $db = get_db();
 
 $id = (int) ($_GET['id'] ?? 0);
-$stmt = $db->prepare('SELECT s.*, u.name AS owner_name FROM suppliers s JOIN users u ON u.id = s.owner_id WHERE s.id = ? AND s.organization_id = ?');
-$stmt->execute([$id, $user['organization_id']]);
-$supplier = $stmt->fetch();
+$supplier = supplier_find($db, $id, $user['organization_id']);
 
 if (!$supplier) {
     http_response_code(404);

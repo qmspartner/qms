@@ -199,6 +199,16 @@ forespørgsel).
   mønster som sager: kun GQAR er begrænset, her til EKSTERNE audits inden
   for egen kontrakt). Samme afgrænsning som ovenfor for `home.php`s/
   `contract_overview.php`s statistik.
+- **`includes/suppliers.php`** er det fjerde modul: et leverandør-
+  repository for `suppliers` (`supplier_find()`, `supplier_list()`,
+  `supplier_stats()`). I modsætning til de tre andre moduler er der
+  INGEN GQAR-synlighedsregel her — `suppliers.php`/`supplier_detail.php`
+  bruger `require_permission()`, ikke `require_permission_allow_gqar()`,
+  så GQAR har slet ikke adgang til leverandørmodulet. De mindre, enkeltstående
+  leverandør-forespørgsler (dropdown-liste og eksistens-tjek i `new_case.php`,
+  `delete_supplier.php`, `includes/functions.php`) er bevidst IKKE flyttet
+  herind — de forekommer hver kun ét sted, så der er ingen duplikering at
+  rydde op på.
 - Nye moduler følger samme mønster: en fil `includes/<modul>.php`, der
   requirer `includes/functions.php` selv (så den er selvstændig), og
   almindelige funktioner — ikke klasser, for at matche resten af kodebasens

@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/suppliers.php';
 require_once __DIR__ . '/includes/tasks.php';
 
 $user = require_permission('suppliers', 'view');
@@ -24,35 +25,17 @@ if (!isset($sortColumns[$sortCol])) {
 }
 $sortDir = ($_GET['dir'] ?? 'asc') === 'desc' ? 'DESC' : 'ASC';
 
-$sql = 'SELECT s.* FROM suppliers s WHERE s.organization_id = ?';
-$params = [$user['organization_id']];
+// Leverandørlisten og -statistikken hentes via det centrale leverandør-repository
+// (includes/suppliers.php) i stedet for at bygge SQL direkte her.
+$suppliers = supplier_list($db, $user, [
+    'categories' => $selectedCategories,
+    'criticality' => $selectedCriticality,
+    'statuses' => $selectedStatuses,
+    'sortColumn' => $sortColumns[$sortCol],
+    'sortDirection' => $sortDir,
+]);
 
-if ($selectedCategories) {
-    $sql .= ' AND s.category IN (' . implode(',', array_fill(0, count($selectedCategories), '?')) . ')';
-    $params = array_merge($params, $selectedCategories);
-}
-if ($selectedCriticality) {
-    $sql .= ' AND s.criticality IN (' . implode(',', array_fill(0, count($selectedCriticality), '?')) . ')';
-    $params = array_merge($params, $selectedCriticality);
-}
-if ($selectedStatuses) {
-    $sql .= ' AND s.status IN (' . implode(',', array_fill(0, count($selectedStatuses), '?')) . ')';
-    $params = array_merge($params, $selectedStatuses);
-}
-$sql .= ' ORDER BY ' . $sortColumns[$sortCol] . ' ' . $sortDir;
-
-$stmt = $db->prepare($sql);
-$stmt->execute($params);
-$suppliers = $stmt->fetchAll();
-
-$stmt = $db->prepare("
-    SELECT
-        COUNT(*) AS total,
-        SUM(status = 'Godkendt' AND next_evaluation_date IS NOT NULL AND next_evaluation_date <= CURDATE() + INTERVAL 60 DAY) AS due_soon
-    FROM suppliers WHERE organization_id = ?
-");
-$stmt->execute([$user['organization_id']]);
-$stats = $stmt->fetch();
+$stats = supplier_stats($db, $user['organization_id']);
 
 $categories = supplier_category_options();
 $criticalities = ['Kritisk', 'Ikke-kritisk'];
