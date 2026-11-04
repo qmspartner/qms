@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/quality_objectives.php';
 
 /**
  * Samler den indloggede brugers opgaver på tværs af dokumenter og sager.
@@ -150,6 +151,35 @@ function get_my_tasks(array $user): array {
             'title' => $doc['doc_number'] . ' — ' . $doc['title'],
             'link' => 'document_acknowledge_team.php?document_id=' . $doc['id'],
             'sort' => 3,
+        ];
+    }
+
+    $stmt = $db->prepare("
+        SELECT id, title, measurement_frequency, start_date, reminder_lead_days
+        FROM quality_objectives
+        WHERE organization_id = ? AND owner_user_id = ? AND status NOT IN ('Opnået', 'Opgivet')
+    ");
+    $stmt->execute([$orgId, $userId]);
+    foreach ($stmt->fetchAll() as $objective) {
+        $measuredPeriodEnds = quality_objective_all_period_ends($db, (int) $objective['id']);
+        $nextDue = quality_objective_next_due_period(
+            $objective['measurement_frequency'],
+            $objective['start_date'],
+            $measuredPeriodEnds,
+            date('Y-m-d'),
+            (int) $objective['reminder_lead_days']
+        );
+        if ($nextDue === null) {
+            continue;
+        }
+        $overdue = $nextDue < date('Y-m-d');
+        $tasks[] = [
+            'urgency' => $overdue ? 'danger' : 'warning',
+            'icon' => $overdue ? 'ti-alert-triangle' : 'ti-calendar-event',
+            'label' => $overdue ? t('tasks.quality_objective_overdue') : t('tasks.quality_objective_due'),
+            'title' => $objective['title'],
+            'link' => 'quality_objective_detail.php?id=' . $objective['id'],
+            'sort' => $overdue ? 0 : 2,
         ];
     }
 

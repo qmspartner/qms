@@ -81,3 +81,32 @@ function notify_configuration_change(array $recipient, int $documentId, string $
 
     @mail($recipient['email'], '=?UTF-8?B?' . base64_encode($subject) . '?=', $body, $headers, $envelopeFrom);
 }
+
+/**
+ * Sender en e-mail til ejeren af et kvalitetsmål om, at en måling for en
+ * kommende (eller allerede overskredet) periode skal indberettes. Kaldes fra
+ * send_quality_objective_reminders.php (dagligt cron-job) - ikke fra et
+ * bruger-flow som de øvrige notify_*-funktioner, men mønsteret er det samme.
+ *
+ * @param array $owner Skal indeholde 'name' og 'email'.
+ */
+function notify_quality_objective_reminder(array $owner, int $objectiveId, string $objectiveTitle, string $periodEnd, bool $overdue): void {
+    $link = rtrim(SITE_URL, '/') . '/quality_objective_detail.php?id=' . $objectiveId;
+    $subject = ($overdue ? 'Måling overskredet: ' : 'Måling nærmer sig: ') . $objectiveTitle;
+
+    $periodLabel = date('d-m-Y', strtotime($periodEnd));
+    $body = "Hej " . $owner['name'] . ",\n\n"
+        . ($overdue
+            ? "Perioden for kvalitetsmålet \"" . $objectiveTitle . "\" sluttede " . $periodLabel . ", og der er endnu ikke indberettet en måling for den.\n\n"
+            : "Kvalitetsmålet \"" . $objectiveTitle . "\" har en periode, der slutter " . $periodLabel . ", og der skal snart indberettes en måling.\n\n")
+        . "Åbn kvalitetsmålet her:\n" . $link . "\n\n"
+        . "Denne besked er sendt automatisk af QMS Dokumentstyring.";
+
+    $fromName = 'QMS Dokumentstyring';
+    $headers = "From: " . $fromName . " <" . MAIL_FROM . ">\r\n"
+        . "Reply-To: " . MAIL_FROM . "\r\n"
+        . "Content-Type: text/plain; charset=UTF-8\r\n";
+    $envelopeFrom = '-f' . MAIL_FROM;
+
+    @mail($owner['email'], '=?UTF-8?B?' . base64_encode($subject) . '?=', $body, $headers, $envelopeFrom);
+}

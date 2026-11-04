@@ -20,7 +20,13 @@ class FakeStatement {
         return true;
     }
 
-    public function fetchAll(): array {
+    public function fetchAll(int $mode = PDO::FETCH_DEFAULT): array {
+        // quality_objective_all_period_ends() bruger PDO::FETCH_COLUMN til at få en flad
+        // liste af værdier i stedet for associative rækker - understøt det her, så den
+        // kan testes uden en rigtig database.
+        if ($mode === PDO::FETCH_COLUMN) {
+            return array_map(fn ($row) => reset($row), $this->rows);
+        }
         return $this->rows;
     }
 

@@ -23,6 +23,7 @@ $showEquipment = !$gqar;
 $showRisks = !$gqar;
 $showSuppliers = !$gqar;
 $showCustomers = !$gqar;
+$showQualityObjectives = has_permission($user, 'quality_objectives');
 $showContractOverview = true;
 $showFai = organization_has_fai();
 $showReports = !$gqar;
@@ -64,6 +65,7 @@ if ($showMeetings) $operationsItems[] = ['meetings', 'help.section.meetings'];
 if ($showEquipment) $operationsItems[] = ['equipment', 'help.section.equipment'];
 if ($showRisks) $operationsItems[] = ['risks', 'help.section.risks'];
 if ($showSuppliers) $operationsItems[] = ['suppliers', 'help.section.suppliers'];
+if ($showQualityObjectives) $operationsItems[] = ['quality-objectives', 'help.section.quality_objectives'];
 if ($operationsItems) $groups[] = ['help.toc_group.operations', $operationsItems];
 
 $overviewItems = [];
@@ -175,13 +177,20 @@ render_header(t('help.title'));
                 <p class="module-desc"><?= h(t('help.customers.desc')) ?></p>
             </div>
             <?php endif; ?>
+            <?php if ($showQualityObjectives): ?>
+            <div class="module-card" style="cursor:default;">
+                <div class="module-icon module-icon-accent">M</div>
+                <p class="module-title"><?= h(t('help.qualityobjectives.title')) ?></p>
+                <p class="module-desc"><?= h(t('help.qualityobjectives.desc')) ?></p>
+            </div>
+            <?php endif; ?>
         </div>
         <?php endif; ?>
 
         <h2 id="roles"><?= h(t('help.section.roles')) ?></h2>
         <div class="card" style="margin-bottom:1.5rem;">
             <?php
-                $rolesToShow = $isAdmin ? ['admin', 'editor', 'approver', 'user', 'gqar'] : [$user['role']];
+                $rolesToShow = $isAdmin ? ['admin', 'editor', 'approver', 'user', 'ledelse', 'gqar'] : [$user['role']];
             ?>
             <?php foreach ($rolesToShow as $role): ?>
                 <div class="log-row">
@@ -317,6 +326,16 @@ render_header(t('help.title'));
             <p style="margin:0 0 8px;"><?= h(t('help.suppliers.step1')) ?></p>
             <p style="margin:0 0 8px;"><?= h(t('help.suppliers.step2')) ?></p>
             <p style="margin:0;"><?= h(t('help.suppliers.step3')) ?></p>
+        </div>
+        <?php endif; ?>
+
+        <?php if ($showQualityObjectives): ?>
+        <h2 id="quality-objectives"><?= h(t('help.section.quality_objectives')) ?></h2>
+        <div class="card" style="margin-bottom:1.5rem;">
+            <p style="margin:0 0 8px;"><?= h(t('help.qualityobjectives.step1')) ?></p>
+            <p style="margin:0 0 8px;"><?= h(t('help.qualityobjectives.step2')) ?></p>
+            <p style="margin:0 0 8px;"><?= h(t('help.qualityobjectives.step3')) ?></p>
+            <p style="margin:0;"><?= h(t('help.qualityobjectives.step4')) ?></p>
         </div>
         <?php endif; ?>
 

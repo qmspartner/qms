@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $active = isset($_POST['active']) ? 1 : 0;
         $newPassword = $_POST['password'] ?? '';
         $gqarContracts = array_values(array_filter((array) ($_POST['gqar_contracts'] ?? [])));
-        $allowedRoles = ['admin', 'editor', 'approver', 'user', 'gqar'];
+        $allowedRoles = ['admin', 'editor', 'approver', 'user', 'gqar', 'ledelse'];
 
         $isSelf = (int) $editUser['id'] === (int) $user['id'];
 
@@ -233,6 +233,7 @@ render_header(t('edituser.title'));
                 <option value="approver" <?= $editUser['role'] === 'approver' ? 'selected' : '' ?>><?= h(role_label('approver')) ?></option>
                 <option value="admin" <?= $editUser['role'] === 'admin' ? 'selected' : '' ?>><?= h(role_label('admin')) ?></option>
                 <option value="gqar" <?= $editUser['role'] === 'gqar' ? 'selected' : '' ?>><?= h(role_label('gqar')) ?></option>
+                <option value="ledelse" <?= $editUser['role'] === 'ledelse' ? 'selected' : '' ?>><?= h(role_label('ledelse')) ?></option>
             </select>
         </label>
         <?php $currentGqarContracts = get_entity_contracts('gqar_contracts', 'user_id', (int) $editUser['id']); ?>

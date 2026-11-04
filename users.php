@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $role = $_POST['role'] ?? 'user';
     $managerUserId = (int) ($_POST['manager_user_id'] ?? 0) ?: null;
     $gqarContracts = array_values(array_filter((array) ($_POST['gqar_contracts'] ?? [])));
-    $allowedRoles = ['admin', 'editor', 'approver', 'user', 'gqar'];
+    $allowedRoles = ['admin', 'editor', 'approver', 'user', 'gqar', 'ledelse'];
 
     if ($name === '' || $email === '' || strlen($password) < 8) {
         $error = t('users.error.create');
@@ -87,6 +87,7 @@ render_header(t('users.title'));
             <option value="approver"><?= h(role_label('approver')) ?></option>
             <option value="admin"><?= h(role_label('admin')) ?></option>
             <option value="gqar"><?= h(role_label('gqar')) ?></option>
+            <option value="ledelse"><?= h(role_label('ledelse')) ?></option>
         </select>
         <select name="manager_user_id" title="<?= h(t('users.field.manager')) ?>">
             <option value=""><?= h(t('users.field.manager_choose')) ?></option>

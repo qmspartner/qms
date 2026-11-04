@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/quality_objectives.php';
 
 $user = require_permission('records', 'create');
 deny_gqar($user);
@@ -71,6 +72,14 @@ $deviationsSystemValue = build_system_value($deviationsCount, $previousReviewDat
 $auditsSystemValue = build_system_value($auditsCount, $previousReviewDate);
 $suppliersSystemValue = build_system_value($suppliersCount, $previousReviewDate);
 $risksSystemValue = build_system_value($risksCount, $previousReviewDate);
+
+// Live kvalitetsmål-opsummering (tilføjet, ikke en erstatning for fritekst-feltet
+// nedenfor - ældre evalueringer har kun fritekst, og det felt bevares derfor uændret).
+// Kun synlig for Ledelse/admin, ligesom selve kvalitetsmål-modulet - en bruger der kan
+// oprette ledelsens evaluering (editor) har ikke nødvendigvis adgang til kvalitetsmål.
+$canViewQualityObjectives = has_permission($user, 'quality_objectives', 'view');
+$qualityObjectivesStats = $canViewQualityObjectives ? quality_objective_stats($db, $orgId) : [];
+$qualityObjectivesList = $canViewQualityObjectives ? quality_objective_list($db, $user, ['sortColumn' => 'qo.status', 'sortDirection' => 'ASC']) : [];
 
 $error = '';
 
@@ -217,6 +226,30 @@ $suggestedNextDate = date('Y-m-d', strtotime('+12 months'));
         <label><?= h(t('mgmtreview.field.customer_satisfaction')) ?>
             <textarea name="customer_satisfaction" rows="2"></textarea>
         </label>
+        <?php if ($qualityObjectivesList): ?>
+        <div class="card" style="margin-bottom:14px;">
+            <p class="meta-label"><?= h(t('mgmtreview.quality_objectives_summary')) ?></p>
+            <p class="muted" style="margin-top:4px;">
+                <?= h(t('mgmtreview.quality_objectives_summary_counts', [
+                    'active' => (int) ($qualityObjectivesStats['active'] ?? 0),
+                    'achieved' => (int) ($qualityObjectivesStats['achieved_ytd'] ?? 0),
+                    'off_track' => (int) ($qualityObjectivesStats['off_track'] ?? 0),
+                ])) ?>
+            </p>
+            <table class="doc-table" style="margin-top:8px;">
+                <tbody>
+                <?php foreach ($qualityObjectivesList as $qo): ?>
+                    <tr>
+                        <td><?= h($qo['title']) ?></td>
+                        <td><span class="<?= quality_objective_status_class($qo['status']) ?>"><?= h(quality_objective_status_label($qo['status'])) ?></span></td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+            <p style="margin:10px 0 0;"><a href="quality_objectives.php"><?= h(t('mgmtreview.quality_objectives_link')) ?></a></p>
+        </div>
+        <?php endif; ?>
+
         <label><?= h(t('mgmtreview.field.quality_objectives')) ?>
             <textarea name="quality_objectives" rows="2"></textarea>
         </label>

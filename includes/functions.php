@@ -417,7 +417,7 @@ function document_category_template_info_map(): array {
 }
 
 function permission_modules(): array {
-    return ['documents', 'cases', 'audits', 'records', 'equipment', 'risks', 'suppliers', 'customers', 'users', 'lists', 'templates'];
+    return ['documents', 'cases', 'audits', 'records', 'equipment', 'risks', 'suppliers', 'customers', 'users', 'lists', 'templates', 'quality_objectives'];
 }
 
 function permission_module_label(string $module): string {
@@ -426,7 +426,10 @@ function permission_module_label(string $module): string {
 
 function permission_roles(): array {
     // Administrator holdes udenfor (altid fuld adgang), GQAR styres separat af kontraktafgrænsningen.
-    return ['editor', 'approver', 'user'];
+    // "Ledelse" er med her ligesom de andre, så den indgår i Indstillinger → Adgangsstyring og kan
+    // finjusteres af en administrator (se seed_default_permissions() for standardopsætningen, hvor
+    // kun Ledelse som udgangspunkt får adgang til quality_objectives).
+    return ['editor', 'approver', 'user', 'ledelse'];
 }
 
 function has_permission(array $user, string $module, string $action = 'view'): bool {
@@ -460,13 +463,20 @@ function has_permission(array $user, string $module, string $action = 'view'): b
 function seed_default_permissions(int $organizationId): void {
     $db = get_db();
     $adminOnlyModules = ['users', 'lists'];
+    // quality_objectives er bevidst IKKE i $adminOnlyModules (som ville give alle ikke-admin-roller
+    // nul adgang) — den skal give FULD adgang til netop Ledelse som udgangspunkt, nul til de andre,
+    // håndteret i sin egen gren nedenfor.
     $stmt = $db->prepare('
         INSERT INTO role_permissions (organization_id, role, module, can_view, can_create, can_edit, can_delete)
         VALUES (?, ?, ?, ?, ?, ?, ?)
     ');
     foreach (permission_roles() as $role) {
         foreach (permission_modules() as $module) {
-            if (in_array($module, $adminOnlyModules, true)) {
+            if ($module === 'quality_objectives') {
+                $isLedelse = ($role === 'ledelse');
+                $view = $create = $edit = $isLedelse ? 1 : 0;
+                $delete = 0;
+            } elseif (in_array($module, $adminOnlyModules, true)) {
                 $view = $create = $edit = $delete = 0;
             } else {
                 $view = 1;
@@ -762,6 +772,39 @@ function equipment_status_label(string $value): string {
 
 function equipment_status_class(string $value): string {
     return $value === 'Aktiv' ? 'badge badge-success' : 'badge badge-neutral';
+}
+
+function quality_objective_status_label(string $status): string {
+    return t('quality_objective_status.' . $status);
+}
+
+function quality_objective_status_class(string $status): string {
+    return match ($status) {
+        'Opnået', 'På kurs' => 'badge badge-success',
+        'Ikke på kurs' => 'badge badge-danger',
+        default => 'badge badge-neutral', // 'Ny', 'Opgivet'
+    };
+}
+
+/**
+ * Admin har altid adgang; Ledelse har adgang via det almindelige tilladelses-modul
+ * 'quality_objectives' (samme 'view'-tjek som selve oversigten i quality_objectives.php,
+ * så en rolle der kan se listen ikke kan blive mødt af en 403 på detaljesiden); OG
+ * målets egen ejer har adgang til netop dette ene mål (til at indberette målinger og
+ * sætte sin egen påmindelsesfrist), uden at få generel adgang til oversigten over alle
+ * kvalitetsmål — samme mønster som can_manage_employee(). Hvorvidt adgangen også giver
+ * ret til at REDIGERE afgøres separat, med has_permission(..., 'edit') på kaldestedet.
+ */
+function can_manage_quality_objective(array $user, array $objective): bool {
+    return has_permission($user, 'quality_objectives', 'view')
+        || (int) $user['id'] === (int) ($objective['owner_user_id'] ?? 0);
+}
+
+function quality_objective_target_label(array $objective): string {
+    $direction = ($objective['target_direction'] ?? '<=') === '>=' ? '≥' : '≤';
+    $value = number_format((float) ($objective['target_value'] ?? 0), 2, ',', '.');
+    $unit = !empty($objective['unit']) ? ' ' . $objective['unit'] : '';
+    return $direction . ' ' . $value . $unit;
 }
 
 function audit_type_label(string $value): string {
@@ -1230,6 +1273,7 @@ function nav_icon(string $key): string {
         'equipment' => '<path d="M14.7 6.3a4 4 0 0 1-5.4 5.4L4 17l3 3 5.3-5.3a4 4 0 0 1 5.4-5.4l-2.7 2.7-2-2Z"/>',
         'risks' => '<path d="M12 2 3 6v6c0 5 4 8.5 9 10 5-1.5 9-5 9-10V6l-9-4Z"/><path d="M12 8v4"/><path d="M12 16h.01"/>',
         'suppliers' => '<rect x="1" y="9" width="13" height="8" rx="1"/><path d="M14 11h4l4 3v3h-2"/><circle cx="6" cy="19" r="1.6"/><circle cx="17" cy="19" r="1.6"/>',
+        'quality_objectives' => '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/>',
         'reports' => '<path d="M4 20V10M12 20V4M20 20v-7"/>',
         'contract' => '<path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="m8.5 15 2 2 4-4.5"/>',
         'customers' => '<path d="M3 21V9l9-5 9 5v12"/><path d="M9 21v-6h6v6"/>',
@@ -1300,14 +1344,16 @@ function render_header(string $title): void {
                     $showEquipment = has_permission($user, 'equipment');
                     $showRisks = has_permission($user, 'risks');
                     $showSuppliers = has_permission($user, 'suppliers');
+                    $showQualityObjectives = has_permission($user, 'quality_objectives');
                 ?>
-                <?php if ($showAudits || $showRecords || $showEquipment || $showRisks || $showSuppliers): ?>
+                <?php if ($showAudits || $showRecords || $showEquipment || $showRisks || $showSuppliers || $showQualityObjectives): ?>
                     <p class="sidebar-group-label"><?= h(t('nav.operations')) ?></p>
                     <?php if ($showAudits): ?><a href="audits.php" class="sidebar-link<?= $isCurrent('audits.php') ?>"><?= nav_icon('audits') ?><span><?= h(t('nav.audits')) ?></span></a><?php endif; ?>
                     <?php if ($showRecords): ?><a href="meetings.php" class="sidebar-link<?= $isCurrent('meetings.php') ?>"><?= nav_icon('meetings') ?><span><?= h(t('nav.meetings')) ?></span></a><?php endif; ?>
                     <?php if ($showEquipment): ?><a href="equipment.php" class="sidebar-link<?= $isCurrent('equipment.php') ?>"><?= nav_icon('equipment') ?><span><?= h(t('nav.equipment')) ?></span></a><?php endif; ?>
                     <?php if ($showRisks): ?><a href="risks.php" class="sidebar-link<?= $isCurrent('risks.php') ?>"><?= nav_icon('risks') ?><span><?= h(t('nav.risks')) ?></span></a><?php endif; ?>
                     <?php if ($showSuppliers): ?><a href="suppliers.php" class="sidebar-link<?= $isCurrent('suppliers.php') ?>"><?= nav_icon('suppliers') ?><span><?= h(t('nav.suppliers')) ?></span></a><?php endif; ?>
+                    <?php if ($showQualityObjectives): ?><a href="quality_objectives.php" class="sidebar-link<?= $isCurrent('quality_objectives.php') ?>"><?= nav_icon('quality_objectives') ?><span><?= h(t('nav.quality_objectives')) ?></span></a><?php endif; ?>
                 <?php endif; ?>
                 <p class="sidebar-group-label"><?= h(t('nav.overview')) ?></p>
                 <a href="contract_overview.php" class="sidebar-link<?= $isCurrent('contract_overview.php') ?>"><?= nav_icon('contract') ?><span><?= h(t('nav.contract_overview')) ?></span></a>

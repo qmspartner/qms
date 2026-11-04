@@ -27,6 +27,7 @@ require_once __DIR__ . '/../includes/suppliers.php';
 require_once __DIR__ . '/../includes/employees.php';
 require_once __DIR__ . '/../includes/customers.php';
 require_once __DIR__ . '/../includes/equipment.php';
+require_once __DIR__ . '/../includes/quality_objectives.php';
 require_once __DIR__ . '/fake_pdo.php';
 
 $passed = 0;
@@ -493,6 +494,111 @@ assert_equal(15, $equipmentStats['total'] ?? null, 'equipment_stats() returnerer
 assert_equal(3, $equipmentStats['due_soon'] ?? null, 'equipment_stats() returnerer due_soon fra første forespørgsel');
 assert_equal(1, $equipmentStats['failed_count'] ?? null, 'equipment_stats() returnerer failed_count fra anden forespørgsel');
 $db->rowsQueue = [];
+
+// --- includes/quality_objectives.php: rene periode-/påmindelsesfunktioner -----
+
+// quality_objective_period_step() — DateInterval-spec pr. frekvens.
+assert_equal('P7D', quality_objective_period_step('Ugentligt'), 'quality_objective_period_step() giver P7D for Ugentligt');
+assert_equal('P1M', quality_objective_period_step('Månedligt'), 'quality_objective_period_step() giver P1M for Månedligt');
+assert_equal('P3M', quality_objective_period_step('Kvartalsvist'), 'quality_objective_period_step() giver P3M for Kvartalsvist');
+assert_equal('P3M', quality_objective_period_step('ukendt-værdi'), 'quality_objective_period_step() falder tilbage til P3M (Kvartalsvist) for en ukendt værdi');
+
+// quality_objective_period_ends_until() — altid mindst én periode, og rækken stopper ved $until.
+assert_equal(
+    ['2026-01-08', '2026-01-15'],
+    quality_objective_period_ends_until('Ugentligt', '2026-01-01', '2026-01-15'),
+    'quality_objective_period_ends_until() (ugentligt) giver periode-slutdatoer frem til og med $until'
+);
+assert_equal(
+    [],
+    quality_objective_period_ends_until('Månedligt', '2026-01-01', '2026-01-10'),
+    'quality_objective_period_ends_until() returnerer et tomt array når selv den første periode slutter efter $until'
+);
+assert_equal(
+    ['2026-04-01', '2026-07-01'],
+    quality_objective_period_ends_until('Kvartalsvist', '2026-01-01', '2026-07-01'),
+    'quality_objective_period_ends_until() (kvartalsvist) giver periode-slutdatoer frem til og med $until'
+);
+
+// quality_objective_next_due_period() — den første ikke-indberettede periode inden for påmindelsesvinduet.
+assert_equal(
+    '2026-01-08',
+    quality_objective_next_due_period('Ugentligt', '2026-01-01', [], '2026-01-05', 7),
+    'quality_objective_next_due_period() finder den første periode inden for påmindelsesvinduet, når intet er indberettet'
+);
+assert_equal(
+    null,
+    quality_objective_next_due_period('Ugentligt', '2026-01-01', [], '2026-01-01', 1),
+    'quality_objective_next_due_period() returnerer null når næste periode ligger uden for påmindelsesvinduet'
+);
+assert_equal(
+    '2026-01-15',
+    quality_objective_next_due_period('Ugentligt', '2026-01-01', ['2026-01-08'], '2026-01-12', 7),
+    'quality_objective_next_due_period() springer allerede indberettede perioder over'
+);
+assert_equal(
+    '2026-01-08',
+    quality_objective_next_due_period('Ugentligt', '2026-01-01', [], '2026-01-10', 0),
+    'quality_objective_next_due_period() finder en allerede overskredet, uindberettet periode (dvs. "for sent")'
+);
+
+// --- includes/quality_objectives.php: repository (via FakePdo) ----------------
+
+$db->rowsToReturn = [['id' => 5, 'title' => 'Reducer afvigelser', 'owner_user_id' => 42]];
+$objective = quality_objective_find($db, 5, 1);
+assert_true(str_contains($db->lastStatement->sql, 'qo.id = ? AND qo.organization_id = ?'), 'quality_objective_find() filtrerer på id og organisation');
+assert_equal([5, 1], $db->lastStatement->boundParams, 'quality_objective_find() binder [id, organization_id] i den rækkefølge');
+assert_equal(5, $objective['id'] ?? null, 'quality_objective_find() returnerer den fundne række');
+
+$db->rowsToReturn = [];
+assert_equal(null, quality_objective_find($db, 999, 1), 'quality_objective_find() returnerer null når intet findes');
+
+$db->rowsToReturn = [['id' => 1]];
+quality_objective_list($db, $user, ['statuses' => ['Ny', 'På kurs'], 'sortColumn' => 'qo.title', 'sortDirection' => 'DESC']);
+assert_true(str_contains($db->lastStatement->sql, 'qo.status IN (?,?)'), 'quality_objective_list() tilføjer status-filter med korrekt antal pladsholdere');
+assert_true(str_contains($db->lastStatement->sql, 'ORDER BY qo.title DESC'), 'quality_objective_list() sorterer efter den angivne kolonne/retning');
+assert_equal([1, 'Ny', 'På kurs'], $db->lastStatement->boundParams, 'quality_objective_list() binder parametre i forventet rækkefølge: org, status-filtre');
+
+quality_objective_list($db, $user, []);
+assert_true(!str_contains($db->lastStatement->sql, 'qo.status IN ('), 'quality_objective_list() uden filtre tilføjer intet status-filter');
+assert_true(str_contains($db->lastStatement->sql, 'ORDER BY qo.title ASC'), 'quality_objective_list() falder tilbage til qo.title/ASC uden filtre');
+
+$db->rowsToReturn = [['active' => 4, 'achieved_ytd' => 2, 'off_track' => 1]];
+$qoStats = quality_objective_stats($db, 1);
+assert_equal([1], $db->lastStatement->boundParams, 'quality_objective_stats() binder kun organization_id');
+assert_equal(4, $qoStats['active'] ?? null, 'quality_objective_stats() returnerer active fra den hentede række');
+
+$db->rowsToReturn = [['period_end' => '2026-01-07', 'value' => 3]];
+$measurements = quality_objective_measurement_list($db, 5);
+assert_equal([5], $db->lastStatement->boundParams, 'quality_objective_measurement_list() binder objective_id');
+assert_equal('2026-01-07', $measurements[0]['period_end'] ?? null, 'quality_objective_measurement_list() returnerer de hentede rækker');
+
+quality_objective_measurement_add($db, 5, '2026-01-07', 3.5, 'note', 42);
+assert_true(str_contains($db->lastStatement->sql, 'INSERT INTO quality_objective_measurements'), 'quality_objective_measurement_add() indsætter en ny måling');
+assert_equal([5, '2026-01-07', 3.5, 'note', 42], $db->lastStatement->boundParams, 'quality_objective_measurement_add() binder parametrene i forventet rækkefølge');
+
+quality_objective_measurement_add($db, 5, '2026-01-07', 3.5, null, 42);
+assert_equal([5, '2026-01-07', 3.5, null, 42], $db->lastStatement->boundParams, 'quality_objective_measurement_add() binder null for en tom note');
+
+$db->rowsToReturn = [['period_end' => '2026-01-07'], ['period_end' => '2026-01-14']];
+$periodEnds = quality_objective_all_period_ends($db, 5);
+assert_equal([5], $db->lastStatement->boundParams, 'quality_objective_all_period_ends() binder objective_id');
+assert_equal(['2026-01-07', '2026-01-14'], $periodEnds, 'quality_objective_all_period_ends() returnerer en flad liste af period_end-datoer (FETCH_COLUMN)');
+
+// --- can_manage_quality_objective(): admin, eller målets egen ejer -------------
+// (bruger rollen 'gqar' til ejer-/ikke-ejer-brugerne herunder, ikke 'user' eller
+// 'ledelse' — begge er med i permission_roles() og ville udløse et DB-opslag via
+// has_permission(), som (ligesom has_permission() for ikke-admin-roller generelt,
+// se CLAUDE.md) bevidst ikke er dækket her uden et test-skema. 'gqar' kortslutter
+// has_permission() til false uden at røre databasen, så kun ejerskabsgrenen testes.)
+
+$ownerUser = test_user('gqar', ['id' => 77]);
+$otherUser2 = test_user('gqar', ['id' => 88]);
+$objectiveOwnedBy77 = ['owner_user_id' => 77];
+
+assert_true(can_manage_quality_objective($admin, $objectiveOwnedBy77), 'admin kan altid tilgå et kvalitetsmål');
+assert_true(can_manage_quality_objective($ownerUser, $objectiveOwnedBy77), 'målets egen ejer kan tilgå det, uanset rolle');
+assert_true(!can_manage_quality_objective($otherUser2, $objectiveOwnedBy77), 'en bruger uden adgang og uden ejerskab kan ikke tilgå et kvalitetsmål');
 
 // --- Resultat ------------------------------------------------------------------
 
