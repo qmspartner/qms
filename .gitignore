@@ -5,3 +5,10 @@ uploads/*
 # Indeholder databasens adgangskode og andre miljøspecifikke værdier — committes aldrig.
 # Kopiér config.example.php til config.php og udfyld dine egne værdier.
 config.php
+
+# PHP's egen fejl-log (produceres af serveren selv, afslører interne filpaths) —
+# må aldrig committes. Otte gamle, ved et uheld committede leverings-zip'er blev
+# samtidig fjernet fra repoet (2026-11-04); dette forhindrer at nye tilsvarende
+# zip-filer committes ved et uheld igen.
+error_log
+*.zip
