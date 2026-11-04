@@ -237,6 +237,19 @@ forespørgsel).
   mønster som de øvrige for konsistens. Dropdown-/eksistens-tjekket i
   `new_case.php`/`delete_customer.php` og den fulde CSV-eksport i
   `export_customers_csv.php` er bevidst IKKE flyttet herind.
+- **`includes/equipment.php`** er det syvende modul: et udstyr-repository
+  (`equipment_find()`, `equipment_list()`, `equipment_stats()`). Som
+  leverandører/kunder er der ingen GQAR-synlighedsregel. `equipment_find()`
+  erstatter to næsten-identiske opslag — `equipment_detail.php`s join mod
+  `users` for ansvarligt navn, og `new_calibration.php`s simplere,
+  ikke-joinede opslag — begge forenet i den ene, joinede udgave, da den
+  ekstra `responsible_name`-kolonne ikke gør skade der hvor den ikke bruges.
+  `equipment_stats()` samler to forespørgsler (total/snart-kalibrering og
+  antal med seneste kalibrering ikke godkendt) i ét svar, samme mønster som
+  `audit_stats()`. Eksistens-tjekket i `delete_equipment.php`, det
+  enkeltstående dropdown-opslag i `includes/functions.php`, og
+  `home.php`s/`contract_overview.php`s aggregerede udstyrsstatistik (anden
+  forespørgselsform, andet formål) er bevidst IKKE flyttet herind.
 - Nye moduler følger samme mønster: en fil `includes/<modul>.php`, der
   requirer `includes/functions.php` selv (så den er selvstændig), og
   almindelige funktioner — ikke klasser, for at matche resten af kodebasens

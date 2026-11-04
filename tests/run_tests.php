@@ -26,6 +26,7 @@ require_once __DIR__ . '/../includes/audits.php';
 require_once __DIR__ . '/../includes/suppliers.php';
 require_once __DIR__ . '/../includes/employees.php';
 require_once __DIR__ . '/../includes/customers.php';
+require_once __DIR__ . '/../includes/equipment.php';
 require_once __DIR__ . '/fake_pdo.php';
 
 $passed = 0;
@@ -417,6 +418,58 @@ $db->rowsToReturn = [['total' => 8]];
 $customerStats = customer_stats($db, 1);
 assert_equal([1], $db->lastStatement->boundParams, 'customer_stats() binder kun organization_id');
 assert_equal(8, $customerStats['total'] ?? null, 'customer_stats() returnerer den hentede række');
+
+// --- includes/equipment.php: udstyr-repository (via FakePdo) ------------------
+
+// equipment_find() — bygger den forventede SQL (med ansvarlig-join) og binder
+// [id, organization_id]. Samme funktion bruges nu også af new_calibration.php,
+// som tidligere havde sit eget, simplere, ikke-joinede opslag.
+$db->rowsToReturn = [['id' => 20, 'name' => 'Skydelære', 'responsible_name' => 'Test Testesen']];
+$equipment = equipment_find($db, 20, 1);
+assert_true(str_contains($db->lastStatement->sql, 'e.id = ? AND e.organization_id = ?'), 'equipment_find() filtrerer på id og organisation');
+assert_equal([20, 1], $db->lastStatement->boundParams, 'equipment_find() binder [id, organization_id] i den rækkefølge');
+assert_equal(20, $equipment['id'] ?? null, 'equipment_find() returnerer den fundne række');
+
+$db->rowsToReturn = [];
+assert_equal(null, equipment_find($db, 999, 1), 'equipment_find() returnerer null når intet findes');
+
+// equipment_list() — kritikalitets-/status-filtre og sortering. Ingen GQAR-
+// synlighedsregel her, ligesom leverandører/kunder.
+$db->rowsToReturn = [['id' => 1]];
+equipment_list($db, $user, [
+    'criticality' => ['Kritisk'],
+    'statuses' => ['Aktiv', 'Ikke aktiv'],
+    'sortColumn' => 'e.next_calibration_date',
+    'sortDirection' => 'DESC',
+]);
+$sql = $db->lastStatement->sql;
+$params = $db->lastStatement->boundParams;
+assert_true(str_contains($sql, 'e.criticality IN (?)'), 'equipment_list() tilføjer kritikalitets-filter');
+assert_true(str_contains($sql, 'e.status IN (?,?)'), 'equipment_list() tilføjer status-filter med korrekt antal pladsholdere');
+assert_true(str_contains($sql, 'ORDER BY e.next_calibration_date DESC'), 'equipment_list() sorterer efter den angivne kolonne/retning');
+assert_equal([1, 'Kritisk', 'Aktiv', 'Ikke aktiv'], $params, 'equipment_list() binder parametre i forventet rækkefølge: org, kritikalitet, status');
+
+equipment_list($db, $user, []);
+assert_true(!str_contains($db->lastStatement->sql, 'e.criticality IN (') && !str_contains($db->lastStatement->sql, 'e.status IN ('), 'equipment_list() uden filtre tilføjer intet filter-fragment');
+assert_true(str_contains($db->lastStatement->sql, 'ORDER BY e.name ASC'), 'equipment_list() falder tilbage til e.name/ASC uden filtre');
+
+// equipment_stats() — kører to forespørgsler (total/due_soon + failed_count) og
+// samler dem i ét svar, samme mønster som audit_stats().
+$db->statements = []; // nulstil historikken, så vi kun ser de to kald equipment_stats() selv laver
+$db->rowsQueue = [
+    [['total' => 15, 'due_soon' => 3]],
+    [['failed_count' => 1]],
+];
+$equipmentStats = equipment_stats($db, 1);
+assert_equal(2, count($db->statements), 'equipment_stats() udfører præcis to forespørgsler');
+assert_true(str_contains($db->statements[0]->sql, 'FROM equipment') && !str_contains($db->statements[0]->sql, 'EXISTS'), 'equipment_stats()s første forespørgsel er total/due_soon-tællingen');
+assert_true(str_contains($db->statements[1]->sql, 'EXISTS'), 'equipment_stats()s anden forespørgsel er den korrelerede failed_count-tælling');
+assert_equal([1], $db->statements[0]->boundParams, 'equipment_stats() binder kun organization_id i første forespørgsel');
+assert_equal([1], $db->statements[1]->boundParams, 'equipment_stats() binder kun organization_id i anden forespørgsel');
+assert_equal(15, $equipmentStats['total'] ?? null, 'equipment_stats() returnerer total fra første forespørgsel');
+assert_equal(3, $equipmentStats['due_soon'] ?? null, 'equipment_stats() returnerer due_soon fra første forespørgsel');
+assert_equal(1, $equipmentStats['failed_count'] ?? null, 'equipment_stats() returnerer failed_count fra anden forespørgsel');
+$db->rowsQueue = [];
 
 // --- Resultat ------------------------------------------------------------------
 

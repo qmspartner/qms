@@ -1,14 +1,13 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/equipment.php';
 
 $user = require_permission('equipment', 'edit');
 $db = get_db();
 
 $equipmentId = (int) ($_GET['equipment_id'] ?? $_POST['equipment_id'] ?? 0);
-$stmt = $db->prepare('SELECT * FROM equipment WHERE id = ? AND organization_id = ?');
-$stmt->execute([$equipmentId, $user['organization_id']]);
-$equipment = $stmt->fetch();
+$equipment = equipment_find($db, $equipmentId, $user['organization_id']);
 
 if (!$equipment || !$equipment['requires_calibration']) {
     http_response_code(404);

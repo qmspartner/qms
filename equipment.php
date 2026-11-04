@@ -2,6 +2,7 @@
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/functions.php';
 require_once __DIR__ . '/includes/tasks.php';
+require_once __DIR__ . '/includes/equipment.php';
 
 $user = require_permission('equipment', 'view');
 $myTasks = get_my_tasks($user);
@@ -23,58 +24,16 @@ if (!isset($sortColumns[$sortCol])) {
 }
 $sortDir = ($_GET['dir'] ?? 'asc') === 'desc' ? 'DESC' : 'ASC';
 
-$sql = '
-    SELECT e.*, u.name AS responsible_name, latest.outcome AS latest_outcome
-    FROM equipment e
-    JOIN users u ON u.id = e.responsible_id
-    LEFT JOIN (
-        SELECT c1.equipment_id, c1.outcome
-        FROM equipment_calibrations c1
-        INNER JOIN (
-            SELECT equipment_id, MAX(calibration_date) AS max_date
-            FROM equipment_calibrations
-            GROUP BY equipment_id
-        ) c2 ON c2.equipment_id = c1.equipment_id AND c2.max_date = c1.calibration_date
-    ) latest ON latest.equipment_id = e.id
-    WHERE e.organization_id = ?
-';
-$params = [$user['organization_id']];
+$equipmentList = equipment_list($db, $user, [
+    'criticality' => $selectedCriticality,
+    'statuses' => $selectedStatuses,
+    'sortColumn' => $sortColumns[$sortCol],
+    'sortDirection' => $sortDir,
+]);
 
-if ($selectedCriticality) {
-    $sql .= ' AND e.criticality IN (' . implode(',', array_fill(0, count($selectedCriticality), '?')) . ')';
-    $params = array_merge($params, $selectedCriticality);
-}
-if ($selectedStatuses) {
-    $sql .= ' AND e.status IN (' . implode(',', array_fill(0, count($selectedStatuses), '?')) . ')';
-    $params = array_merge($params, $selectedStatuses);
-}
-$sql .= ' ORDER BY ' . $sortColumns[$sortCol] . ' ' . $sortDir;
-
-$stmt = $db->prepare($sql);
-$stmt->execute($params);
-$equipmentList = $stmt->fetchAll();
-
-$stmt = $db->prepare("
-    SELECT
-        COUNT(*) AS total,
-        SUM(status = 'Aktiv' AND requires_calibration = 1 AND next_calibration_date IS NOT NULL AND next_calibration_date <= CURDATE() + INTERVAL 60 DAY) AS due_soon
-    FROM equipment
-    WHERE organization_id = ?
-");
-$stmt->execute([$user['organization_id']]);
-$stats = $stmt->fetch();
-
-$stmt = $db->prepare("
-    SELECT COUNT(*) AS failed_count
-    FROM equipment e
-    WHERE e.organization_id = ? AND e.status = 'Aktiv' AND EXISTS (
-        SELECT 1 FROM equipment_calibrations c
-        WHERE c.equipment_id = e.id AND c.outcome = 'Ikke godkendt'
-            AND c.calibration_date = (SELECT MAX(calibration_date) FROM equipment_calibrations c2 WHERE c2.equipment_id = e.id)
-    )
-");
-$stmt->execute([$user['organization_id']]);
-$failedStats = $stmt->fetch();
+$equipmentStats = equipment_stats($db, $user['organization_id']);
+$stats = $equipmentStats;
+$failedStats = ['failed_count' => $equipmentStats['failed_count']];
 
 $criticalities = ['Kritisk', 'Ikke-kritisk'];
 $statuses = ['Aktiv', 'Ikke aktiv'];

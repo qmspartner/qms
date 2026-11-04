@@ -1,14 +1,13 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/equipment.php';
 
 $user = require_permission('equipment', 'view');
 $db = get_db();
 
 $id = (int) ($_GET['id'] ?? 0);
-$stmt = $db->prepare('SELECT e.*, u.name AS responsible_name FROM equipment e JOIN users u ON u.id = e.responsible_id WHERE e.id = ? AND e.organization_id = ?');
-$stmt->execute([$id, $user['organization_id']]);
-$equipment = $stmt->fetch();
+$equipment = equipment_find($db, $id, $user['organization_id']);
 
 if (!$equipment) {
     http_response_code(404);
