@@ -202,6 +202,29 @@ assert_equal(3, document_validate_link($db, $user, 3), 'document_validate_link()
 $db->rowsToReturn = [];
 assert_equal(null, document_validate_link($db, $user, 3), 'document_validate_link() returnerer null når intet matcher (ikke synligt/ikke fundet)');
 
+// document_version_find() — bygger den forventede SQL (med join mod documents for
+// organisationsscope) og binder [id, organization_id], med et valgfrit ekstra
+// 'd.is_template = 1'-fragment når templateOnly er sat (download_template.php).
+// stream_file_download() testes IKKE her — den sender HTTP-headers og kalder
+// readfile()/exit() direkte, og har derfor ingen ren, DB-fri logik at teste uden en
+// rigtig fil og et rigtigt respons, ligesom upload-håndteringen i new_calibration.php
+// m.fl. ikke testes her.
+$db->rowsToReturn = [['id' => 30, 'document_id' => 2, 'document_status' => 'Godkendt']];
+$version = document_version_find($db, 30, 1);
+assert_true(str_contains($db->lastStatement->sql, 'v.id = ? AND d.organization_id = ?'), 'document_version_find() filtrerer på version-id og organisation (via dokumentet)');
+assert_equal([30, 1], $db->lastStatement->boundParams, 'document_version_find() binder [version_id, organization_id] i den rækkefølge');
+assert_equal(30, $version['id'] ?? null, 'document_version_find() returnerer den fundne række');
+
+$db->rowsToReturn = [];
+assert_equal(null, document_version_find($db, 999, 1), 'document_version_find() returnerer null når intet findes');
+
+$db->rowsToReturn = [['id' => 31]];
+document_version_find($db, 31, 1, ['templateOnly' => true]);
+assert_true(str_contains($db->lastStatement->sql, 'd.is_template = 1'), 'document_version_find() tilføjer skabelon-filter når templateOnly er sat');
+
+document_version_find($db, 31, 1);
+assert_true(!str_contains($db->lastStatement->sql, 'is_template'), 'document_version_find() uden templateOnly tilføjer intet skabelon-filter');
+
 // --- includes/cases.php: sags-repository (via FakePdo) ------------------------
 
 // case_visibility_sql() / case_is_visible() — sager har ingen "almindelig bruger

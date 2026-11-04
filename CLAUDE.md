@@ -177,10 +177,18 @@ forespørgsel).
   `index.php`, `document.php`, `new_audit.php` og `new_case.php`:
   `document_find()`, `document_list()`, `document_stats()`,
   `document_list_for_linking()`, `document_validate_link()`. Scriptfilerne
-  kalder disse i stedet for selv at bygge SQL. `download.php`s forespørgsel
-  (document_versions JOIN documents) og `home.php`s dashboard-statistik er
-  bevidst IKKE flyttet herind — de har en anden form (version-centreret,
-  hhv. et andet sæt tal pr. rolle) og passer ikke ind i de samme funktioner.
+  kalder disse i stedet for selv at bygge SQL. `home.php`s
+  dashboard-statistik er bevidst IKKE flyttet herind — den beregner et
+  andet sæt tal pr. rolle og passer ikke ind i de samme funktioner.
+  Modulet har desuden to version-centrerede (ikke dokument-centrerede)
+  funktioner, tilføjet senere: `document_version_find()` erstatter to
+  ordret identiske opslag i `download.php` og `download_template.php`
+  (`document_versions JOIN documents`, scopet via dokumentet) — den tager
+  et valgfrit `templateOnly`-filter til skabelon-varianten, men bærer selv
+  ingen autorisationslogik, fordi `document_is_visible()`-tjekket og
+  "forældet version"-advarslen kun gælder for `download.php` og ikke for
+  skabeloner. `stream_file_download()` erstatter den ordret kopierede
+  HTTP-header/`readfile()`-blok, der fandtes i begge de samme to filer.
 - **`includes/cases.php`** er det andet modul: et sags-repository for
   `cases`, der kapsler de forespørgsler der var genskrevet i `cases.php` og
   `case.php`: `case_find()`, `case_list()`, `case_stats()`, samt den

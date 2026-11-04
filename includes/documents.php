@@ -8,11 +8,16 @@
  * det første modul. Ren SQL-indkapsling her; en side (fx document.php) beslutter selv
  * hvad den vil gøre med resultatet (404 vs. 403, rendering osv.).
  *
- * `download.php`s forespørgsel (document_versions JOIN documents) er bevidst IKKE
- * flyttet herind endnu — den har en anden form (version-centreret, ikke
- * dokument-centreret) og hører naturligt hjemme i et kommende "versions"-modul.
- * home.php's dashboard-statistik er også bevidst urørt (se CLAUDE.md/document_stats()
+ * home.php's dashboard-statistik er bevidst urørt (se CLAUDE.md/document_stats()
  * nedenfor) — den beregner et andet sæt tal på en anden måde pr. rolle.
+ *
+ * document_version_find() og stream_file_download() nedenfor er version-centrerede
+ * (document_versions, ikke documents) og blev tilføjet senere, da download.php og
+ * download_template.php viste sig at have ordret identisk opslags- og
+ * fil-stream-kode. De bærer bevidst ikke selv nogen autorisationslogik —
+ * document_is_visible()-tjekket og "forældet version"-advarslen i download.php er
+ * IKKE flyttet herind, fordi download_template.php ikke bruger den regel og en delt
+ * funktion derfor ikke skal vide noget om den.
  */
 
 require_once __DIR__ . '/functions.php';
@@ -137,4 +142,55 @@ function document_validate_link(PDO $db, array $user, int $documentId): ?int {
     $stmt = $db->prepare($sql);
     $stmt->execute($params);
     return $stmt->fetch() ? $documentId : null;
+}
+
+/**
+ * Henter én dokumentversion ved id, inden for brugerens organisation (scopet via
+ * det overordnede dokument, da document_versions ikke selv har organization_id).
+ * Bringer også de dokument-felter med, som download.php bruger til synlighedstjek
+ * (document_status, is_configuration_item, baseline_reference) og til visning
+ * (document_title, current_version_id) — harmløse ekstra kolonner for de kaldesteder,
+ * der ikke selv bruger dem (download_template.php).
+ *
+ * $filters-nøgler (alle valgfrie):
+ *   templateOnly (bool) kun skabelon-versioner (d.is_template = 1) — brugt af
+ *                       download_template.php, som har sin egen, simplere
+ *                       tilladelsesmodel og derfor ikke selv tjekker
+ *                       document_is_visible().
+ *
+ * Returnerer null hvis ikke fundet. Tjekker IKKE document_is_visible() selv —
+ * kaldestedet (download.php) gør det bagefter, ligesom document_find().
+ */
+function document_version_find(PDO $db, int $versionId, int $organizationId, array $filters = []): ?array {
+    $sql = '
+        SELECT v.*, d.current_version_id, d.title AS document_title, d.status AS document_status,
+               d.is_configuration_item, d.baseline_reference
+        FROM document_versions v
+        JOIN documents d ON d.id = v.document_id
+        WHERE v.id = ? AND d.organization_id = ?
+    ';
+    $params = [$versionId, $organizationId];
+
+    if (!empty($filters['templateOnly'])) {
+        $sql .= ' AND d.is_template = 1';
+    }
+
+    $stmt = $db->prepare($sql);
+    $stmt->execute($params);
+    $version = $stmt->fetch();
+    return $version ?: null;
+}
+
+/**
+ * Sender en fil til browseren som download (de fire standard-headers + readfile()),
+ * og afslutter requesten. Var tidligere kopieret ordret ind i både download.php og
+ * download_template.php.
+ */
+function stream_file_download(string $path, string $originalFilename): void {
+    header('Content-Description: File Transfer');
+    header('Content-Type: application/octet-stream');
+    header('Content-Disposition: attachment; filename="' . basename($originalFilename) . '"');
+    header('Content-Length: ' . filesize($path));
+    readfile($path);
+    exit;
 }
