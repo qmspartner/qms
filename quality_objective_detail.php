@@ -75,29 +75,49 @@ $nextDue = quality_objective_next_due_period($objective['measurement_frequency']
 $suggestedPeriodEnd = $nextDue ?? quality_objective_period_ends_until($objective['measurement_frequency'], $objective['start_date'], date('Y-m-d', strtotime('+1 year')))[0] ?? date('Y-m-d');
 
 // Trendgraf (SVG) over de seneste målinger, ældste til venstre — rent visningslogik, ingen beregning gemmes.
+// Titel og enheder på begge akser: titlen gentager målets navn (grafen skal kunne stå
+// alene, fx hvis den klippes ud/printes), y-aksen viser min/maks-værdi inkl. enhed,
+// x-aksen viser første/sidste periodes slutdato.
 $chartPoints = array_reverse($measurements);
 $chartSvg = null;
 if (count($chartPoints) >= 2) {
+    $unit = $objective['unit'] ?? '';
     $values = array_map(fn ($m) => (float) $m['value'], $chartPoints);
     $values[] = (float) $objective['target_value'];
     $min = min($values);
     $max = max($values);
     $range = ($max - $min) ?: 1;
     $width = 560;
-    $height = 160;
-    $padX = 30;
-    $padY = 20;
+    $height = 190;
+    $padTop = 28;    // plads til titlen
+    $padBottom = 26; // plads til x-aksens datoer
+    $padLeft = 64;   // plads til y-aksens værdi+enhed
+    $padRight = 16;
+    $plotWidth = $width - $padLeft - $padRight;
+    $plotHeight = $height - $padTop - $padBottom;
     $n = count($chartPoints);
-    $stepX = $n > 1 ? ($width - 2 * $padX) / ($n - 1) : 0;
-    $toY = fn ($v) => $height - $padY - (($v - $min) / $range) * ($height - 2 * $padY);
+    $stepX = $n > 1 ? $plotWidth / ($n - 1) : 0;
+    $toX = fn ($i) => $padLeft + ($n > 1 ? $i * $stepX : $plotWidth / 2);
+    $toY = fn ($v) => $padTop + $plotHeight - (($v - $min) / $range) * $plotHeight;
+    $formatValue = fn ($v) => number_format($v, 2, ',', '.') . ($unit !== '' ? ' ' . $unit : '');
     $linePoints = [];
     foreach ($chartPoints as $i => $m) {
-        $x = $padX + $i * $stepX;
-        $y = $toY((float) $m['value']);
-        $linePoints[] = round($x, 1) . ',' . round($y, 1);
+        $linePoints[] = round($toX($i), 1) . ',' . round($toY((float) $m['value']), 1);
     }
-    $targetY = $toY((float) $objective['target_value']);
-    $chartSvg = ['points' => implode(' ', $linePoints), 'targetY' => round($targetY, 1), 'width' => $width, 'height' => $height, 'padX' => $padX];
+    $chartSvg = [
+        'points' => implode(' ', $linePoints),
+        'targetY' => round($toY((float) $objective['target_value']), 1),
+        'width' => $width,
+        'height' => $height,
+        'padLeft' => $padLeft,
+        'padRight' => $padRight,
+        'padTop' => $padTop,
+        'title' => t('qualityobjective.trend_chart_title', ['title' => $objective['title']]),
+        'yMaxLabel' => $formatValue($max),
+        'yMinLabel' => $formatValue($min),
+        'xFirstLabel' => format_date($chartPoints[0]['period_end']),
+        'xLastLabel' => format_date($chartPoints[$n - 1]['period_end']),
+    ];
 }
 
 render_header($objective['title']);
@@ -145,8 +165,13 @@ render_header($objective['title']);
 <h2><?= h(t('qualityobjective.trend_title')) ?></h2>
 <div class="card">
     <?php if ($chartSvg): ?>
-        <svg width="100%" height="<?= $chartSvg['height'] ?>" viewBox="0 0 <?= $chartSvg['width'] ?> <?= $chartSvg['height'] ?>" style="display:block;">
-            <line x1="<?= $chartSvg['padX'] ?>" y1="<?= $chartSvg['targetY'] ?>" x2="<?= $chartSvg['width'] - $chartSvg['padX'] ?>" y2="<?= $chartSvg['targetY'] ?>" stroke="#a1a1aa" stroke-width="1.5" stroke-dasharray="5,5"/>
+        <svg width="100%" height="<?= $chartSvg['height'] ?>" viewBox="0 0 <?= $chartSvg['width'] ?> <?= $chartSvg['height'] ?>" style="display:block;" role="img" aria-label="<?= h($chartSvg['title']) ?>">
+            <text x="<?= $chartSvg['width'] / 2 ?>" y="16" text-anchor="middle" font-size="13" font-weight="600" fill="#111827"><?= h($chartSvg['title']) ?></text>
+            <text x="<?= $chartSvg['padLeft'] - 8 ?>" y="<?= $chartSvg['padTop'] + 4 ?>" text-anchor="end" font-size="11" fill="#52525b"><?= h($chartSvg['yMaxLabel']) ?></text>
+            <text x="<?= $chartSvg['padLeft'] - 8 ?>" y="<?= $chartSvg['height'] - 26 ?>" text-anchor="end" font-size="11" fill="#52525b"><?= h($chartSvg['yMinLabel']) ?></text>
+            <text x="<?= $chartSvg['padLeft'] ?>" y="<?= $chartSvg['height'] - 6 ?>" text-anchor="start" font-size="11" fill="#52525b"><?= h($chartSvg['xFirstLabel']) ?></text>
+            <text x="<?= $chartSvg['width'] - $chartSvg['padRight'] ?>" y="<?= $chartSvg['height'] - 6 ?>" text-anchor="end" font-size="11" fill="#52525b"><?= h($chartSvg['xLastLabel']) ?></text>
+            <line x1="<?= $chartSvg['padLeft'] ?>" y1="<?= $chartSvg['targetY'] ?>" x2="<?= $chartSvg['width'] - $chartSvg['padRight'] ?>" y2="<?= $chartSvg['targetY'] ?>" stroke="#a1a1aa" stroke-width="1.5" stroke-dasharray="5,5"/>
             <polyline points="<?= h($chartSvg['points']) ?>" fill="none" stroke="#2563eb" stroke-width="2.5"/>
         </svg>
         <p class="muted" style="margin:8px 0 0; font-size:12px;"><?= h(t('qualityobjective.trend_note')) ?></p>

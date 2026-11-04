@@ -1596,6 +1596,7 @@ return [
     'qualityobjective.next_report' => 'Næste indberetning',
     'qualityobjective.next_report_none' => 'Ingen forfalden periode',
     'qualityobjective.trend_title' => 'Udvikling',
+    'qualityobjective.trend_chart_title' => 'Udvikling for {title}',
     'qualityobjective.trend_note' => 'Den stiplede linje er målværdien.',
     'qualityobjective.trend_empty' => 'Mindst to målinger kræves for at vise en graf.',
     'qualityobjective.measurements_title' => 'Målinger',

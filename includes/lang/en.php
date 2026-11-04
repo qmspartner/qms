@@ -1596,6 +1596,7 @@ return [
     'qualityobjective.next_report' => 'Next report due',
     'qualityobjective.next_report_none' => 'No period due',
     'qualityobjective.trend_title' => 'Trend',
+    'qualityobjective.trend_chart_title' => 'Trend for {title}',
     'qualityobjective.trend_note' => 'The dashed line is the target value.',
     'qualityobjective.trend_empty' => 'At least two measurements are required to show a chart.',
     'qualityobjective.measurements_title' => 'Measurements',
