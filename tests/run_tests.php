@@ -22,6 +22,7 @@ if (!defined('EFFECTIVENESS_DUE_SOON_DAYS')) {
 require_once __DIR__ . '/../includes/functions.php';
 require_once __DIR__ . '/../includes/documents.php';
 require_once __DIR__ . '/../includes/cases.php';
+require_once __DIR__ . '/../includes/audits.php';
 require_once __DIR__ . '/fake_pdo.php';
 
 $passed = 0;
@@ -260,6 +261,71 @@ $caseStats = case_stats($db, 1);
 assert_equal([1], $db->lastStatement->boundParams, 'case_stats() binder kun organization_id');
 assert_true(str_contains($db->lastStatement->sql, "type != 'Opfølgningspunkt'"), 'case_stats() udelukker Opfølgningspunkt-typen ligesom case_list()');
 assert_equal(3, $caseStats['open_count'] ?? null, 'case_stats() returnerer den hentede række');
+
+// --- includes/audits.php: audit-repository (via FakePdo) ----------------------
+
+// audit_visibility_sql() / audit_is_visible() — samme mønster som sager: ingen
+// "almindelig bruger ser mindre"-regel, kun GQAR er begrænset (her: til eksterne
+// audits inden for egen kontrakt).
+[$sql, $params] = audit_visibility_sql($admin);
+assert_equal('', $sql, 'audit_visibility_sql() giver admin fuld adgang');
+
+[$sql, $params] = audit_visibility_sql($gqarWithContract);
+assert_equal(" AND a.audit_type = 'Eksternt' AND a.contract_reference IN (?)", $sql, 'audit_visibility_sql() begrænser gqar til eksterne audits på egen kontrakt');
+assert_equal(['K-1001'], $params, 'audit_visibility_sql() binder gqars kontraktreferencer');
+
+$externalAudit = ['audit_type' => 'Eksternt', 'contract_reference' => 'K-1001'];
+$internalAudit = ['audit_type' => 'Internt', 'contract_reference' => null];
+
+assert_true(audit_is_visible($user, $internalAudit), 'en almindelig bruger ser en intern audit (ingen auditregel for user-rollen)');
+assert_true(audit_is_visible($gqarWithContract, $externalAudit), 'gqar ser en ekstern audit på egen kontrakt');
+assert_true(!audit_is_visible($gqarWithContract, $internalAudit), 'gqar ser ikke en intern audit');
+assert_true(!audit_is_visible($gqarNoContract, $externalAudit), 'gqar uden den konkrete kontrakt ser ikke auditen, selv ekstern');
+
+// audit_find() — bygger den forventede SQL og binder [id, organization_id].
+$db->rowsToReturn = [['id' => 5, 'audit_type' => 'Internt']];
+$audit = audit_find($db, 5, 1);
+assert_true(str_contains($db->lastStatement->sql, 'a.id = ? AND a.organization_id = ?'), 'audit_find() filtrerer på id og organisation');
+assert_equal([5, 1], $db->lastStatement->boundParams, 'audit_find() binder [id, organization_id] i den rækkefølge');
+assert_equal(5, $audit['id'] ?? null, 'audit_find() returnerer den fundne række');
+
+$db->rowsToReturn = [];
+assert_equal(null, audit_find($db, 999, 1), 'audit_find() returnerer null når intet findes');
+
+// audit_list() — filtre, synlighed og sortering.
+$db->rowsToReturn = [['id' => 1]];
+audit_list($db, $gqarWithContract, [
+    'statuses' => ['Planlagt'],
+    'types' => ['Eksternt'],
+    'sortColumn' => 'a.title',
+    'sortDirection' => 'ASC',
+]);
+$sql = $db->lastStatement->sql;
+$params = $db->lastStatement->boundParams;
+assert_true(str_contains($sql, 'a.status IN (?)'), 'audit_list() tilføjer status-filter');
+assert_true(str_contains($sql, 'a.audit_type IN (?)'), 'audit_list() tilføjer audittype-filter');
+assert_true(str_contains($sql, "a.audit_type = 'Eksternt' AND a.contract_reference IN (?)"), 'audit_list() anvender gqar-synlighedsregel');
+assert_true(str_contains($sql, 'ORDER BY a.title ASC'), 'audit_list() sorterer efter den angivne kolonne/retning');
+assert_equal([1, 'Planlagt', 'Eksternt', 'K-1001'], $params, 'audit_list() binder parametre i forventet rækkefølge: org, status, type, gqar-kontrakt');
+
+audit_list($db, $user, []);
+assert_true(!str_contains($db->lastStatement->sql, "audit_type = 'Eksternt'"), 'audit_list() uden filtre/gqar tilføjer intet synligheds-fragment for en almindelig bruger');
+
+// audit_stats() — kører to forespørgsler (audits + cases) og samler dem i ét svar.
+$db->statements = []; // nulstil historikken, så vi kun ser de to kald audit_stats() selv laver
+$db->rowsQueue = [
+    [['planned_this_year' => 4]],
+    [['open_findings' => 2]],
+];
+$auditStats = audit_stats($db, 1);
+assert_equal(2, count($db->statements), 'audit_stats() udfører præcis to forespørgsler');
+assert_true(str_contains($db->statements[0]->sql, 'FROM audits'), 'audit_stats()s første forespørgsel går mod audits-tabellen');
+assert_true(str_contains($db->statements[1]->sql, 'FROM cases'), 'audit_stats()s anden forespørgsel går mod cases-tabellen (fund)');
+assert_equal([1], $db->statements[0]->boundParams, 'audit_stats() binder kun organization_id i audits-forespørgslen');
+assert_equal([1], $db->statements[1]->boundParams, 'audit_stats() binder kun organization_id i cases-forespørgslen');
+assert_equal(4, $auditStats['planned_this_year'] ?? null, 'audit_stats() returnerer planned_this_year fra audits-forespørgslen');
+assert_equal(2, $auditStats['open_findings'] ?? null, 'audit_stats() returnerer open_findings fra cases-forespørgslen');
+$db->rowsQueue = [];
 
 // --- Resultat ------------------------------------------------------------------
 

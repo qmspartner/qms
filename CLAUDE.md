@@ -190,6 +190,15 @@ forespørgsel).
   egen kontrakt). `home.php`s og `contract_overview.php`s statistik bruger
   samme grundregel i en anden forespørgselsform og er bevidst IKKE flyttet
   herind, af samme grund som `document_stats()`/`home.php` ovenfor.
+- **`includes/audits.php`** er det tredje modul: et audit-repository for
+  `audits`, der kapsler de forespørgsler der var genskrevet i `audits.php`
+  og `audit.php`: `audit_find()`, `audit_list()`, `audit_stats()`
+  (kører to forespørgsler — audits-tabellen for "planlagt i år", cases-
+  tabellen for "åbne fund" — samlet i ét svar, fordi begge hører til samme
+  stat-grid), samt `audit_visibility_sql()`/`audit_is_visible()` (samme
+  mønster som sager: kun GQAR er begrænset, her til EKSTERNE audits inden
+  for egen kontrakt). Samme afgrænsning som ovenfor for `home.php`s/
+  `contract_overview.php`s statistik.
 - Nye moduler følger samme mønster: en fil `includes/<modul>.php`, der
   requirer `includes/functions.php` selv (så den er selvstændig), og
   almindelige funktioner — ikke klasser, for at matche resten af kodebasens
@@ -198,7 +207,11 @@ forespørgsel).
   fil i `tests/`) med dækning af det, der flyttes — se `tests/fake_pdo.php`
   for hvordan repository-funktioner, der tager en `PDO`, testes uden en
   rigtig database (en simpel stub, der husker den byggede SQL og de bundne
-  parametre, i stedet for at udføre dem).
+  parametre, i stedet for at udføre dem). For en funktion der selv laver
+  flere forespørgsler i rækkefølge (fx `audit_stats()`), sæt `$db->rowsQueue`
+  til et array af rækkesæt (ét pr. forespørgsel) i stedet for
+  `$db->rowsToReturn`, og nulstil `$db->statements = []` umiddelbart før
+  kaldet, så man kun inspicerer de forespørgsler funktionen selv laver.
 
 ## Standard-hjælpefunktioner (`includes/functions.php` m.fl.)
 

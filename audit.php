@@ -1,20 +1,13 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/audits.php';
 
 $user = require_permission_allow_gqar('audits');
 $db = get_db();
 
 $id = (int) ($_GET['id'] ?? 0);
-$stmt = $db->prepare('
-    SELECT a.*, u.name AS auditor_name, d.title AS linked_document_title, d.doc_number AS linked_document_number
-    FROM audits a
-    JOIN users u ON u.id = a.auditor_id
-    LEFT JOIN documents d ON d.id = a.linked_document_id
-    WHERE a.id = ? AND a.organization_id = ?
-');
-$stmt->execute([$id, $user['organization_id']]);
-$audit = $stmt->fetch();
+$audit = audit_find($db, $id, $user['organization_id']);
 
 if (!$audit) {
     http_response_code(404);
@@ -24,7 +17,9 @@ if (!$audit) {
     exit;
 }
 
-if (is_gqar($user) && ($audit['audit_type'] !== 'Eksternt' || !user_has_contract($user, $audit['contract_reference']))) {
+// Central synlighedsregel (GQAR-kontraktbegrænsning / fuld adgang for andre roller) —
+// se audit_is_visible() i includes/audits.php, det ene sted reglen er defineret.
+if (!audit_is_visible($user, $audit)) {
     http_response_code(403);
     render_header(t('error.forbidden'));
     echo '<div class="card">' . h(t('error.forbidden')) . '</div>';

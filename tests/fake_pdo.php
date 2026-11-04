@@ -31,14 +31,20 @@ class FakeStatement {
 
 class FakePdo extends PDO {
     public ?FakeStatement $lastStatement = null;
+    /** @var FakeStatement[] Alle forberedte statements, i kaldeorden — til funktioner der kører flere forespørgsler (fx audit_stats()). */
+    public array $statements = [];
     public array $rowsToReturn = [];
+    /** @var array[] Kø af rækkesæt, ét pr. prepare()-kald, i forventet kalderækkefølge. Tømmes fortløbende; falder tilbage til $rowsToReturn når køen er tom (bagudkompatibelt med funktioner der kun laver ét kald). */
+    public array $rowsQueue = [];
 
     public function __construct() {
         // Ingen rigtig forbindelse — denne stub kører aldrig rigtig SQL.
     }
 
     public function prepare(string $query, array $options = []): FakeStatement|false {
-        $this->lastStatement = new FakeStatement($query, $this->rowsToReturn);
+        $rows = $this->rowsQueue ? array_shift($this->rowsQueue) : $this->rowsToReturn;
+        $this->lastStatement = new FakeStatement($query, $rows);
+        $this->statements[] = $this->lastStatement;
         return $this->lastStatement;
     }
 }

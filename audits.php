@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/audits.php';
 require_once __DIR__ . '/includes/tasks.php';
 
 $user = require_permission_allow_gqar('audits');
@@ -23,46 +24,17 @@ if (!isset($sortColumns[$sortCol])) {
 }
 $sortDir = ($_GET['dir'] ?? 'desc') === 'asc' ? 'ASC' : 'DESC';
 
-$sql = '
-    SELECT a.*, u.name AS auditor_name
-    FROM audits a
-    JOIN users u ON u.id = a.auditor_id
-    WHERE a.organization_id = ?
-';
-$params = [$user['organization_id']];
+// Auditlisten og -statistikken hentes via det centrale audit-repository
+// (includes/audits.php) i stedet for at bygge SQL direkte her — se den fil for den
+// fulde forklaring og den centrale GQAR-synlighedsregel (audit_visibility_sql()).
+$audits = audit_list($db, $user, [
+    'statuses' => $selectedStatuses,
+    'types' => $selectedTypes,
+    'sortColumn' => $sortColumns[$sortCol],
+    'sortDirection' => $sortDir,
+]);
 
-if ($selectedStatuses) {
-    $sql .= ' AND a.status IN (' . implode(',', array_fill(0, count($selectedStatuses), '?')) . ')';
-    $params = array_merge($params, $selectedStatuses);
-}
-if ($selectedTypes) {
-    $sql .= ' AND a.audit_type IN (' . implode(',', array_fill(0, count($selectedTypes), '?')) . ')';
-    $params = array_merge($params, $selectedTypes);
-}
-if (is_gqar($user)) {
-    [$clause, $clauseParams] = contract_in_clause('a.contract_reference', $user['gqar_contract_references']);
-    $sql .= " AND a.audit_type = 'Eksternt' AND {$clause}";
-    $params = array_merge($params, $clauseParams);
-}
-$sql .= ' ORDER BY ' . $sortColumns[$sortCol] . ' ' . $sortDir;
-
-$stmt = $db->prepare($sql);
-$stmt->execute($params);
-$audits = $stmt->fetchAll();
-
-$stmt = $db->prepare("
-    SELECT SUM(YEAR(planned_date) = YEAR(CURDATE())) AS planned_this_year
-    FROM audits WHERE organization_id = ?
-");
-$stmt->execute([$user['organization_id']]);
-$auditStats = $stmt->fetch();
-
-$stmt = $db->prepare("
-    SELECT COUNT(*) AS open_findings
-    FROM cases WHERE organization_id = ? AND audit_id IS NOT NULL AND status != 'Lukket'
-");
-$stmt->execute([$user['organization_id']]);
-$findingStats = $stmt->fetch();
+$auditStats = audit_stats($db, $user['organization_id']);
 
 $statuses = ['Planlagt', 'Gennemført', 'Aflyst'];
 $auditTypes = ['Internt', 'Eksternt'];
@@ -91,7 +63,7 @@ render_header(t('audits.title'));
 <div>
 <div class="stat-grid">
     <div class="stat-card"><p class="stat-label"><?= h(t('audits.stat.planned')) ?></p><p class="stat-value"><?= (int)($auditStats['planned_this_year'] ?? 0) ?></p></div>
-    <div class="stat-card"><p class="stat-label"><?= h(t('audits.stat.findings')) ?></p><p class="stat-value stat-warning"><?= (int)($findingStats['open_findings'] ?? 0) ?></p></div>
+    <div class="stat-card"><p class="stat-label"><?= h(t('audits.stat.findings')) ?></p><p class="stat-value stat-warning"><?= (int)($auditStats['open_findings'] ?? 0) ?></p></div>
 </div>
 
 <?php render_active_filters($activeChips, clear_all_filters_href(['status', 'audit_type'])); ?>
