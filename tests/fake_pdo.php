@@ -33,6 +33,22 @@ class FakeStatement {
     public function fetch() {
         return $this->rows[0] ?? false;
     }
+
+    /**
+     * Tilføjet sammen med includes/action_items.php, som bruger fetchColumn() til
+     * eksistens-tjek (action_item_has_open_for_case()) og enkelt-værdi-opslag
+     * (næste position i action_item_add()) — samme mønster som flere steder i
+     * includes/functions.php allerede bruger mod den rigtige PDO. Henter værdien af den
+     * første kolonne i første række; false hvis der ingen rækker er, ligesom den
+     * rigtige PDOStatement::fetchColumn().
+     */
+    public function fetchColumn() {
+        if (!$this->rows) {
+            return false;
+        }
+        $first = reset($this->rows[0]);
+        return $first;
+    }
 }
 
 class FakePdo extends PDO {

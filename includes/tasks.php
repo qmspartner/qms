@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/quality_objectives.php';
+require_once __DIR__ . '/action_items.php';
 
 /**
  * Samler den indloggede brugers opgaver på tværs af dokumenter og sager.
@@ -45,6 +46,18 @@ function get_my_tasks(array $user): array {
             'label' => $overdue ? t('tasks.case_overdue') : t('tasks.case_assigned'),
             'title' => $case['title'],
             'link' => 'case.php?id=' . $case['id'],
+            'sort' => $overdue ? 0 : 2,
+        ];
+    }
+
+    foreach (action_items_for_owner_tasks($db, $orgId, $userId) as $item) {
+        $overdue = $item['due_date'] < date('Y-m-d');
+        $tasks[] = [
+            'urgency' => $overdue ? 'danger' : 'warning',
+            'icon' => $overdue ? 'ti-alert-triangle' : 'ti-list-check',
+            'label' => $overdue ? t('tasks.action_item_overdue') : t('tasks.action_item_due'),
+            'title' => $item['title'] . ' (' . $item['case_title'] . ')',
+            'link' => 'case.php?id=' . $item['case_id'],
             'sort' => $overdue ? 0 : 2,
         ];
     }

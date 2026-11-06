@@ -28,6 +28,7 @@ require_once __DIR__ . '/../includes/employees.php';
 require_once __DIR__ . '/../includes/customers.php';
 require_once __DIR__ . '/../includes/equipment.php';
 require_once __DIR__ . '/../includes/quality_objectives.php';
+require_once __DIR__ . '/../includes/action_items.php';
 require_once __DIR__ . '/fake_pdo.php';
 
 $passed = 0;
@@ -599,6 +600,49 @@ $objectiveOwnedBy77 = ['owner_user_id' => 77];
 assert_true(can_manage_quality_objective($admin, $objectiveOwnedBy77), 'admin kan altid tilgå et kvalitetsmål');
 assert_true(can_manage_quality_objective($ownerUser, $objectiveOwnedBy77), 'målets egen ejer kan tilgå det, uanset rolle');
 assert_true(!can_manage_quality_objective($otherUser2, $objectiveOwnedBy77), 'en bruger uden adgang og uden ejerskab kan ikke tilgå et kvalitetsmål');
+
+// --- action_items.php: underaktioner på sager (Fase 1) -------------------------
+
+$db->rowsToReturn = [['id' => 1, 'case_id' => 5, 'status' => 'Åben', 'owner_name' => 'Mette Hansen']];
+action_item_list_for_case($db, 5);
+assert_true(str_contains($db->lastStatement->sql, 'WHERE ai.case_id = ?'), 'action_item_list_for_case() filtrerer på sagens id');
+assert_equal([5], $db->lastStatement->boundParams, 'action_item_list_for_case() binder case_id');
+
+$db->rowsToReturn = [['exists' => 1]];
+assert_true(action_item_has_open_for_case($db, 5), 'action_item_has_open_for_case() er sand når en åben underaktion findes');
+assert_true(str_contains($db->lastStatement->sql, "status = 'Åben'"), 'action_item_has_open_for_case() tjekker kun åbne underaktioner');
+
+$db->rowsToReturn = [];
+assert_true(!action_item_has_open_for_case($db, 5), 'action_item_has_open_for_case() er falsk når ingen rækker findes');
+
+// action_item_add(): første prepare henter næste position (SQL'en beregner selv
+// COALESCE(MAX(position), -1) + 1 — fetchColumn()'s returværdi ER den næste position,
+// ikke den rå MAX), anden prepare indsætter rækken.
+$db->rowsQueue = [[['next_position' => 2]], []];
+$db->statements = [];
+action_item_add($db, 1, 5, 'Opdatér kvalitetsplan', 42, '2026-12-01', 7);
+assert_equal(2, count($db->statements), 'action_item_add() laver præcis to forespørgsler (position + insert)');
+assert_true(str_contains($db->statements[1]->sql, 'INSERT INTO action_items'), 'action_item_add() indsætter en ny underaktion');
+assert_equal([1, 5, 2, 'Opdatér kvalitetsplan', 42, '2026-12-01', 7], $db->statements[1]->boundParams, 'action_item_add() binder parametrene, med den beregnede næste position');
+
+$db->rowsQueue = [[['next_position' => 0]], []];
+action_item_add($db, 1, 5, 'Uden ejer eller frist', null, null, 7);
+assert_equal([1, 5, 0, 'Uden ejer eller frist', null, null, 7], $db->lastStatement->boundParams, 'action_item_add() binder null for ejer/frist, position 0 for den første underaktion på en sag');
+
+action_item_set_status($db, 9, 1, true);
+assert_true(str_contains($db->lastStatement->sql, 'SET status = ?, completed_at = ?'), 'action_item_set_status() opdaterer status og completed_at');
+assert_equal('Afsluttet', $db->lastStatement->boundParams[0] ?? null, 'action_item_set_status(true) sætter status til Afsluttet');
+assert_true($db->lastStatement->boundParams[1] !== null, 'action_item_set_status(true) sætter completed_at');
+
+action_item_set_status($db, 9, 1, false);
+assert_equal('Åben', $db->lastStatement->boundParams[0] ?? null, 'action_item_set_status(false) genåbner til Åben');
+assert_equal(null, $db->lastStatement->boundParams[1], 'action_item_set_status(false) nulstiller completed_at');
+
+$db->rowsToReturn = [['id' => 3, 'title' => 'Opdatér kvalitetsplan', 'due_date' => '2026-11-01', 'case_id' => 5, 'case_title' => 'Forkert materialecertifikat']];
+$ownerTasks = action_items_for_owner_tasks($db, 1, 42);
+assert_equal([1, 42], $db->lastStatement->boundParams, 'action_items_for_owner_tasks() binder [organization_id, owner_user_id]');
+assert_true(str_contains($db->lastStatement->sql, "status = 'Åben' AND ai.due_date IS NOT NULL"), 'action_items_for_owner_tasks() viser kun åbne underaktioner med en frist');
+assert_equal('Forkert materialecertifikat', $ownerTasks[0]['case_title'] ?? null, 'action_items_for_owner_tasks() leverer sagens titel til brug i opgave-labelen');
 
 // --- Resultat ------------------------------------------------------------------
 

@@ -280,6 +280,27 @@ forespørgsel).
   (samme `can_manage_X`-mønster som `can_manage_employee()`), til at
   indberette målinger og sætte sin egen påmindelsesfrist
   (`can_manage_quality_objective()` i `includes/functions.php`).
+- **`includes/action_items.php`** er det niende modul: et underaktions-repository
+  ("handlingsplaner med underaktioner", Fase 1 af flere planlagte), med
+  `action_item_list_for_case()`, `action_item_has_open_for_case()`,
+  `action_item_add()`, `action_item_set_status()`, `action_item_delete()`,
+  `action_items_for_owner_tasks()`. En underaktion (`action_items`) er et
+  sporbart lag (ejer, deadline, status) OVENPÅ et eksisterende fritekstfelt —
+  i Fase 1 `cases.corrective_action` — fritekstfeltet fjernes/ændres ikke, det
+  forbliver opsummeringen. `action_items.case_id` er i dag altid sat; en
+  senere fase (Risici, Ledelsens evaluering) tilføjer flere nullable
+  forælder-kolonner efter samme mønster (se `migrations/013_underaktioner.sql`s
+  kommentar om `chk_actionitems_has_parent`) — BEVIDST ikke én generisk
+  `parent_type`/`parent_id`-kolonne, for at bevare rigtige FK-constraints,
+  i tråd med resten af skemaet. En sag kan IKKE sættes til "Lukket", mens den
+  har åbne underaktioner (`case.php`, samme blokerende mønster som
+  fratrædelse) — "Lukket" vises som deaktiveret mulighed i status-dropdown'en
+  når det er tilfældet. En åben underaktion med ejer+frist surfaces i "Mine
+  opgaver" (`includes/tasks.php`), ligesom kvalitetsmål og fratrædelse.
+  Tilføjelse/sletning af underaktioner kræver `can_manage_cases()`; at
+  markere en underaktion afsluttet/genåbnet kræver det SAMME, ELLER at man
+  selv er underaktionens ejer (så ejeren kan lukke sin egen opgave fra "Mine
+  opgaver" uden fuld sagsadgang).
 - Nye moduler følger samme mønster: en fil `includes/<modul>.php`, der
   requirer `includes/functions.php` selv (så den er selvstændig), og
   almindelige funktioner — ikke klasser, for at matche resten af kodebasens

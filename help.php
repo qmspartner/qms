@@ -274,7 +274,8 @@ render_header(t('help.title'));
             </div>
             <p style="margin:0 0 8px;"><?= h(t('help.cases.step1')) ?></p>
             <p style="margin:0 0 8px;"><?= h(t('help.cases.step2')) ?></p>
-            <p style="margin:0;"><?= h(t('help.cases.step3')) ?></p>
+            <p style="margin:0 0 8px;"><?= h(t('help.cases.step3')) ?></p>
+            <p style="margin:0;"><?= h(t('help.cases.step4')) ?></p>
         </div>
         <?php endif; ?>
 
