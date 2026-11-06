@@ -374,6 +374,8 @@ return [
     'case.error.closure_requires_closed_action_items' => 'The quality event cannot be closed until there is at least one corrective and one preventive sub-action, all either completed (with evidence) or marked N/A.',
 
     'case.actionitems.title' => 'Sub-actions',
+    'case.actionitems.section_subtitle_required' => 'Requirement for closing this case type',
+    'case.actionitems.section_subtitle_optional' => 'Optional tool, not a requirement for this case type',
     'case.actionitems.intro_required' => 'Sub-actions with an owner, deadline and documented evidence of completion.',
     'case.actionitems.intro_optional' => 'Sub-actions are an optional tool here — not a condition for closing the case.',
     'case.actionitems.optional_badge' => 'optional',

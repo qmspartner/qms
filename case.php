@@ -466,123 +466,147 @@ render_header($case['title']);
         <button type="submit"><?= h(t('case.save')) ?></button>
     </form>
 
-    <?php foreach (['Korrigerende' => ['items' => $correctiveItems, 'label' => t('case.field.corrective_action')], 'Forebyggende' => ['items' => $preventiveItems, 'label' => t('case.field.preventive_action')]] as $category => $categoryDef): ?>
-        <?php
-            $items = $categoryDef['items'];
-            $total = count($items);
-            $doneCount = count(array_filter($items, fn ($it) => $it['status'] !== 'Åben'));
-        ?>
-        <div style="border-top:0.5px solid var(--border); padding-top:1rem; margin-top:1rem;">
-            <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
-                <p class="meta-label" style="margin:0;">
-                    <?= h($categoryDef['label']) ?>
-                    <?php if (!$requiresClosureDocumentation): ?>
-                        <span class="muted" style="font-weight:400; text-transform:none; font-size:11px;">(<?= h(t('case.actionitems.optional_badge')) ?>)</span>
-                    <?php endif; ?>
-                </p>
-                <?php if ($items): ?>
-                    <p class="muted" style="margin:0; font-size:12px; white-space:nowrap;"><?= h(t('case.actionitems.progress', ['done' => $doneCount, 'total' => $total])) ?></p>
-                <?php endif; ?>
-            </div>
-            <p class="muted" style="margin:0 0 10px; font-size:12px;"><?= h($requiresClosureDocumentation ? t('case.actionitems.intro_required') : t('case.actionitems.intro_optional')) ?></p>
+    <div style="padding-top:20px; border-top:1px solid var(--border); margin-top:20px; display:flex; flex-direction:column; gap:16px;">
 
-            <?php foreach ($items as $it): ?>
-                <?php
-                    $isClosed = $it['status'] === 'Afsluttet';
-                    $isNa = $it['status'] === 'N/A';
-                    $isResolved = $isClosed || $isNa;
-                    $isOwnItem = (int) ($it['owner_user_id'] ?? 0) === (int) $user['id'];
-                    $isOverdue = !$isResolved && $it['due_date'] && $it['due_date'] < date('Y-m-d');
-                    $evidence = action_item_evidence_find_for_item($db, (int) $it['id']);
-                ?>
-                <div style="padding:10px 0; border-top:0.5px solid var(--border); display:flex; align-items:flex-start; gap:12px;">
-                    <?php if ($canManage || $isOwnItem): ?>
-                        <form method="post" class="inline-form" style="margin:0;">
-                            <?= csrf_field() ?>
-                            <input type="hidden" name="action_item_action" value="<?= $isResolved ? 'reopen' : 'close' ?>">
-                            <input type="hidden" name="item_id" value="<?= (int) $it['id'] ?>">
-                            <button type="submit" aria-label="<?= h(t($isResolved ? 'case.actionitems.reopen' : 'case.actionitems.close')) ?>"
-                                <?php if (!$isResolved && $requiresClosureDocumentation && !$evidence): ?>title="<?= h(t('case.actionitems.error.evidence_required')) ?>"<?php endif; ?>
-                                style="width:18px; height:18px; border-radius:5px; flex:0 0 auto; margin-top:1px; cursor:pointer; padding:0;
-                                       <?= $isClosed ? 'background:#16a34a; border:none; display:flex; align-items:center; justify-content:center;' : ($isNa ? 'background:#a1a1aa; border:none;' : 'background:#ffffff; border:1.5px solid var(--border);') ?>">
-                                <?php if ($isClosed): ?>
-                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                <?php endif; ?>
-                            </button>
-                        </form>
-                    <?php else: ?>
-                        <div style="width:18px; height:18px; border-radius:5px; flex:0 0 auto; margin-top:1px; <?= $isClosed ? 'background:#16a34a;' : ($isNa ? 'background:#a1a1aa;' : 'background:#ffffff; border:1.5px solid var(--border);') ?>"></div>
+        <div class="actionitems-heading">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 11l3 3L22 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <h3><?= h(t('case.actionitems.title')) ?></h3>
+            <span><?= h($requiresClosureDocumentation ? t('case.actionitems.section_subtitle_required') : t('case.actionitems.section_subtitle_optional')) ?></span>
+        </div>
+
+        <div class="actionitems-columns">
+        <?php foreach (['Korrigerende' => ['items' => $correctiveItems, 'label' => t('case.field.corrective_action')], 'Forebyggende' => ['items' => $preventiveItems, 'label' => t('case.field.preventive_action')]] as $category => $categoryDef): ?>
+            <?php
+                $items = $categoryDef['items'];
+                $total = count($items);
+                $doneCount = count(array_filter($items, fn ($it) => $it['status'] !== 'Åben'));
+                $progressPct = $total > 0 ? round(($doneCount / $total) * 100) : 0;
+            ?>
+            <div class="actionitem-panel">
+                <div class="actionitem-panel-head">
+                    <p class="actionitem-panel-title">
+                        <?= h($categoryDef['label']) ?>
+                        <?php if (!$requiresClosureDocumentation): ?>
+                            <span class="badge-optional">(<?= h(t('case.actionitems.optional_badge')) ?>)</span>
+                        <?php endif; ?>
+                    </p>
+                    <?php if ($items): ?>
+                        <p class="actionitem-panel-progress"><?= h(t('case.actionitems.progress', ['done' => $doneCount, 'total' => $total])) ?></p>
                     <?php endif; ?>
-                    <div style="flex:1 1 auto; min-width:0;">
-                        <p style="margin:0 0 6px; font-size:13px; <?= $isResolved ? 'color:#a1a1aa; text-decoration:line-through;' : 'color:var(--text);' ?>"><?= h($it['title']) ?></p>
-                        <?php if ($isNa): ?>
-                            <p class="muted" style="margin:0; font-size:11px; font-style:italic;"><?= h(t('case.actionitems.na_logged', ['reason' => $it['na_reason']])) ?></p>
-                        <?php elseif ($evidence): ?>
-                            <a href="download_action_item_evidence.php?id=<?= (int) $evidence['id'] ?>" style="display:inline-flex; align-items:center; gap:6px; font-size:11px; color:var(--text); background:#f0fdf4; border:1px solid #bbf7d0; border-radius:14px; padding:3px 10px; text-decoration:none; white-space:nowrap;">
-                                <?= h($evidence['original_filename']) ?>
-                            </a>
-                        <?php elseif (!$isResolved && ($canManage || $isOwnItem)): ?>
-                            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-                                <form method="post" enctype="multipart/form-data" class="inline-form" style="margin:0;">
-                                    <?= csrf_field() ?>
-                                    <input type="hidden" name="action_item_action" value="upload_evidence">
-                                    <input type="hidden" name="item_id" value="<?= (int) $it['id'] ?>">
-                                    <label style="font-size:11px; color:var(--accent-color, #2563eb); cursor:pointer; border:1px dashed var(--border); border-radius:14px; padding:3px 10px; white-space:nowrap;">
-                                        <?= h($requiresClosureDocumentation ? t('case.actionitems.upload_evidence') : t('case.actionitems.upload_evidence_optional')) ?>
-                                        <input type="file" name="evidence" onchange="this.form.submit();" style="display:none;">
-                                    </label>
-                                </form>
-                                <?php if ($canManage && $requiresClosureDocumentation): ?>
-                                    <form method="post" class="inline-form" style="margin:0; display:flex; gap:4px; align-items:center;">
-                                        <?= csrf_field() ?>
-                                        <input type="hidden" name="action_item_action" value="mark_na">
-                                        <input type="hidden" name="item_id" value="<?= (int) $it['id'] ?>">
-                                        <input type="text" name="na_reason" placeholder="<?= h(t('case.actionitems.na_reason_placeholder')) ?>" required style="width:130px; font-size:11px; padding:3px 6px;">
-                                        <button type="submit" class="button-small button-secondary" style="padding:2px 8px; font-size:11px; white-space:nowrap;"><?= h(t('case.actionitems.mark_na')) ?></button>
-                                    </form>
+                </div>
+                <?php if ($items): ?>
+                    <div class="actionitem-progress-track"><div class="actionitem-progress-fill" style="width:<?= (int) $progressPct ?>%;"></div></div>
+                <?php endif; ?>
+                <p class="actionitem-intro"><?= h($requiresClosureDocumentation ? t('case.actionitems.intro_required') : t('case.actionitems.intro_optional')) ?></p>
+
+                <?php foreach ($items as $it): ?>
+                    <?php
+                        $isClosed = $it['status'] === 'Afsluttet';
+                        $isNa = $it['status'] === 'N/A';
+                        $isResolved = $isClosed || $isNa;
+                        $isOwnItem = (int) ($it['owner_user_id'] ?? 0) === (int) $user['id'];
+                        $isOverdue = !$isResolved && $it['due_date'] && $it['due_date'] < date('Y-m-d');
+                        $evidence = action_item_evidence_find_for_item($db, (int) $it['id']);
+                        $statusClass = $isClosed ? ' actionitem-status-done' : ($isNa ? ' actionitem-status-na' : '');
+                    ?>
+                    <div class="actionitem-row">
+                        <?php if ($canManage || $isOwnItem): ?>
+                            <form method="post" class="inline-form" style="margin:0;">
+                                <?= csrf_field() ?>
+                                <input type="hidden" name="action_item_action" value="<?= $isResolved ? 'reopen' : 'close' ?>">
+                                <input type="hidden" name="item_id" value="<?= (int) $it['id'] ?>">
+                                <button type="submit" class="actionitem-status<?= $statusClass ?>" aria-label="<?= h(t($isResolved ? 'case.actionitems.reopen' : 'case.actionitems.close')) ?>"
+                                    <?php if (!$isResolved && $requiresClosureDocumentation && !$evidence): ?>title="<?= h(t('case.actionitems.error.evidence_required')) ?>"<?php endif; ?>>
+                                    <?php if ($isClosed): ?>
+                                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    <?php endif; ?>
+                                </button>
+                            </form>
+                        <?php else: ?>
+                            <div class="actionitem-status<?= $statusClass ?>" aria-hidden="true">
+                                <?php if ($isClosed): ?>
+                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
                                 <?php endif; ?>
                             </div>
                         <?php endif; ?>
+                        <div class="actionitem-body">
+                            <p class="actionitem-title<?= $isResolved ? ' actionitem-title-resolved' : '' ?>"><?= h($it['title']) ?></p>
+                            <p class="actionitem-meta"><?= h($it['owner_name'] ?? t('case.actionitems.no_owner')) ?><?php if (!$isResolved && $it['due_date']): ?> &middot; <?= $isOverdue ? '<span class="actionitem-side-overdue">' . h(format_date($it['due_date'])) . '</span>' : h(format_date($it['due_date'])) ?><?php endif; ?></p>
+                            <?php if ($isNa): ?>
+                                <p class="actionitem-na-note"><?= h(t('case.actionitems.na_logged', ['reason' => $it['na_reason']])) ?></p>
+                            <?php elseif ($evidence): ?>
+                                <a href="download_action_item_evidence.php?id=<?= (int) $evidence['id'] ?>" class="actionitem-evidence-chip">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="2"/><path d="M14 2v6h6" stroke="currentColor" stroke-width="2"/></svg>
+                                    <?= h($evidence['original_filename']) ?>
+                                </a>
+                            <?php elseif (!$isResolved && ($canManage || $isOwnItem)): ?>
+                                <div class="actionitem-actions-row">
+                                    <form method="post" enctype="multipart/form-data" class="inline-form" style="margin:0;">
+                                        <?= csrf_field() ?>
+                                        <input type="hidden" name="action_item_action" value="upload_evidence">
+                                        <input type="hidden" name="item_id" value="<?= (int) $it['id'] ?>">
+                                        <label class="actionitem-upload-btn">
+                                            <?= h($requiresClosureDocumentation ? t('case.actionitems.upload_evidence') : t('case.actionitems.upload_evidence_optional')) ?>
+                                            <input type="file" name="evidence" onchange="this.form.submit();" style="display:none;">
+                                        </label>
+                                    </form>
+                                    <?php if ($canManage && $requiresClosureDocumentation): ?>
+                                        <form method="post" class="actionitem-na-form">
+                                            <?= csrf_field() ?>
+                                            <input type="hidden" name="action_item_action" value="mark_na">
+                                            <input type="hidden" name="item_id" value="<?= (int) $it['id'] ?>">
+                                            <input type="text" name="na_reason" placeholder="<?= h(t('case.actionitems.na_reason_placeholder')) ?>" required>
+                                            <button type="submit" class="button-small button-secondary" style="padding:3px 9px; font-size:11.5px; white-space:nowrap;"><?= h(t('case.actionitems.mark_na')) ?></button>
+                                        </form>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                        <?php if ($isResolved): ?>
+                            <span class="actionitem-side actionitem-side-resolved"><?= $isClosed ? h(t('case.actionitems.status_done')) : h(t('case.actionitems.status_na')) ?></span>
+                        <?php endif; ?>
+                        <?php if ($canManage): ?>
+                            <form method="post" class="inline-form" style="margin:0;" onsubmit="return confirm('<?= h(t('case.actionitems.delete_confirm')) ?>');">
+                                <?= csrf_field() ?>
+                                <input type="hidden" name="action_item_action" value="delete">
+                                <input type="hidden" name="item_id" value="<?= (int) $it['id'] ?>">
+                                <button type="submit" class="button-small button-secondary actionitem-delete-btn" aria-label="<?= h(t('case.actionitems.delete')) ?>">&times;</button>
+                            </form>
+                        <?php endif; ?>
                     </div>
-                    <span style="font-size:11px; color:<?= $isResolved ? '#a1a1aa' : 'var(--text-muted)' ?>; white-space:nowrap; margin-top:2px;"><?= h($it['owner_name'] ?? t('case.actionitems.no_owner')) ?></span>
-                    <span style="font-size:11px; font-weight:<?= $isOverdue ? '600' : '400' ?>; color:<?= $isResolved ? '#a1a1aa' : ($isOverdue ? 'var(--danger)' : 'var(--text-muted)') ?>; white-space:nowrap; width:76px; text-align:right; margin-top:2px;">
-                        <?= $isClosed ? h(t('case.actionitems.status_done')) : ($isNa ? h(t('case.actionitems.status_na')) : ($it['due_date'] ? format_date($it['due_date']) : '—')) ?>
-                    </span>
-                    <?php if ($canManage): ?>
-                        <form method="post" class="inline-form" style="margin:0;" onsubmit="return confirm('<?= h(t('case.actionitems.delete_confirm')) ?>');">
-                            <?= csrf_field() ?>
-                            <input type="hidden" name="action_item_action" value="delete">
-                            <input type="hidden" name="item_id" value="<?= (int) $it['id'] ?>">
-                            <button type="submit" class="button-small button-secondary" aria-label="<?= h(t('case.actionitems.delete')) ?>" style="padding:2px 8px; font-size:11px; margin-top:2px;">&times;</button>
-                        </form>
-                    <?php endif; ?>
-                </div>
-            <?php endforeach; ?>
-            <?php if (!$items): ?>
-                <p class="muted" style="margin:0; padding:8px 0;"><?= h(t('case.actionitems.none')) ?></p>
-            <?php endif; ?>
+                <?php endforeach; ?>
+                <?php if (!$items): ?>
+                    <p class="muted" style="margin:0; padding:4px 0;"><?= h(t('case.actionitems.none')) ?></p>
+                <?php endif; ?>
 
-            <?php if ($canManage): ?>
-            <form method="post" class="inline-grid-form" style="padding-top:10px; border-top:1px dashed var(--border); margin-top:4px; display:flex; gap:8px; align-items:center;">
-                <?= csrf_field() ?>
-                <input type="hidden" name="action_item_action" value="add">
-                <input type="hidden" name="category" value="<?= h($category) ?>">
-                <input type="text" name="title" placeholder="<?= h(t('case.actionitems.new_placeholder')) ?>" required style="flex:1 1 auto; min-width:0;">
-                <select name="owner_user_id" style="width:160px;">
-                    <option value=""><?= h(t('case.field.responsible_none')) ?></option>
-                    <?php foreach ($orgUsers as $u): ?>
-                        <option value="<?= (int) $u['id'] ?>"><?= h($u['name']) ?></option>
-                    <?php endforeach; ?>
-                </select>
-                <input type="date" name="due_date" style="width:150px;">
-                <button type="submit"><?= h(t('case.actionitems.add')) ?></button>
-            </form>
-            <?php endif; ?>
+                <?php if ($canManage): ?>
+                <form method="post" class="actionitem-add-row">
+                    <?= csrf_field() ?>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                    <input type="hidden" name="action_item_action" value="add">
+                    <input type="hidden" name="category" value="<?= h($category) ?>">
+                    <input type="text" name="title" placeholder="<?= h(t('case.actionitems.new_placeholder')) ?>" required>
+                    <select name="owner_user_id" style="width:150px;">
+                        <option value=""><?= h(t('case.field.responsible_none')) ?></option>
+                        <?php foreach ($orgUsers as $u): ?>
+                            <option value="<?= (int) $u['id'] ?>"><?= h($u['name']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <input type="date" name="due_date" style="width:140px;">
+                    <button type="submit" class="button-small"><?= h(t('case.actionitems.add')) ?></button>
+                </form>
+                <?php endif; ?>
+            </div>
+        <?php endforeach; ?>
         </div>
-    <?php endforeach; ?>
-    <?php if ($blocksClosure): ?>
-        <p class="muted" style="margin:10px 0 0; font-size:12px;"><?= h(t('case.actionitems.blocks_closure_hint')) ?></p>
-    <?php endif; ?>
+
+        <?php if ($blocksClosure): ?>
+            <div class="actionitem-closure-hint">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 9v4M12 17h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/></svg>
+                <p><?= h(t('case.actionitems.blocks_closure_hint')) ?></p>
+            </div>
+        <?php endif; ?>
+    </div>
 </div>
 <?php endif; ?>
 

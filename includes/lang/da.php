@@ -374,6 +374,8 @@ return [
     'case.error.closure_requires_closed_action_items' => 'Kvalitetshændelsen kan ikke lukkes, før der findes mindst én korrigerende og én forebyggende underaktion, alle afsluttet (med bevis) eller markeret N/A.',
 
     'case.actionitems.title' => 'Underaktioner',
+    'case.actionitems.section_subtitle_required' => 'Krav til lukning af denne sagstype',
+    'case.actionitems.section_subtitle_optional' => 'Valgfrit værktøj, ikke et krav for denne sagstype',
     'case.actionitems.intro_required' => 'Underaktioner med ejer, frist og dokumenteret bevis for udførelsen.',
     'case.actionitems.intro_optional' => 'Underaktioner er her et valgfrit værktøj — ikke en betingelse for at lukke sagen.',
     'case.actionitems.optional_badge' => 'valgfrit',
