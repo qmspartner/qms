@@ -282,25 +282,49 @@ forespørgsel).
   (`can_manage_quality_objective()` i `includes/functions.php`).
 - **`includes/action_items.php`** er det niende modul: et underaktions-repository
   ("handlingsplaner med underaktioner", Fase 1 af flere planlagte), med
-  `action_item_list_for_case()`, `action_item_has_open_for_case()`,
-  `action_item_add()`, `action_item_set_status()`, `action_item_delete()`,
-  `action_items_for_owner_tasks()`. En underaktion (`action_items`) er et
-  sporbart lag (ejer, deadline, status) OVENPÅ et eksisterende fritekstfelt —
-  i Fase 1 `cases.corrective_action` — fritekstfeltet fjernes/ændres ikke, det
-  forbliver opsummeringen. `action_items.case_id` er i dag altid sat; en
-  senere fase (Risici, Ledelsens evaluering) tilføjer flere nullable
-  forælder-kolonner efter samme mønster (se `migrations/013_underaktioner.sql`s
-  kommentar om `chk_actionitems_has_parent`) — BEVIDST ikke én generisk
+  `action_item_list_for_case()` (valgfrit `$category`-filter),
+  `action_item_has_open_for_case()`, `action_item_category_counts_for_case()`,
+  `action_item_add()`, `action_item_close()`, `action_item_reopen()`,
+  `action_item_mark_na()`, `action_item_delete()`,
+  `action_item_evidence_find_for_item()`, `action_item_evidence_add()`,
+  `action_item_evidence_delete_for_item()`, `action_items_for_owner_tasks()`.
+  En underaktion (`action_items`) er et sporbart lag (ejer, deadline, status,
+  bevis) der i Sager-modulet nu ERSTATTER selve redigeringsfeltet for
+  Korrigerende/Forebyggende handling — `cases.corrective_action`/
+  `preventive_action` bevares uændret i databasen (udelukkende eksempeldata
+  ramt indtil videre), men vises/redigeres ikke længere nogen steder. Hver
+  underaktion hører til én af to kategorier (`action_items.category`:
+  Korrigerende/Forebyggende), og kan have ét vedhæftet bevis
+  (`action_item_evidence`, én række ad gangen — et nyt upload sletter den
+  forrige fil og -række, se `case.php`s `upload_evidence`-handling).
+  `action_items.case_id` er i dag altid sat; en senere fase (Risici,
+  Ledelsens evaluering) tilføjer flere nullable forælder-kolonner efter
+  samme mønster (se `migrations/013_underaktioner.sql`s kommentar om
+  `chk_actionitems_has_parent`) — BEVIDST ikke én generisk
   `parent_type`/`parent_id`-kolonne, for at bevare rigtige FK-constraints,
-  i tråd med resten af skemaet. En sag kan IKKE sættes til "Lukket", mens den
-  har åbne underaktioner (`case.php`, samme blokerende mønster som
-  fratrædelse) — "Lukket" vises som deaktiveret mulighed i status-dropdown'en
-  når det er tilfældet. En åben underaktion med ejer+frist surfaces i "Mine
-  opgaver" (`includes/tasks.php`), ligesom kvalitetsmål og fratrædelse.
+  i tråd med resten af skemaet.
+  For de sagstyper der kræver lukningsdokumentation
+  (`$requiresClosureDocumentation` i `case.php`: Afvigelse, Audit fund,
+  Kundeklage, Leverandør reklamation) kan en sag IKKE sættes til "Lukket",
+  mens den enten har åbne underaktioner, eller mangler mindst én underaktion
+  i hver af de to kategorier (`$blocksClosure` i `case.php`) — "Lukket" vises
+  som deaktiveret mulighed i status-dropdown'en når det er tilfældet. For de
+  øvrige sagstyper (Forslag, Observation, Mistænkt forfalsket del) er
+  underaktioner et valgfrit værktøj uden lukke-krav, markeret med en
+  "valgfrit"-badge i UI'et.
+  At AFSLUTTE en underaktion kræver, på de blokerende sagstyper, enten et
+  vedhæftet bevis ELLER at den i stedet markeres 'N/A' (ikke relevant) med en
+  påkrævet, logget begrundelse (`na_reason`/`na_logged_by`/`na_logged_at`) —
+  samme mønster som fratrædelsens påkrævede, loggede begrundelse. På de
+  øvrige sagstyper kan den afsluttes frit, uden bevis. En åben underaktion
+  med ejer+frist surfaces i "Mine opgaver" (`includes/tasks.php`), ligesom
+  kvalitetsmål og fratrædelse, uanset kategori.
   Tilføjelse/sletning af underaktioner kræver `can_manage_cases()`; at
-  markere en underaktion afsluttet/genåbnet kræver det SAMME, ELLER at man
-  selv er underaktionens ejer (så ejeren kan lukke sin egen opgave fra "Mine
-  opgaver" uden fuld sagsadgang).
+  afslutte/genåbne/uploade bevis for en underaktion kræver det SAMME, ELLER
+  at man selv er underaktionens ejer (så ejeren kan lukke sin egen opgave fra
+  "Mine opgaver" uden fuld sagsadgang); at markere 'N/A' kræver
+  `can_manage_cases()` (ikke ejeren alene, da det er en undtagelse fra selve
+  kravet, ikke blot en afslutning af ens egen opgave).
 - Nye moduler følger samme mønster: en fil `includes/<modul>.php`, der
   requirer `includes/functions.php` selv (så den er selvstændig), og
   almindelige funktioner — ikke klasser, for at matche resten af kodebasens

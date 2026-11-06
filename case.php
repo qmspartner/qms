@@ -31,9 +31,16 @@ if (!case_is_visible($user, $case)) {
 $canManage = can_manage_cases($user);
 $error = '';
 $effectivenessError = '';
-// Disse sagstyper skal, ved lukning, have en dokumenteret rodårsag og korrigerende
-// handling samt en planlagt dato for effektivitetstjek af handlingen (ISO 9001 pkt. 10.2).
+// Disse sagstyper skal, ved lukning, have en dokumenteret rodårsag samt en planlagt dato
+// for effektivitetstjek af handlingen (ISO 9001 pkt. 10.2). De skal desuden have mindst én
+// korrigerende og én forebyggende underaktion, alle afsluttet (med bevis) eller markeret
+// N/A — se $blocksClosure. For øvrige sagstyper (Forslag, Observation, Mistænkt forfalsket
+// del) er underaktioner et valgfrit værktøj, ikke en lukke-betingelse.
 $requiresClosureDocumentation = in_array($case['type'], ['Audit fund', 'Afvigelse', 'Kundeklage', 'Leverandør reklamation'], true);
+$hasOpenActionItems = action_item_has_open_for_case($db, $id);
+$categoryCounts = action_item_category_counts_for_case($db, $id);
+$blocksClosure = $requiresClosureDocumentation
+    && ($hasOpenActionItems || $categoryCounts['Korrigerende'] === 0 || $categoryCounts['Forebyggende'] === 0);
 
 if ($canManage && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['effectiveness_action'])) {
     $effectivenessAction = $_POST['effectiveness_action'];
@@ -83,18 +90,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_item_action'])
     $actionItemAction = $_POST['action_item_action'];
 
     if ($actionItemAction === 'add' && $canManage) {
+        $category = $_POST['category'] ?? '';
         $title = trim($_POST['title'] ?? '');
         $ownerUserId = (int) ($_POST['owner_user_id'] ?? 0);
         $dueDate = trim($_POST['due_date'] ?? '');
-        if ($title === '') {
+        if (!in_array($category, ['Korrigerende', 'Forebyggende'], true)) {
+            $error = t('case.error.invalid');
+        } elseif ($title === '') {
             $error = t('case.actionitems.error.title_required');
         } else {
-            action_item_add($db, $user['organization_id'], $id, $title, $ownerUserId ?: null, $dueDate ?: null, (int) $user['id']);
+            action_item_add($db, $user['organization_id'], $id, $category, $title, $ownerUserId ?: null, $dueDate ?: null, (int) $user['id']);
             log_case_action($id, t('case.actionitems.log.added'), $title);
             header('Location: case.php?id=' . $id);
             exit;
         }
-    } elseif (in_array($actionItemAction, ['close', 'reopen'], true)) {
+    } elseif (in_array($actionItemAction, ['close', 'reopen', 'mark_na'], true)) {
         $itemId = (int) ($_POST['item_id'] ?? 0);
         $items = action_item_list_for_case($db, $id);
         $match = null;
@@ -106,13 +116,83 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_item_action'])
         }
         $isOwner = $match && (int) ($match['owner_user_id'] ?? 0) === (int) $user['id'];
         if ($match && ($canManage || $isOwner)) {
-            action_item_set_status($db, $itemId, $user['organization_id'], $actionItemAction === 'close');
-            log_case_action($id, $actionItemAction === 'close' ? t('case.actionitems.log.closed') : t('case.actionitems.log.reopened'), $match['title']);
-            header('Location: case.php?id=' . $id);
-            exit;
+            if ($actionItemAction === 'close') {
+                // Bevis er kun en betingelse for at afslutte en underaktion på de
+                // sagstyper der kræver lukningsdokumentation — ellers kan den afsluttes
+                // frit, som før.
+                $hasEvidence = (bool) action_item_evidence_find_for_item($db, $itemId);
+                if ($requiresClosureDocumentation && !$hasEvidence) {
+                    $error = t('case.actionitems.error.evidence_required');
+                } else {
+                    action_item_close($db, $itemId, $user['organization_id']);
+                    log_case_action($id, t('case.actionitems.log.closed'), $match['title']);
+                    header('Location: case.php?id=' . $id);
+                    exit;
+                }
+            } elseif ($actionItemAction === 'reopen') {
+                action_item_reopen($db, $itemId, $user['organization_id']);
+                log_case_action($id, t('case.actionitems.log.reopened'), $match['title']);
+                header('Location: case.php?id=' . $id);
+                exit;
+            } elseif ($actionItemAction === 'mark_na' && $canManage) {
+                // N/A er en undtagelse fra selve bevis-kravet, ikke blot en afslutning af
+                // ens egen opgave — derfor kræves fuld sagsadgang her, i modsætning til
+                // close/reopen/upload_evidence, som ejeren også selv kan udføre.
+                $naReason = trim($_POST['na_reason'] ?? '');
+                if ($naReason === '') {
+                    $error = t('case.actionitems.error.na_reason_required');
+                } else {
+                    action_item_mark_na($db, $itemId, $user['organization_id'], $naReason, (int) $user['id']);
+                    log_case_action($id, t('case.actionitems.log.marked_na'), $match['title'] . ' — ' . $naReason);
+                    header('Location: case.php?id=' . $id);
+                    exit;
+                }
+            }
+        }
+    } elseif ($actionItemAction === 'upload_evidence') {
+        $itemId = (int) ($_POST['item_id'] ?? 0);
+        $items = action_item_list_for_case($db, $id);
+        $match = null;
+        foreach ($items as $it) {
+            if ((int) $it['id'] === $itemId) {
+                $match = $it;
+                break;
+            }
+        }
+        $isOwner = $match && (int) ($match['owner_user_id'] ?? 0) === (int) $user['id'];
+        $file = $_FILES['evidence'] ?? null;
+        if ($match && ($canManage || $isOwner)) {
+            if (!$file || $file['error'] === UPLOAD_ERR_NO_FILE) {
+                $error = t('case.actionitems.error.evidence_file_required');
+            } elseif ($file['error'] !== UPLOAD_ERR_OK) {
+                $error = t('newcase.error.upload', ['file' => $file['name']]);
+            } elseif ($file['size'] > MAX_FILE_SIZE) {
+                $error = t('newcase.error.too_large', ['file' => $file['name']]);
+            } else {
+                $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+                if (!in_array($ext, ALLOWED_EXTENSIONS, true)) {
+                    $error = t('newcase.error.bad_type', ['file' => $file['name'], 'types' => implode(', ', ALLOWED_EXTENSIONS)]);
+                } else {
+                    $storedName = bin2hex(random_bytes(16)) . '.' . $ext;
+                    if (move_uploaded_file($file['tmp_name'], UPLOAD_DIR . $storedName)) {
+                        // Ét bevis ad gangen — et nyt upload erstatter det forrige
+                        // (både databaserækken og selve filen på disk).
+                        foreach (action_item_evidence_delete_for_item($db, $itemId, $user['organization_id']) as $oldStoredFilename) {
+                            @unlink(UPLOAD_DIR . $oldStoredFilename);
+                        }
+                        action_item_evidence_add($db, $user['organization_id'], $itemId, $storedName, $file['name'], (int) $user['id']);
+                        log_case_action($id, t('case.actionitems.log.evidence_uploaded'), $match['title']);
+                        header('Location: case.php?id=' . $id);
+                        exit;
+                    }
+                }
+            }
         }
     } elseif ($actionItemAction === 'delete' && $canManage) {
         $itemId = (int) ($_POST['item_id'] ?? 0);
+        foreach (action_item_evidence_delete_for_item($db, $itemId, $user['organization_id']) as $storedFilename) {
+            @unlink(UPLOAD_DIR . $storedFilename);
+        }
         action_item_delete($db, $itemId, $user['organization_id']);
         header('Location: case.php?id=' . $id);
         exit;
@@ -125,8 +205,6 @@ if ($canManage && $_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['effect
     $description = trim($_POST['description'] ?? '');
     $rootCause = trim($_POST['root_cause'] ?? '');
     $immediateAction = trim($_POST['immediate_action'] ?? '');
-    $correctiveAction = trim($_POST['corrective_action'] ?? '');
-    $preventiveAction = trim($_POST['preventive_action'] ?? '');
     $assignedTo = (int) ($_POST['assigned_to'] ?? 0);
     $dueDate = trim($_POST['due_date'] ?? '');
     $requiresNotification = isset($_POST['requires_customer_notification']) ? 1 : 0;
@@ -143,12 +221,10 @@ if ($canManage && $_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['effect
 
     if (!in_array($status, $allowedStatuses, true) || !in_array($severity, $allowedSeverities, true) || $description === '') {
         $error = t('case.error.invalid');
-    } elseif ($isClosingNow && action_item_has_open_for_case($db, $id)) {
+    } elseif ($isClosingNow && $blocksClosure) {
         $error = t('case.error.closure_requires_closed_action_items');
-    } elseif ($isClosingNow && $requiresClosureDocumentation && ($rootCause === '' || $correctiveAction === '')) {
+    } elseif ($isClosingNow && $requiresClosureDocumentation && $rootCause === '') {
         $error = t('case.error.closure_requires_root_cause');
-    } elseif (!$wasAlreadyClosed && $correctiveAction !== '' && $preventiveAction === '') {
-        $error = t('case.error.corrective_requires_preventive');
     } elseif ($isClosingNow && $requiresClosureDocumentation && $effectivenessReviewDue === '') {
         $error = t('case.error.closure_requires_effectiveness_date');
     } elseif ($requiresNotification && $contractReference === '') {
@@ -180,11 +256,11 @@ if ($canManage && $_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['effect
 
         $stmt = $db->prepare('
             UPDATE cases
-            SET status = ?, severity = ?, description = ?, root_cause = ?, immediate_action = ?, corrective_action = ?, preventive_action = ?, assigned_to = ?, due_date = ?, requires_customer_notification = ?, contract_reference = ?, customer_response_date = ?, closed_at = ?, effectiveness_review_due = ?
+            SET status = ?, severity = ?, description = ?, root_cause = ?, immediate_action = ?, assigned_to = ?, due_date = ?, requires_customer_notification = ?, contract_reference = ?, customer_response_date = ?, closed_at = ?, effectiveness_review_due = ?
             WHERE id = ? AND organization_id = ?
         ');
         $stmt->execute([
-            $status, $severity ?: null, $description, $rootCause ?: null, $immediateAction ?: null, $correctiveAction ?: null, $preventiveAction ?: null,
+            $status, $severity ?: null, $description, $rootCause ?: null, $immediateAction ?: null,
             $assignedToId, $dueDate ?: null, $requiresNotification, $requiresNotification ? $contractReference : null,
             $case['type'] === 'Kundeklage' ? ($customerResponseDate ?: null) : null, $closedAt,
             $validEffectivenessReviewDue,
@@ -223,8 +299,8 @@ $stmt = $db->prepare("SELECT id, name FROM users WHERE organization_id = ? AND a
 $stmt->execute([$user['organization_id']]);
 $orgUsers = $stmt->fetchAll();
 
-$actionItems = action_item_list_for_case($db, $id);
-$openActionItemCount = count(array_filter($actionItems, fn ($it) => $it['status'] === 'Åben'));
+$correctiveItems = action_item_list_for_case($db, $id, 'Korrigerende');
+$preventiveItems = action_item_list_for_case($db, $id, 'Forebyggende');
 
 render_header($case['title']);
 ?>
@@ -269,90 +345,127 @@ render_header($case['title']);
         <?php endif; ?>
         <?php if ($case['root_cause']): ?>
             <p class="meta-label"><?= h(t('case.root_cause')) ?></p>
-            <p style="margin:0 0 12px;"><?= nl2br(h($case['root_cause'])) ?></p>
-        <?php endif; ?>
-        <?php if ($case['corrective_action']): ?>
-            <p class="meta-label"><?= h(t('case.corrective_action')) ?></p>
-            <p style="margin:0 0 12px;"><?= nl2br(h($case['corrective_action'])) ?></p>
-        <?php endif; ?>
-        <?php if ($case['preventive_action']): ?>
-            <p class="meta-label"><?= h(t('case.preventive_action')) ?></p>
-            <p style="margin:0;"><?= nl2br(h($case['preventive_action'])) ?></p>
+            <p style="margin:0;"><?= nl2br(h($case['root_cause'])) ?></p>
         <?php endif; ?>
     </div>
 
-    <div style="border-top:0.5px solid var(--border); padding-top:1rem; margin-top:1rem;">
-        <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
-            <p class="meta-label" style="margin:0;"><?= h(t('case.actionitems.title')) ?></p>
-            <?php if ($actionItems): ?>
-                <p class="muted" style="margin:0; font-size:12px; white-space:nowrap;"><?= h(t('case.actionitems.progress', ['done' => count($actionItems) - $openActionItemCount, 'total' => count($actionItems)])) ?></p>
-            <?php endif; ?>
-        </div>
-        <p class="muted" style="margin:0 0 10px; font-size:12px;"><?= h(t('case.actionitems.intro')) ?></p>
-
-        <?php foreach ($actionItems as $it): ?>
-            <?php
-                $isClosed = $it['status'] === 'Afsluttet';
-                $isOwnItem = (int) ($it['owner_user_id'] ?? 0) === (int) $user['id'];
-                $isOverdue = !$isClosed && $it['due_date'] && $it['due_date'] < date('Y-m-d');
-            ?>
-            <div style="padding:8px 0; border-top:0.5px solid var(--border); display:flex; align-items:flex-start; gap:12px;">
-                <?php if ($canManage || $isOwnItem): ?>
-                    <form method="post" class="inline-form" style="margin:0;">
-                        <?= csrf_field() ?>
-                        <input type="hidden" name="action_item_action" value="<?= $isClosed ? 'reopen' : 'close' ?>">
-                        <input type="hidden" name="item_id" value="<?= (int) $it['id'] ?>">
-                        <button type="submit" aria-label="<?= h(t($isClosed ? 'case.actionitems.reopen' : 'case.actionitems.close')) ?>"
-                            style="width:18px; height:18px; border-radius:5px; flex:0 0 auto; margin-top:1px; cursor:pointer; padding:0;
-                                   <?= $isClosed ? 'background:#16a34a; border:none; display:flex; align-items:center; justify-content:center;' : 'background:#ffffff; border:1.5px solid var(--border);' ?>">
-                            <?php if ($isClosed): ?>
-                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                            <?php endif; ?>
-                        </button>
-                    </form>
-                <?php else: ?>
-                    <div style="width:18px; height:18px; border-radius:5px; flex:0 0 auto; margin-top:1px; <?= $isClosed ? 'background:#16a34a;' : 'background:#ffffff; border:1.5px solid var(--border);' ?>"></div>
-                <?php endif; ?>
-                <div style="flex:1 1 auto; min-width:0;">
-                    <p style="margin:0; font-size:13px; <?= $isClosed ? 'color:#a1a1aa; text-decoration:line-through;' : 'color:var(--text);' ?>"><?= h($it['title']) ?></p>
-                </div>
-                <span style="font-size:11px; color:<?= $isClosed ? '#a1a1aa' : 'var(--text-muted)' ?>; white-space:nowrap;"><?= h($it['owner_name'] ?? t('case.actionitems.no_owner')) ?></span>
-                <span style="font-size:11px; font-weight:<?= $isOverdue ? '600' : '400' ?>; color:<?= $isClosed ? '#a1a1aa' : ($isOverdue ? 'var(--danger)' : 'var(--text-muted)') ?>; white-space:nowrap; width:76px; text-align:right;">
-                    <?= $isClosed ? h(t('case.actionitems.status_done')) : ($it['due_date'] ? format_date($it['due_date']) : '—') ?>
-                </span>
-                <?php if ($canManage): ?>
-                    <form method="post" class="inline-form" style="margin:0;" onsubmit="return confirm('<?= h(t('case.actionitems.delete_confirm')) ?>');">
-                        <?= csrf_field() ?>
-                        <input type="hidden" name="action_item_action" value="delete">
-                        <input type="hidden" name="item_id" value="<?= (int) $it['id'] ?>">
-                        <button type="submit" class="button-small button-secondary" aria-label="<?= h(t('case.actionitems.delete')) ?>" style="padding:2px 8px; font-size:11px;">&times;</button>
-                    </form>
+    <?php foreach (['Korrigerende' => ['items' => $correctiveItems, 'label' => t('case.field.corrective_action')], 'Forebyggende' => ['items' => $preventiveItems, 'label' => t('case.field.preventive_action')]] as $category => $categoryDef): ?>
+        <?php
+            $items = $categoryDef['items'];
+            $total = count($items);
+            $doneCount = count(array_filter($items, fn ($it) => $it['status'] !== 'Åben'));
+        ?>
+        <div style="border-top:0.5px solid var(--border); padding-top:1rem; margin-top:1rem;">
+            <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+                <p class="meta-label" style="margin:0;">
+                    <?= h($categoryDef['label']) ?>
+                    <?php if (!$requiresClosureDocumentation): ?>
+                        <span class="muted" style="font-weight:400; text-transform:none; font-size:11px;">(<?= h(t('case.actionitems.optional_badge')) ?>)</span>
+                    <?php endif; ?>
+                </p>
+                <?php if ($items): ?>
+                    <p class="muted" style="margin:0; font-size:12px; white-space:nowrap;"><?= h(t('case.actionitems.progress', ['done' => $doneCount, 'total' => $total])) ?></p>
                 <?php endif; ?>
             </div>
-        <?php endforeach; ?>
-        <?php if (!$actionItems): ?>
-            <p class="muted" style="margin:0; padding:8px 0;"><?= h(t('case.actionitems.none')) ?></p>
-        <?php endif; ?>
+            <p class="muted" style="margin:0 0 10px; font-size:12px;"><?= h($requiresClosureDocumentation ? t('case.actionitems.intro_required') : t('case.actionitems.intro_optional')) ?></p>
 
-        <?php if ($canManage): ?>
-        <form method="post" class="inline-grid-form" style="padding-top:10px; border-top:1px dashed var(--border); margin-top:4px; display:flex; gap:8px; align-items:center;">
-            <?= csrf_field() ?>
-            <input type="hidden" name="action_item_action" value="add">
-            <input type="text" name="title" placeholder="<?= h(t('case.actionitems.new_placeholder')) ?>" required style="flex:1 1 auto; min-width:0;">
-            <select name="owner_user_id" style="width:160px;">
-                <option value=""><?= h(t('case.field.responsible_none')) ?></option>
-                <?php foreach ($orgUsers as $u): ?>
-                    <option value="<?= (int) $u['id'] ?>"><?= h($u['name']) ?></option>
-                <?php endforeach; ?>
-            </select>
-            <input type="date" name="due_date" style="width:150px;">
-            <button type="submit"><?= h(t('case.actionitems.add')) ?></button>
-        </form>
-        <?php endif; ?>
-        <?php if ($openActionItemCount > 0): ?>
-            <p class="muted" style="margin:8px 0 0; font-size:12px;"><?= h(t('case.actionitems.blocks_closure_hint')) ?></p>
-        <?php endif; ?>
-    </div>
+            <?php foreach ($items as $it): ?>
+                <?php
+                    $isClosed = $it['status'] === 'Afsluttet';
+                    $isNa = $it['status'] === 'N/A';
+                    $isResolved = $isClosed || $isNa;
+                    $isOwnItem = (int) ($it['owner_user_id'] ?? 0) === (int) $user['id'];
+                    $isOverdue = !$isResolved && $it['due_date'] && $it['due_date'] < date('Y-m-d');
+                    $evidence = action_item_evidence_find_for_item($db, (int) $it['id']);
+                ?>
+                <div style="padding:10px 0; border-top:0.5px solid var(--border); display:flex; align-items:flex-start; gap:12px;">
+                    <?php if ($canManage || $isOwnItem): ?>
+                        <form method="post" class="inline-form" style="margin:0;">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="action_item_action" value="<?= $isResolved ? 'reopen' : 'close' ?>">
+                            <input type="hidden" name="item_id" value="<?= (int) $it['id'] ?>">
+                            <button type="submit" aria-label="<?= h(t($isResolved ? 'case.actionitems.reopen' : 'case.actionitems.close')) ?>"
+                                <?php if (!$isResolved && $requiresClosureDocumentation && !$evidence): ?>title="<?= h(t('case.actionitems.error.evidence_required')) ?>"<?php endif; ?>
+                                style="width:18px; height:18px; border-radius:5px; flex:0 0 auto; margin-top:1px; cursor:pointer; padding:0;
+                                       <?= $isClosed ? 'background:#16a34a; border:none; display:flex; align-items:center; justify-content:center;' : ($isNa ? 'background:#a1a1aa; border:none;' : 'background:#ffffff; border:1.5px solid var(--border);') ?>">
+                                <?php if ($isClosed): ?>
+                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                <?php endif; ?>
+                            </button>
+                        </form>
+                    <?php else: ?>
+                        <div style="width:18px; height:18px; border-radius:5px; flex:0 0 auto; margin-top:1px; <?= $isClosed ? 'background:#16a34a;' : ($isNa ? 'background:#a1a1aa;' : 'background:#ffffff; border:1.5px solid var(--border);') ?>"></div>
+                    <?php endif; ?>
+                    <div style="flex:1 1 auto; min-width:0;">
+                        <p style="margin:0 0 6px; font-size:13px; <?= $isResolved ? 'color:#a1a1aa; text-decoration:line-through;' : 'color:var(--text);' ?>"><?= h($it['title']) ?></p>
+                        <?php if ($isNa): ?>
+                            <p class="muted" style="margin:0; font-size:11px; font-style:italic;"><?= h(t('case.actionitems.na_logged', ['reason' => $it['na_reason']])) ?></p>
+                        <?php elseif ($evidence): ?>
+                            <a href="download_action_item_evidence.php?id=<?= (int) $evidence['id'] ?>" style="display:inline-flex; align-items:center; gap:6px; font-size:11px; color:var(--text); background:#f0fdf4; border:1px solid #bbf7d0; border-radius:14px; padding:3px 10px; text-decoration:none; white-space:nowrap;">
+                                <?= h($evidence['original_filename']) ?>
+                            </a>
+                        <?php elseif (!$isResolved && ($canManage || $isOwnItem)): ?>
+                            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                                <form method="post" enctype="multipart/form-data" class="inline-form" style="margin:0;">
+                                    <?= csrf_field() ?>
+                                    <input type="hidden" name="action_item_action" value="upload_evidence">
+                                    <input type="hidden" name="item_id" value="<?= (int) $it['id'] ?>">
+                                    <label style="font-size:11px; color:var(--accent-color, #2563eb); cursor:pointer; border:1px dashed var(--border); border-radius:14px; padding:3px 10px; white-space:nowrap;">
+                                        <?= h($requiresClosureDocumentation ? t('case.actionitems.upload_evidence') : t('case.actionitems.upload_evidence_optional')) ?>
+                                        <input type="file" name="evidence" onchange="this.form.submit();" style="display:none;">
+                                    </label>
+                                </form>
+                                <?php if ($canManage && $requiresClosureDocumentation): ?>
+                                    <form method="post" class="inline-form" style="margin:0; display:flex; gap:4px; align-items:center;">
+                                        <?= csrf_field() ?>
+                                        <input type="hidden" name="action_item_action" value="mark_na">
+                                        <input type="hidden" name="item_id" value="<?= (int) $it['id'] ?>">
+                                        <input type="text" name="na_reason" placeholder="<?= h(t('case.actionitems.na_reason_placeholder')) ?>" required style="width:130px; font-size:11px; padding:3px 6px;">
+                                        <button type="submit" class="button-small button-secondary" style="padding:2px 8px; font-size:11px; white-space:nowrap;"><?= h(t('case.actionitems.mark_na')) ?></button>
+                                    </form>
+                                <?php endif; ?>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                    <span style="font-size:11px; color:<?= $isResolved ? '#a1a1aa' : 'var(--text-muted)' ?>; white-space:nowrap; margin-top:2px;"><?= h($it['owner_name'] ?? t('case.actionitems.no_owner')) ?></span>
+                    <span style="font-size:11px; font-weight:<?= $isOverdue ? '600' : '400' ?>; color:<?= $isResolved ? '#a1a1aa' : ($isOverdue ? 'var(--danger)' : 'var(--text-muted)') ?>; white-space:nowrap; width:76px; text-align:right; margin-top:2px;">
+                        <?= $isClosed ? h(t('case.actionitems.status_done')) : ($isNa ? h(t('case.actionitems.status_na')) : ($it['due_date'] ? format_date($it['due_date']) : '—')) ?>
+                    </span>
+                    <?php if ($canManage): ?>
+                        <form method="post" class="inline-form" style="margin:0;" onsubmit="return confirm('<?= h(t('case.actionitems.delete_confirm')) ?>');">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="action_item_action" value="delete">
+                            <input type="hidden" name="item_id" value="<?= (int) $it['id'] ?>">
+                            <button type="submit" class="button-small button-secondary" aria-label="<?= h(t('case.actionitems.delete')) ?>" style="padding:2px 8px; font-size:11px; margin-top:2px;">&times;</button>
+                        </form>
+                    <?php endif; ?>
+                </div>
+            <?php endforeach; ?>
+            <?php if (!$items): ?>
+                <p class="muted" style="margin:0; padding:8px 0;"><?= h(t('case.actionitems.none')) ?></p>
+            <?php endif; ?>
+
+            <?php if ($canManage): ?>
+            <form method="post" class="inline-grid-form" style="padding-top:10px; border-top:1px dashed var(--border); margin-top:4px; display:flex; gap:8px; align-items:center;">
+                <?= csrf_field() ?>
+                <input type="hidden" name="action_item_action" value="add">
+                <input type="hidden" name="category" value="<?= h($category) ?>">
+                <input type="text" name="title" placeholder="<?= h(t('case.actionitems.new_placeholder')) ?>" required style="flex:1 1 auto; min-width:0;">
+                <select name="owner_user_id" style="width:160px;">
+                    <option value=""><?= h(t('case.field.responsible_none')) ?></option>
+                    <?php foreach ($orgUsers as $u): ?>
+                        <option value="<?= (int) $u['id'] ?>"><?= h($u['name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <input type="date" name="due_date" style="width:150px;">
+                <button type="submit"><?= h(t('case.actionitems.add')) ?></button>
+            </form>
+            <?php endif; ?>
+        </div>
+    <?php endforeach; ?>
+    <?php if ($blocksClosure): ?>
+        <p class="muted" style="margin:10px 0 0; font-size:12px;"><?= h(t('case.actionitems.blocks_closure_hint')) ?></p>
+    <?php endif; ?>
 
     <div class="button-row">
         <?php if ($case['linked_document_title']): ?>
@@ -408,7 +521,7 @@ render_header($case['title']);
             <label><?= h(t('case.field.status')) ?>
                 <select name="status">
                     <?php foreach (['Registreret', 'Under undersøgelse', 'Handling igangsat', 'Lukket'] as $s): ?>
-                        <?php $blockThis = $s === 'Lukket' && $case['status'] !== 'Lukket' && $openActionItemCount > 0; ?>
+                        <?php $blockThis = $s === 'Lukket' && $case['status'] !== 'Lukket' && $blocksClosure; ?>
                         <option value="<?= h($s) ?>" <?= $case['status'] === $s ? 'selected' : '' ?> <?= $blockThis ? 'disabled' : '' ?>><?= h(case_status_label($s)) ?><?= $blockThis ? ' — ' . h(t('case.actionitems.blocks_closure_option_suffix')) : '' ?></option>
                     <?php endforeach; ?>
                 </select>
@@ -447,13 +560,7 @@ render_header($case['title']);
         <label><?= h(t('case.field.root_cause')) ?>
             <textarea name="root_cause" rows="3"><?= h($case['root_cause'] ?? '') ?></textarea>
         </label>
-        <label><?= h(t('case.field.corrective_action')) ?>
-            <textarea name="corrective_action" rows="3"><?= h($case['corrective_action'] ?? '') ?></textarea>
-        </label>
-        <label><?= h(t('case.field.preventive_action')) ?>
-            <textarea name="preventive_action" rows="3"><?= h($case['preventive_action'] ?? '') ?></textarea>
-        </label>
-        <p class="muted" style="margin:-8px 0 16px;"><?= h(t('case.field.preventive_action_hint')) ?></p>
+        <p class="muted" style="margin:-4px 0 16px; font-size:12px;"><?= h(t('case.field.action_items_hint')) ?></p>
         <?php if ($requiresClosureDocumentation): ?>
             <label><?= h(t('case.field.effectiveness_review_due')) ?>
                 <input type="date" name="effectiveness_review_due" value="<?= h($case['effectiveness_review_due'] ?? '') ?>">

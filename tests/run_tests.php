@@ -601,12 +601,17 @@ assert_true(can_manage_quality_objective($admin, $objectiveOwnedBy77), 'admin ka
 assert_true(can_manage_quality_objective($ownerUser, $objectiveOwnedBy77), 'målets egen ejer kan tilgå det, uanset rolle');
 assert_true(!can_manage_quality_objective($otherUser2, $objectiveOwnedBy77), 'en bruger uden adgang og uden ejerskab kan ikke tilgå et kvalitetsmål');
 
-// --- action_items.php: underaktioner på sager (Fase 1) -------------------------
+// --- action_items.php: underaktioner på sager (Fase 1, udvidet med kategori/bevis/N/A) ---
 
 $db->rowsToReturn = [['id' => 1, 'case_id' => 5, 'status' => 'Åben', 'owner_name' => 'Mette Hansen']];
 action_item_list_for_case($db, 5);
 assert_true(str_contains($db->lastStatement->sql, 'WHERE ai.case_id = ?'), 'action_item_list_for_case() filtrerer på sagens id');
-assert_equal([5], $db->lastStatement->boundParams, 'action_item_list_for_case() binder case_id');
+assert_equal([5], $db->lastStatement->boundParams, 'action_item_list_for_case() binder case_id uden kategori');
+assert_true(!str_contains($db->lastStatement->sql, 'ai.category'), 'action_item_list_for_case() uden kategori-argument filtrerer ikke på kategori');
+
+action_item_list_for_case($db, 5, 'Korrigerende');
+assert_true(str_contains($db->lastStatement->sql, 'AND ai.category = ?'), 'action_item_list_for_case() med kategori-argument filtrerer også på kategori');
+assert_equal([5, 'Korrigerende'], $db->lastStatement->boundParams, 'action_item_list_for_case() binder [case_id, category]');
 
 $db->rowsToReturn = [['exists' => 1]];
 assert_true(action_item_has_open_for_case($db, 5), 'action_item_has_open_for_case() er sand når en åben underaktion findes');
@@ -615,34 +620,67 @@ assert_true(str_contains($db->lastStatement->sql, "status = 'Åben'"), 'action_i
 $db->rowsToReturn = [];
 assert_true(!action_item_has_open_for_case($db, 5), 'action_item_has_open_for_case() er falsk når ingen rækker findes');
 
+$db->rowsToReturn = [['category' => 'Korrigerende', 'antal' => 2], ['category' => 'Forebyggende', 'antal' => 0]];
+$counts = action_item_category_counts_for_case($db, 5);
+assert_true(str_contains($db->lastStatement->sql, 'GROUP BY category'), 'action_item_category_counts_for_case() grupperer pr. kategori');
+assert_equal(['Korrigerende' => 2, 'Forebyggende' => 0], $counts, 'action_item_category_counts_for_case() leverer begge kategorier, inkl. 0 for en der ikke findes i rækkerne');
+
 // action_item_add(): første prepare henter næste position (SQL'en beregner selv
 // COALESCE(MAX(position), -1) + 1 — fetchColumn()'s returværdi ER den næste position,
 // ikke den rå MAX), anden prepare indsætter rækken.
 $db->rowsQueue = [[['next_position' => 2]], []];
 $db->statements = [];
-action_item_add($db, 1, 5, 'Opdatér kvalitetsplan', 42, '2026-12-01', 7);
+action_item_add($db, 1, 5, 'Korrigerende', 'Opdatér kvalitetsplan', 42, '2026-12-01', 7);
 assert_equal(2, count($db->statements), 'action_item_add() laver præcis to forespørgsler (position + insert)');
 assert_true(str_contains($db->statements[1]->sql, 'INSERT INTO action_items'), 'action_item_add() indsætter en ny underaktion');
-assert_equal([1, 5, 2, 'Opdatér kvalitetsplan', 42, '2026-12-01', 7], $db->statements[1]->boundParams, 'action_item_add() binder parametrene, med den beregnede næste position');
+assert_equal([1, 5, 'Korrigerende', 2, 'Opdatér kvalitetsplan', 42, '2026-12-01', 7], $db->statements[1]->boundParams, 'action_item_add() binder parametrene, inkl. kategori, med den beregnede næste position');
 
 $db->rowsQueue = [[['next_position' => 0]], []];
-action_item_add($db, 1, 5, 'Uden ejer eller frist', null, null, 7);
-assert_equal([1, 5, 0, 'Uden ejer eller frist', null, null, 7], $db->lastStatement->boundParams, 'action_item_add() binder null for ejer/frist, position 0 for den første underaktion på en sag');
+action_item_add($db, 1, 5, 'Forebyggende', 'Uden ejer eller frist', null, null, 7);
+assert_equal([1, 5, 'Forebyggende', 0, 'Uden ejer eller frist', null, null, 7], $db->lastStatement->boundParams, 'action_item_add() binder null for ejer/frist, position 0 for den første underaktion i kategorien');
 
-action_item_set_status($db, 9, 1, true);
-assert_true(str_contains($db->lastStatement->sql, 'SET status = ?, completed_at = ?'), 'action_item_set_status() opdaterer status og completed_at');
-assert_equal('Afsluttet', $db->lastStatement->boundParams[0] ?? null, 'action_item_set_status(true) sætter status til Afsluttet');
-assert_true($db->lastStatement->boundParams[1] !== null, 'action_item_set_status(true) sætter completed_at');
+action_item_close($db, 9, 1);
+assert_true(str_contains($db->lastStatement->sql, "status = 'Afsluttet'"), 'action_item_close() sætter status til Afsluttet');
+assert_true(str_contains($db->lastStatement->sql, 'na_reason = NULL'), 'action_item_close() rydder et evt. tidligere N/A-mærke');
+assert_true($db->lastStatement->boundParams[0] !== null, 'action_item_close() sætter completed_at');
 
-action_item_set_status($db, 9, 1, false);
-assert_equal('Åben', $db->lastStatement->boundParams[0] ?? null, 'action_item_set_status(false) genåbner til Åben');
-assert_equal(null, $db->lastStatement->boundParams[1], 'action_item_set_status(false) nulstiller completed_at');
+action_item_reopen($db, 9, 1);
+assert_true(str_contains($db->lastStatement->sql, "status = 'Åben'"), 'action_item_reopen() genåbner til Åben');
+assert_true(str_contains($db->lastStatement->sql, 'completed_at = NULL'), 'action_item_reopen() nulstiller completed_at');
+assert_equal([9, 1], $db->lastStatement->boundParams, 'action_item_reopen() binder kun item_id og organization_id (resten er literal NULL i SQL\'en)');
+
+action_item_mark_na($db, 9, 1, 'Leverandøren findes ikke længere', 3);
+assert_true(str_contains($db->lastStatement->sql, "status = 'N/A'"), 'action_item_mark_na() sætter status til N/A');
+assert_equal('Leverandøren findes ikke længere', $db->lastStatement->boundParams[0] ?? null, 'action_item_mark_na() binder begrundelsen');
+assert_equal(3, $db->lastStatement->boundParams[1] ?? null, 'action_item_mark_na() binder hvem der loggede det');
+assert_true(($db->lastStatement->boundParams[2] ?? null) !== null, 'action_item_mark_na() sætter et tidspunkt for loggen');
+assert_equal([9, 1], array_slice($db->lastStatement->boundParams, 3), 'action_item_mark_na() binder item_id og organization_id sidst');
 
 $db->rowsToReturn = [['id' => 3, 'title' => 'Opdatér kvalitetsplan', 'due_date' => '2026-11-01', 'case_id' => 5, 'case_title' => 'Forkert materialecertifikat']];
 $ownerTasks = action_items_for_owner_tasks($db, 1, 42);
 assert_equal([1, 42], $db->lastStatement->boundParams, 'action_items_for_owner_tasks() binder [organization_id, owner_user_id]');
 assert_true(str_contains($db->lastStatement->sql, "status = 'Åben' AND ai.due_date IS NOT NULL"), 'action_items_for_owner_tasks() viser kun åbne underaktioner med en frist');
 assert_equal('Forkert materialecertifikat', $ownerTasks[0]['case_title'] ?? null, 'action_items_for_owner_tasks() leverer sagens titel til brug i opgave-labelen');
+
+// --- action_items.php: bevis (action_item_evidence) ----------------------------
+
+$db->rowsToReturn = [];
+assert_equal(false, action_item_evidence_find_for_item($db, 9), 'action_item_evidence_find_for_item() returnerer false når intet bevis er uploadet');
+
+$db->rowsToReturn = [['id' => 4, 'action_item_id' => 9, 'original_filename' => 'certifikat.pdf', 'uploaded_by_name' => 'Mette Hansen']];
+$evidence = action_item_evidence_find_for_item($db, 9);
+assert_true(str_contains($db->lastStatement->sql, 'ORDER BY e.uploaded_at DESC'), 'action_item_evidence_find_for_item() henter det seneste bevis først');
+assert_equal('certifikat.pdf', $evidence['original_filename'] ?? null, 'action_item_evidence_find_for_item() leverer det uploadede filnavn');
+
+action_item_evidence_add($db, 1, 9, 'a1b2c3.pdf', 'certifikat.pdf', 7);
+assert_true(str_contains($db->lastStatement->sql, 'INSERT INTO action_item_evidence'), 'action_item_evidence_add() indsætter en bevis-række');
+assert_equal([1, 9, 'a1b2c3.pdf', 'certifikat.pdf', 7], $db->lastStatement->boundParams, 'action_item_evidence_add() binder organisation, underaktion, lagret/oprindeligt filnavn og uploader');
+
+$db->rowsQueue = [[['stored_filename' => 'gammel.pdf']], []];
+$db->statements = [];
+$deleted = action_item_evidence_delete_for_item($db, 9, 1);
+assert_equal(['gammel.pdf'], $deleted, 'action_item_evidence_delete_for_item() returnerer de slettede rækkers lagrede filnavne, så kalderen kan slette filerne fra disk');
+assert_true(str_contains($db->statements[1]->sql, 'DELETE FROM action_item_evidence'), 'action_item_evidence_delete_for_item() sletter bevis-rækkerne for underaktionen');
 
 // --- Resultat ------------------------------------------------------------------
 
