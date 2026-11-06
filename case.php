@@ -582,18 +582,22 @@ render_header($case['title']);
                 <?php if ($canManage): ?>
                 <form method="post" class="actionitem-add-row">
                     <?= csrf_field() ?>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                     <input type="hidden" name="action_item_action" value="add">
                     <input type="hidden" name="category" value="<?= h($category) ?>">
-                    <input type="text" name="title" placeholder="<?= h(t('case.actionitems.new_placeholder')) ?>" required>
-                    <select name="owner_user_id" style="width:150px;">
-                        <option value=""><?= h(t('case.field.responsible_none')) ?></option>
-                        <?php foreach ($orgUsers as $u): ?>
-                            <option value="<?= (int) $u['id'] ?>"><?= h($u['name']) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                    <input type="date" name="due_date" style="width:140px;">
-                    <button type="submit" class="button-small"><?= h(t('case.actionitems.add')) ?></button>
+                    <div class="actionitem-add-row-title">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                        <input type="text" name="title" placeholder="<?= h(t('case.actionitems.new_placeholder')) ?>" required>
+                    </div>
+                    <div class="actionitem-add-row-controls">
+                        <select name="owner_user_id">
+                            <option value=""><?= h(t('case.field.responsible_none')) ?></option>
+                            <?php foreach ($orgUsers as $u): ?>
+                                <option value="<?= (int) $u['id'] ?>"><?= h($u['name']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <input type="date" name="due_date">
+                        <button type="submit" class="button-small"><?= h(t('case.actionitems.add')) ?></button>
+                    </div>
                 </form>
                 <?php endif; ?>
             </div>
