@@ -1302,7 +1302,7 @@ function render_header(string $title): void {
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title><?= h($title) ?> - <?= h(t('brand.name')) ?></title>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
-        <link rel="stylesheet" href="css/style.css?v=53">
+        <link rel="stylesheet" href="css/style.css?v=54">
     </head>
     <body>
     <?php if (is_impersonating()): ?>
@@ -1400,6 +1400,15 @@ function render_header(string $title): void {
 }
 
 function render_footer(): void {
+    require_once __DIR__ . '/tasks.php';
+    require_once __DIR__ . '/assistant.php';
+    $footerUser = current_user();
+    // GQAR er en ekstern, kontraktbegrænset rolle (se CLAUDE.md) — assistenten
+    // overblikker interne forhold (sagsmængder, hvem har rapporteret hvad) der
+    // ikke hører til den adskilte, snævrere GQAR-synlighed. Vises derfor ikke.
+    if ($footerUser && !is_gqar($footerUser)) {
+        render_assistant_widget($footerUser);
+    }
     ?>
     </main>
     </div>

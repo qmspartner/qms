@@ -526,6 +526,10 @@ return [
 
     'help.section.tasks' => 'Mine opgaver',
     'help.tasks.text' => 'Panelet i siden samler automatisk dine opgaver på tværs af dokumenter og kvalitetshændelser — fx godkendelser der venter på dig, eller kvalitetshændelser tildelt dig.',
+    'help.section.assistant' => 'QMS-assistenten',
+    'help.assistant.text1' => 'Det lille, runde ikon i nederste højre hjørne af skærmen er QMS-assistenten. Den dukker kun op med en ring og et lille mærke, når der faktisk er noget at bemærke — ellers ligger den stille.',
+    'help.assistant.text2' => 'Under fanen "I dag" vises kun det mest kritiske: overskredne eller snart forfaldende opgaver. Alt andet — kommende godkendelser, revisioner osv. — venter til fanen "Denne uge", som viser hele din opgaveliste samt en sektion med "Iagttagelser": mønstre som systemet selv har lagt mærke til, fx en type kvalitetshændelse der forekommer usædvanligt ofte for tiden, eller en enkelt person der har rapporteret mange sager på kort tid.',
+    'help.assistant.text3' => 'Vil du ikke se assistenten igen i dag, kan du klikke "Vis ikke igen i dag" i bunden af panelet — den dukker automatisk op igen næste dag, hvis der stadig er noget at bemærke.',
 
     'help.section.language' => 'Sprog',
     'help.language.text' => 'Skift sprog når som helst med DA/EN-linkene øverst til højre. Dit valg huskes til næste gang, du logger ind.',
@@ -1663,4 +1667,19 @@ return [
     'mgmtreview.quality_objectives_summary' => 'Kvalitetsmål (aktuel status)',
     'mgmtreview.quality_objectives_summary_counts' => '{active} aktive, {achieved} opnået i år, {off_track} ikke på kurs',
     'mgmtreview.quality_objectives_link' => 'Se alle kvalitetsmål',
+
+    'assistant.open' => 'Åbn QMS-assistenten',
+    'assistant.close' => 'Luk',
+    'assistant.title' => 'QMS-assistent',
+    'assistant.greeting' => 'Hej {name}',
+    'assistant.tab_today' => 'I dag',
+    'assistant.tab_week' => 'Denne uge',
+    'assistant.today_empty' => 'Intet kritisk lige nu.',
+    'assistant.week_empty' => 'Intet at vise denne uge.',
+    'assistant.observations_heading' => 'Iagttagelser',
+    'assistant.snooze' => 'Vis ikke igen i dag',
+    'assistant.open_tasks' => 'Åbn Mine opgaver',
+    'assistant.observation.volume_spike_with_avg' => 'Der er registreret {count} sager af typen "{type}" de seneste 7 dage — mod et gennemsnit på {avg} om ugen de seneste 8 uger.',
+    'assistant.observation.volume_spike_new' => 'Der er registreret {count} sager af typen "{type}" de seneste 7 dage — denne type er ikke set i de foregående 8 uger.',
+    'assistant.observation.reporter_concentration' => '{count} sager er rapporteret af {name} de seneste 7 dage.',
 ];

@@ -29,6 +29,7 @@ require_once __DIR__ . '/../includes/customers.php';
 require_once __DIR__ . '/../includes/equipment.php';
 require_once __DIR__ . '/../includes/quality_objectives.php';
 require_once __DIR__ . '/../includes/action_items.php';
+require_once __DIR__ . '/../includes/assistant.php';
 require_once __DIR__ . '/fake_pdo.php';
 
 $passed = 0;
@@ -681,6 +682,48 @@ $db->statements = [];
 $deleted = action_item_evidence_delete_for_item($db, 9, 1);
 assert_equal(['gammel.pdf'], $deleted, 'action_item_evidence_delete_for_item() returnerer de slettede rækkers lagrede filnavne, så kalderen kan slette filerne fra disk');
 assert_true(str_contains($db->statements[1]->sql, 'DELETE FROM action_item_evidence'), 'action_item_evidence_delete_for_item() sletter bevis-rækkerne for underaktionen');
+
+// --- assistant.php ---------------------------------------------------------------
+
+$sampleTasks = [
+    ['urgency' => 'danger', 'icon' => 'ti-alert-triangle', 'label' => 'Kvalitetshændelse · Frist overskredet', 'title' => 'Sag A', 'link' => 'case.php?id=1', 'sort' => 0],
+    ['urgency' => 'accent', 'icon' => 'ti-file-check', 'label' => 'Dokument · Afventer din godkendelse', 'title' => 'Dok B', 'link' => 'document.php?id=2', 'sort' => 1],
+    ['urgency' => 'warning', 'icon' => 'ti-calendar-event', 'label' => 'Kvalitetsmål · Måling skal snart indberettes', 'title' => 'Mål C', 'link' => 'quality_objective_detail.php?id=3', 'sort' => 2],
+    ['urgency' => 'neutral', 'icon' => 'ti-calendar-event', 'label' => 'Dokument · Snart til revision', 'title' => 'Dok D', 'link' => 'document.php?id=4', 'sort' => 3],
+];
+$todayItems = assistant_today_items($sampleTasks);
+assert_equal(2, count($todayItems), 'assistant_today_items() beholder kun danger og warning');
+assert_equal(['Sag A', 'Mål C'], array_map(fn ($t) => $t['title'], $todayItems), 'assistant_today_items() udelader accent og neutral (de venter til ugeoversigten)');
+
+$db->rowsQueue = [
+    [['type' => 'Afvigelse', 'antal' => 3]], // indeværende 7 dage
+    [['type' => 'Afvigelse', 'antal' => 4]], // forudgående 8 ugers baseline (gennemsnit 0,5/uge)
+    [['reported_by' => 7, 'name' => 'Mette Hansen', 'antal' => 3]], // mest aktive rapportør
+];
+$db->statements = [];
+$observations = assistant_observations($db, 1);
+assert_equal(2, count($observations), 'assistant_observations() finder både en mængde-iagttagelse og en rapportør-koncentration');
+assert_true(str_contains($observations[0]['text'], 'Intern afvigelse'), 'assistant_observations() navngiver sagstypen via type_label()');
+assert_true(str_contains($observations[0]['text'], '0,5'), 'assistant_observations() viser det beregnede ugentlige gennemsnit');
+assert_true(str_contains($observations[1]['text'], 'Mette Hansen'), 'assistant_observations() navngiver den rapportør der har logget flest sager');
+
+$db->rowsQueue = [
+    [['type' => 'Afvigelse', 'antal' => 5]], // helt ny type i vinduet
+    [], // ingen i baseline-perioden
+    [], // ingen enkelt rapportør med 3+ sager
+];
+$db->statements = [];
+$newTypeObservations = assistant_observations($db, 1);
+assert_equal(1, count($newTypeObservations), 'assistant_observations() flager også en type der slet ikke er set i baseline-perioden');
+assert_true(str_contains($newTypeObservations[0]['text'], 'ikke set i de foregående 8 uger'), 'assistant_observations() bruger "ny type"-teksten når baseline-gennemsnittet er 0');
+
+$db->rowsQueue = [
+    [['type' => 'Afvigelse', 'antal' => 1]], // for få (under 2) til at tælle som en iagttagelse
+    [['type' => 'Afvigelse', 'antal' => 1]], // baseline (irrelevant, tærsklen er allerede ikke nået)
+    [], // ingen enkelt rapportør med 3+ sager
+];
+$db->statements = [];
+assert_equal([], assistant_observations($db, 1), 'assistant_observations() siger intet ved kun 1 sag af en type (ingen reel stigning at bemærke)');
 
 // --- Resultat ------------------------------------------------------------------
 

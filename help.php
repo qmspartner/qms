@@ -32,6 +32,7 @@ $showImpersonation = $isAdmin;
 $showAqapGlossary = true;
 $showTables = true;
 $showTasks = !$gqar;
+$showAssistant = !$gqar;
 $showLanguage = true;
 
 // Grupperet indholdsfortegnelse: samme gruppering som topmenuen bruger, så den er genkendelig.
@@ -44,6 +45,7 @@ $generalItems[] = ['roles', 'help.section.roles'];
 if ($showAqapGlossary) $generalItems[] = ['aqap-glossary', 'help.section.aqap_glossary'];
 if ($showTables) $generalItems[] = ['tables', 'help.section.tables'];
 if ($showTasks) $generalItems[] = ['tasks', 'help.section.tasks'];
+if ($showAssistant) $generalItems[] = ['assistant', 'help.section.assistant'];
 $generalItems[] = ['language', 'help.section.language'];
 if ($generalItems) $groups[] = ['help.toc_group.general', $generalItems];
 
@@ -438,6 +440,15 @@ render_header(t('help.title'));
         <h2 id="tasks"><?= h(t('help.section.tasks')) ?></h2>
         <div class="card" style="margin-bottom:1.5rem;">
             <p style="margin:0;"><?= h(t('help.tasks.text')) ?></p>
+        </div>
+        <?php endif; ?>
+
+        <?php if ($showAssistant): ?>
+        <h2 id="assistant"><?= h(t('help.section.assistant')) ?></h2>
+        <div class="card" style="margin-bottom:1.5rem;">
+            <p style="margin:0 0 10px;"><?= h(t('help.assistant.text1')) ?></p>
+            <p style="margin:0 0 10px;"><?= h(t('help.assistant.text2')) ?></p>
+            <p style="margin:0;"><?= h(t('help.assistant.text3')) ?></p>
         </div>
         <?php endif; ?>
 

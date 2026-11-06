@@ -526,6 +526,10 @@ return [
 
     'help.section.tasks' => 'My tasks',
     'help.tasks.text' => 'The panel in the sidebar automatically gathers your tasks across documents and quality events — e.g. approvals waiting on you, or quality events assigned to you.',
+    'help.section.assistant' => 'The QMS assistant',
+    'help.assistant.text1' => 'The small, round icon in the bottom-right corner of the screen is the QMS assistant. It only appears with a ring and a small badge when there is actually something to flag — otherwise it stays quiet.',
+    'help.assistant.text2' => 'The "Today" tab shows only the most critical items: overdue or soon-to-expire tasks. Everything else — upcoming approvals, revisions and so on — waits for the "This week" tab, which shows your full task list plus an "Observations" section: patterns the system has noticed on its own, such as a type of quality event occurring unusually often lately, or a single person who has reported many cases in a short time.',
+    'help.assistant.text3' => 'If you don\'t want to see the assistant again today, click "Don\'t show again today" at the bottom of the panel — it will reappear automatically the next day if there is still something to flag.',
 
     'help.section.language' => 'Language',
     'help.language.text' => 'Switch language anytime with the DA/EN links in the top right. Your choice is remembered next time you log in.',
@@ -1663,4 +1667,19 @@ return [
     'mgmtreview.quality_objectives_summary' => 'Quality objectives (current status)',
     'mgmtreview.quality_objectives_summary_counts' => '{active} active, {achieved} achieved this year, {off_track} off track',
     'mgmtreview.quality_objectives_link' => 'See all quality objectives',
+
+    'assistant.open' => 'Open the QMS assistant',
+    'assistant.close' => 'Close',
+    'assistant.title' => 'QMS assistant',
+    'assistant.greeting' => 'Hi {name}',
+    'assistant.tab_today' => 'Today',
+    'assistant.tab_week' => 'This week',
+    'assistant.today_empty' => 'Nothing critical right now.',
+    'assistant.week_empty' => 'Nothing to show this week.',
+    'assistant.observations_heading' => 'Observations',
+    'assistant.snooze' => "Don't show again today",
+    'assistant.open_tasks' => 'Open My tasks',
+    'assistant.observation.volume_spike_with_avg' => '{count} cases of type "{type}" have been logged in the last 7 days — against an average of {avg} a week over the last 8 weeks.',
+    'assistant.observation.volume_spike_new' => '{count} cases of type "{type}" have been logged in the last 7 days — this type has not appeared in the preceding 8 weeks.',
+    'assistant.observation.reporter_concentration' => '{count} cases have been reported by {name} in the last 7 days.',
 ];

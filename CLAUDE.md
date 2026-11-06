@@ -325,6 +325,47 @@ forespørgsel).
   "Mine opgaver" uden fuld sagsadgang); at markere 'N/A' kræver
   `can_manage_cases()` (ikke ejeren alene, da det er en undtagelse fra selve
   kravet, ikke blot en afslutning af ens egen opgave).
+- **`includes/assistant.php`** er det tiende modul: QMS-assistenten, et
+  flydende "assistent"-ikon (`render_assistant_widget()`) vist globalt i
+  bunden af hver side via `render_footer()`. Den genbruger `get_my_tasks()`
+  fra `includes/tasks.php` i stedet for at opfinde en ny datakilde:
+  `assistant_today_items()` er en ren filtreringsfunktion der kun beholder
+  de opgaver med `urgency` 'danger'/'warning' (overskredet/snart
+  forfaldende) til fanen "I dag" — resten (godkendelser, kommende
+  revisioner m.v.) venter til fanen "Denne uge", som viser hele
+  opgavelisten. "Denne uge" har desuden en "Iagttagelser"-sektion fra
+  `assistant_observations(PDO $db, int $organizationId)`: mønster-agtige
+  observationer beregnet direkte mod `cases`-tabellen (bevidst IKKE i
+  `includes/cases.php` — det er assistent-specifik "er der noget
+  usædvanligt"-logik, ikke en genbrugt sagsforespørgsel). Algoritmen
+  sammenligner et glidende 7-dages vindue (i dag og 6 dage tilbage) med et
+  8-ugers gennemsnit umiddelbart forud for det (et rullende vindue, ikke en
+  kalenderuge, så sammenligningen er retfærdig uanset ugedag), og finder
+  to typer iagttagelser: (A) en sagstype med usædvanligt mange sager i
+  vinduet (mindst 2, og mindst dobbelt så mange som baseline-ugegennemsnittet
+  — med særlig tekst hvis typen slet ikke er set i baseline-perioden), og
+  (B) én rapportør med 3+ sager i vinduet (kun tjekket hvis færre end 2
+  iagttagelser allerede er fundet). Begrænset til maks. 2 iagttagelser i alt.
+  Assistenten vises kun med ring/notifikations-mærke når
+  `$hasSomething = !empty($todayItems) || !empty($observations)` er sand —
+  ikonet er altid der som manuel indgang, men panelet åbner kun automatisk
+  ved sidevisning hvis der er noget at bemærke OG brugeren ikke allerede har
+  klikket "Vis ikke igen i dag" (ren klient-side `localStorage`, nøglet pr.
+  bruger-id og dags dato — bevidst ingen ny DB-tabel/kolonne til dette, da
+  det kun er en visningsbekvemmelighed, ikke persistent tilstand). Vises
+  IKKE for GQAR (`is_gqar($user)`, tjekket i `render_footer()` før kaldet) —
+  assistenten overblikker organisationsbredde/interne forhold (sagsmængder
+  pr. type, hvem har rapporteret hvad), som falder uden for GQARs bevidst
+  snævre, kontrakt-scopede synlighed. **Bemærk et afvigende mønster:**
+  modulet requirer KUN `functions.php` ved indlæsning, ikke `tasks.php` —
+  selvom `render_assistant_widget()` kalder `get_my_tasks()`. Det er fordi
+  `tasks.php` kræver `db.php`/`config.php`, og `config.php` er gitignored og
+  findes ikke i et rent GitHub Actions-checkout; at kræve den ved modul-
+  indlæsning ville gøre `tests/run_tests.php` (som kun loader de rene,
+  DB-fri moduler) CI-brudt. I stedet requirer `render_footer()` i
+  `functions.php` selv `tasks.php`, lige før den (for ikke-GQAR-brugere)
+  kalder `render_assistant_widget()` — kun ved faktisk sidevisning, med
+  databaseadgang allerede til rådighed, aldrig ved test-indlæsning.
 - Nye moduler følger samme mønster: en fil `includes/<modul>.php`, der
   requirer `includes/functions.php` selv (så den er selvstændig), og
   almindelige funktioner — ikke klasser, for at matche resten af kodebasens
