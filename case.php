@@ -349,6 +349,123 @@ render_header($case['title']);
         <?php endif; ?>
     </div>
 
+    <div class="button-row">
+        <?php if ($case['linked_document_title']): ?>
+            <a class="button button-secondary" href="document.php?id=<?= (int)$case['linked_document_id'] ?>">
+                <?= h(t('case.linked_document')) ?>: <?= h($case['linked_document_number']) ?>
+            </a>
+        <?php endif; ?>
+        <?php if ($case['linked_audit_title']): ?>
+            <a class="button button-secondary" href="audit.php?id=<?= (int)$case['audit_id'] ?>">
+                <?= h(t('audit.found_under')) ?>: <?= h($case['linked_audit_title']) ?>
+            </a>
+        <?php endif; ?>
+        <?php if ($case['linked_supplier_name']): ?>
+            <a class="button button-secondary" href="supplier_detail.php?id=<?= (int)$case['supplier_id'] ?>">
+                <?= h(t('supplier.linked_to_case')) ?>: <?= h($case['linked_supplier_name']) ?>
+            </a>
+        <?php endif; ?>
+        <?php if ($case['source_record_title']): ?>
+            <a class="button button-secondary" href="record.php?id=<?= (int)$case['source_record_id'] ?>">
+                <?= h(t('case.source_record')) ?>: <?= h($case['source_record_title']) ?>
+            </a>
+        <?php endif; ?>
+        <?php if ($user['role'] === 'admin'): ?>
+            <form method="post" action="delete_case.php" class="inline-form"
+                  onsubmit="return confirm('<?= h(t('case.delete_confirm')) ?>
+');">
+    <?= csrf_field() ?>
+                <input type="hidden" name="case_id" value="<?= (int)$case['id'] ?>">
+                <button type="submit" class="button-secondary button-danger"><?= h(t('case.delete')) ?></button>
+            </form>
+        <?php endif; ?>
+    </div>
+
+    <?php if ($attachments): ?>
+        <div style="border-top:0.5px solid var(--border); padding-top:1rem; margin-top:1rem;">
+            <p class="meta-label"><?= h(t('case.attachments')) ?></p>
+            <?php foreach ($attachments as $a): ?>
+                <p style="margin:4px 0;">
+                    <a href="download_case_attachment.php?id=<?= (int)$a['id'] ?>"><?= h($a['original_filename']) ?></a>
+                    <span class="muted"> — <?= h(t('case.uploaded_by')) ?> <?= h($a['uploaded_by_name']) ?></span>
+                </p>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
+</div>
+
+<?php if ($canManage): ?>
+<h2><?= h(t('case.update_title')) ?></h2>
+<div class="card">
+    <form method="post">
+    <?= csrf_field() ?>
+        <div class="inline-grid-form" style="margin-bottom:14px;">
+            <label><?= h(t('case.field.status')) ?>
+                <select name="status">
+                    <?php foreach (['Registreret', 'Under undersøgelse', 'Handling igangsat', 'Lukket'] as $s): ?>
+                        <?php $blockThis = $s === 'Lukket' && $case['status'] !== 'Lukket' && $blocksClosure; ?>
+                        <option value="<?= h($s) ?>" <?= $case['status'] === $s ? 'selected' : '' ?> <?= $blockThis ? 'disabled' : '' ?>><?= h(case_status_label($s)) ?><?= $blockThis ? ' — ' . h(t('case.actionitems.blocks_closure_option_suffix')) : '' ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
+            <label><?= h(t('case.field.severity')) ?>
+                <select name="severity">
+                    <option value=""><?= h(t('case.field.severity_none')) ?></option>
+                    <?php foreach (['Høj', 'Mellem', 'Lav'] as $s): ?>
+                        <option value="<?= h($s) ?>" <?= $case['severity'] === $s ? 'selected' : '' ?>><?= h(severity_label($s)) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
+            <label><?= h(t('case.field.responsible')) ?>
+                <select name="assigned_to">
+                    <option value=""><?= h(t('case.field.responsible_none')) ?></option>
+                    <?php foreach ($orgUsers as $u): ?>
+                        <option value="<?= (int) $u['id'] ?>" <?= (int)$case['assigned_to'] === (int)$u['id'] ? 'selected' : '' ?>><?= h($u['name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
+            <label><?= h(t('case.field.deadline')) ?>
+                <input type="date" name="due_date" value="<?= h($case['due_date'] ?? '') ?>">
+            </label>
+        </div>
+        <label><?= h(t('case.field.description')) ?>
+            <textarea name="description" rows="4" required><?= h($case['description']) ?></textarea>
+        </label>
+        <?php if ($case['type'] === 'Kundeklage'): ?>
+            <label><?= h(t('case.field.customer_response_date')) ?>
+                <input type="date" name="customer_response_date" value="<?= h($case['customer_response_date'] ?? '') ?>">
+            </label>
+        <?php endif; ?>
+        <label><?= h(t('case.field.immediate_action')) ?>
+            <textarea name="immediate_action" rows="2"><?= h($case['immediate_action'] ?? '') ?></textarea>
+        </label>
+        <label><?= h(t('case.field.root_cause')) ?>
+            <textarea name="root_cause" rows="3"><?= h($case['root_cause'] ?? '') ?></textarea>
+        </label>
+        <p class="muted" style="margin:-4px 0 16px; font-size:12px;"><?= h(t('case.field.action_items_hint')) ?></p>
+        <?php if ($requiresClosureDocumentation): ?>
+            <label><?= h(t('case.field.effectiveness_review_due')) ?>
+                <input type="date" name="effectiveness_review_due" value="<?= h($case['effectiveness_review_due'] ?? '') ?>">
+            </label>
+            <p class="muted" style="margin:-8px 0 16px;"><?= h(t('case.field.closure_requirements_hint')) ?></p>
+        <?php endif; ?>
+        <label style="display:flex; align-items:center; gap:8px; flex-direction:row;">
+            <input type="checkbox" name="requires_customer_notification" id="case-notify-checkbox" value="1" <?= $case['requires_customer_notification'] ? 'checked' : '' ?> style="width:auto;" onchange="document.getElementById('case-contract-ref-field-edit').style.display = this.checked ? 'block' : 'none';">
+            <?= h(t('case.field.customer_notification')) ?>
+        </label>
+        <div id="case-contract-ref-field-edit" style="<?= $case['requires_customer_notification'] ? '' : 'display:none;' ?>">
+            <label><?= h(t('case.field.contract_reference')) ?>
+                <select name="contract_reference">
+                    <option value=""><?= h(t('newcase.field.contract_reference_choose')) ?></option>
+                    <?php foreach (list_active_values('contract_reference') as $ref): ?>
+                        <option value="<?= h($ref) ?>" <?= $case['contract_reference'] === $ref ? 'selected' : '' ?>><?= h($ref) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
+        </div>
+        <button type="submit"><?= h(t('case.save')) ?></button>
+    </form>
+
     <?php foreach (['Korrigerende' => ['items' => $correctiveItems, 'label' => t('case.field.corrective_action')], 'Forebyggende' => ['items' => $preventiveItems, 'label' => t('case.field.preventive_action')]] as $category => $categoryDef): ?>
         <?php
             $items = $categoryDef['items'];
@@ -466,123 +583,6 @@ render_header($case['title']);
     <?php if ($blocksClosure): ?>
         <p class="muted" style="margin:10px 0 0; font-size:12px;"><?= h(t('case.actionitems.blocks_closure_hint')) ?></p>
     <?php endif; ?>
-
-    <div class="button-row">
-        <?php if ($case['linked_document_title']): ?>
-            <a class="button button-secondary" href="document.php?id=<?= (int)$case['linked_document_id'] ?>">
-                <?= h(t('case.linked_document')) ?>: <?= h($case['linked_document_number']) ?>
-            </a>
-        <?php endif; ?>
-        <?php if ($case['linked_audit_title']): ?>
-            <a class="button button-secondary" href="audit.php?id=<?= (int)$case['audit_id'] ?>">
-                <?= h(t('audit.found_under')) ?>: <?= h($case['linked_audit_title']) ?>
-            </a>
-        <?php endif; ?>
-        <?php if ($case['linked_supplier_name']): ?>
-            <a class="button button-secondary" href="supplier_detail.php?id=<?= (int)$case['supplier_id'] ?>">
-                <?= h(t('supplier.linked_to_case')) ?>: <?= h($case['linked_supplier_name']) ?>
-            </a>
-        <?php endif; ?>
-        <?php if ($case['source_record_title']): ?>
-            <a class="button button-secondary" href="record.php?id=<?= (int)$case['source_record_id'] ?>">
-                <?= h(t('case.source_record')) ?>: <?= h($case['source_record_title']) ?>
-            </a>
-        <?php endif; ?>
-        <?php if ($user['role'] === 'admin'): ?>
-            <form method="post" action="delete_case.php" class="inline-form"
-                  onsubmit="return confirm('<?= h(t('case.delete_confirm')) ?>
-');">
-    <?= csrf_field() ?>
-                <input type="hidden" name="case_id" value="<?= (int)$case['id'] ?>">
-                <button type="submit" class="button-secondary button-danger"><?= h(t('case.delete')) ?></button>
-            </form>
-        <?php endif; ?>
-    </div>
-
-    <?php if ($attachments): ?>
-        <div style="border-top:0.5px solid var(--border); padding-top:1rem; margin-top:1rem;">
-            <p class="meta-label"><?= h(t('case.attachments')) ?></p>
-            <?php foreach ($attachments as $a): ?>
-                <p style="margin:4px 0;">
-                    <a href="download_case_attachment.php?id=<?= (int)$a['id'] ?>"><?= h($a['original_filename']) ?></a>
-                    <span class="muted"> — <?= h(t('case.uploaded_by')) ?> <?= h($a['uploaded_by_name']) ?></span>
-                </p>
-            <?php endforeach; ?>
-        </div>
-    <?php endif; ?>
-</div>
-
-<?php if ($canManage): ?>
-<h2><?= h(t('case.update_title')) ?></h2>
-<div class="card">
-    <form method="post">
-    <?= csrf_field() ?>
-        <div class="inline-grid-form" style="margin-bottom:14px;">
-            <label><?= h(t('case.field.status')) ?>
-                <select name="status">
-                    <?php foreach (['Registreret', 'Under undersøgelse', 'Handling igangsat', 'Lukket'] as $s): ?>
-                        <?php $blockThis = $s === 'Lukket' && $case['status'] !== 'Lukket' && $blocksClosure; ?>
-                        <option value="<?= h($s) ?>" <?= $case['status'] === $s ? 'selected' : '' ?> <?= $blockThis ? 'disabled' : '' ?>><?= h(case_status_label($s)) ?><?= $blockThis ? ' — ' . h(t('case.actionitems.blocks_closure_option_suffix')) : '' ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </label>
-            <label><?= h(t('case.field.severity')) ?>
-                <select name="severity">
-                    <option value=""><?= h(t('case.field.severity_none')) ?></option>
-                    <?php foreach (['Høj', 'Mellem', 'Lav'] as $s): ?>
-                        <option value="<?= h($s) ?>" <?= $case['severity'] === $s ? 'selected' : '' ?>><?= h(severity_label($s)) ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </label>
-            <label><?= h(t('case.field.responsible')) ?>
-                <select name="assigned_to">
-                    <option value=""><?= h(t('case.field.responsible_none')) ?></option>
-                    <?php foreach ($orgUsers as $u): ?>
-                        <option value="<?= (int) $u['id'] ?>" <?= (int)$case['assigned_to'] === (int)$u['id'] ? 'selected' : '' ?>><?= h($u['name']) ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </label>
-            <label><?= h(t('case.field.deadline')) ?>
-                <input type="date" name="due_date" value="<?= h($case['due_date'] ?? '') ?>">
-            </label>
-        </div>
-        <label><?= h(t('case.field.description')) ?>
-            <textarea name="description" rows="4" required><?= h($case['description']) ?></textarea>
-        </label>
-        <?php if ($case['type'] === 'Kundeklage'): ?>
-            <label><?= h(t('case.field.customer_response_date')) ?>
-                <input type="date" name="customer_response_date" value="<?= h($case['customer_response_date'] ?? '') ?>">
-            </label>
-        <?php endif; ?>
-        <label><?= h(t('case.field.immediate_action')) ?>
-            <textarea name="immediate_action" rows="2"><?= h($case['immediate_action'] ?? '') ?></textarea>
-        </label>
-        <label><?= h(t('case.field.root_cause')) ?>
-            <textarea name="root_cause" rows="3"><?= h($case['root_cause'] ?? '') ?></textarea>
-        </label>
-        <p class="muted" style="margin:-4px 0 16px; font-size:12px;"><?= h(t('case.field.action_items_hint')) ?></p>
-        <?php if ($requiresClosureDocumentation): ?>
-            <label><?= h(t('case.field.effectiveness_review_due')) ?>
-                <input type="date" name="effectiveness_review_due" value="<?= h($case['effectiveness_review_due'] ?? '') ?>">
-            </label>
-            <p class="muted" style="margin:-8px 0 16px;"><?= h(t('case.field.closure_requirements_hint')) ?></p>
-        <?php endif; ?>
-        <label style="display:flex; align-items:center; gap:8px; flex-direction:row;">
-            <input type="checkbox" name="requires_customer_notification" id="case-notify-checkbox" value="1" <?= $case['requires_customer_notification'] ? 'checked' : '' ?> style="width:auto;" onchange="document.getElementById('case-contract-ref-field-edit').style.display = this.checked ? 'block' : 'none';">
-            <?= h(t('case.field.customer_notification')) ?>
-        </label>
-        <div id="case-contract-ref-field-edit" style="<?= $case['requires_customer_notification'] ? '' : 'display:none;' ?>">
-            <label><?= h(t('case.field.contract_reference')) ?>
-                <select name="contract_reference">
-                    <option value=""><?= h(t('newcase.field.contract_reference_choose')) ?></option>
-                    <?php foreach (list_active_values('contract_reference') as $ref): ?>
-                        <option value="<?= h($ref) ?>" <?= $case['contract_reference'] === $ref ? 'selected' : '' ?>><?= h($ref) ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </label>
-        </div>
-        <button type="submit"><?= h(t('case.save')) ?></button>
-    </form>
 </div>
 <?php endif; ?>
 
