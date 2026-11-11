@@ -8,6 +8,7 @@ $db = get_db();
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = trim($_POST['name'] ?? '');
+    $title = trim($_POST['title'] ?? '') ?: null;
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
     $role = $_POST['role'] ?? 'user';
@@ -23,8 +24,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = t('users.error.gqar_contract_required');
     } else {
         try {
-            $stmt = $db->prepare('INSERT INTO users (organization_id, name, email, password_hash, role, manager_user_id) VALUES (?, ?, ?, ?, ?, ?)');
-            $stmt->execute([$user['organization_id'], $name, $email, password_hash($password, PASSWORD_DEFAULT), $role, $managerUserId]);
+            $stmt = $db->prepare('INSERT INTO users (organization_id, name, title, email, password_hash, role, manager_user_id) VALUES (?, ?, ?, ?, ?, ?, ?)');
+            $stmt->execute([$user['organization_id'], $name, $title, $email, password_hash($password, PASSWORD_DEFAULT), $role, $managerUserId]);
             $newUserId = (int) $db->lastInsertId();
             if ($role === 'gqar') {
                 save_entity_contracts('gqar_contracts', 'user_id', $newUserId, $gqarContracts);
@@ -46,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $stmt = $db->prepare('
-    SELECT u.id, u.name, u.email, u.role, u.active, u.deactivation_requested_at, m.name AS manager_name
+    SELECT u.id, u.name, u.title, u.email, u.role, u.active, u.deactivation_requested_at, m.name AS manager_name
     FROM users u
     LEFT JOIN users m ON m.id = u.manager_user_id
     WHERE u.organization_id = ?
@@ -79,6 +80,7 @@ render_header(t('users.title'));
     <form method="post" class="inline-grid-form" data-preserve="newuser">
     <?= csrf_field() ?>
         <input type="text" name="name" placeholder="<?= h(t('users.field.name_ph')) ?>" required>
+        <input type="text" name="title" placeholder="<?= h(t('users.field.title_ph')) ?>">
         <input type="email" name="email" placeholder="<?= h(t('users.field.email_ph')) ?>" required>
         <input type="password" name="password" placeholder="<?= h(t('users.field.password_ph')) ?>" required minlength="8">
         <select name="role" id="new-user-role">
@@ -126,6 +128,7 @@ render_header(t('users.title'));
 <table class="doc-table">
     <thead><tr>
         <th><?= h(t('users.table.name')) ?></th>
+        <th><?= h(t('users.table.title')) ?></th>
         <th><?= h(t('users.table.email')) ?></th>
         <th><?= h(t('users.table.role')) ?></th>
         <th><?= h(t('users.table.manager')) ?></th>
@@ -136,6 +139,7 @@ render_header(t('users.title'));
     <?php foreach ($users as $u): ?>
         <tr>
             <td><?= h($u['name']) ?></td>
+            <td><?= h($u['title'] ?: '—') ?></td>
             <td><?= h($u['email']) ?></td>
             <td><?= h(role_label($u['role'])) ?></td>
             <td><?= h($u['manager_name'] ?: '—') ?></td>

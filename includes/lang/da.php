@@ -410,10 +410,12 @@ return [
     'users.title' => 'Brugere',
     'users.create_title' => 'Opret ny bruger',
     'users.field.name_ph' => 'Navn',
+    'users.field.title_ph' => 'Titel (valgfri)',
     'users.field.email_ph' => 'E-mail',
     'users.field.password_ph' => 'Adgangskode (min. 8 tegn)',
     'users.create' => 'Opret',
     'users.table.name' => 'Navn',
+    'users.table.title' => 'Titel',
     'users.table.email' => 'E-mail',
     'users.table.role' => 'Rolle',
     'users.table.status' => 'Status',
@@ -440,6 +442,7 @@ return [
 
     'edituser.title' => 'Rediger bruger',
     'edituser.field.name' => 'Navn',
+    'edituser.field.title' => 'Titel',
     'edituser.field.email' => 'E-mail',
     'edituser.field.password' => 'Ny adgangskode (lad stå tomt for at beholde den nuværende)',
     'edituser.field.role' => 'Rolle',
@@ -1003,6 +1006,11 @@ return [
 
     'help.section.reports' => 'Rapporter',
     'help.reports.text' => 'Rapporter viser tendenser over tid, som ikke fremgår andre steder i systemet: gennemsnitlig godkendelsestid for dokumenter, gennemsnitlig tid til lukning af kvalitetshændelser, andel kvalitetshændelser og audits gennemført til tiden, samt antal kvalitetshændelser pr. måned. Vælg en periode øverst på siden.',
+
+    'help.section.organization' => 'Organisationsdiagram',
+    'help.organization.step1' => 'Under Indstillinger → Organisation vises et organisationsdiagram, bygget automatisk fra "Nærmeste leder" på hver bruger under Indstillinger → Brugere — der er intet at sætte op, kun et diagram der altid er opdateret.',
+    'help.organization.step2' => 'Diagrammet viser kun systembrugere. Tallet under hver person er antal medarbejdere (uden systemlogin, se Indstillinger → Organisation → Medarbejdere), der rapporterer direkte til dem.',
+    'help.organization.step3' => 'En leder uden systemlogin kan i dag ikke selv have medarbejdere under sig i diagrammet — kun systembrugere kan stå som leder.',
 
     'help.section.users' => 'Sådan fungerer Brugere',
     'help.users.step1' => 'En bruger er en konto med login og en rolle (fx Administrator, Redaktør, Godkender eller GQAR). Brugere oprettes og redigeres under Indstillinger → Brugere, kun af Administrator. Modsat en medarbejder kan en bruger faktisk logge ind i systemet.',
@@ -1682,4 +1690,13 @@ return [
     'assistant.observation.volume_spike_with_avg' => 'Der er registreret {count} sager af typen "{type}" de seneste 7 dage — mod et gennemsnit på {avg} om ugen de seneste 8 uger.',
     'assistant.observation.volume_spike_new' => 'Der er registreret {count} sager af typen "{type}" de seneste 7 dage — denne type er ikke set i de foregående 8 uger.',
     'assistant.observation.reporter_concentration' => '{count} sager er rapporteret af {name} de seneste 7 dage.',
+
+    'nav.organization' => 'Organisation',
+    'organization.title' => 'Organisationsdiagram',
+    'organization.description' => 'Lederskabsstrukturen blandt systembrugere, bygget automatisk fra "Nærmeste leder" på hver bruger. Tallet under hver person er antal medarbejdere, der rapporterer direkte til dem.',
+    'organization.tab.chart' => 'Organisationsdiagram',
+    'organization.empty' => 'Ingen aktive brugere at vise endnu.',
+    'organization.user_count' => '{count} systembrugere',
+    'organization.employee_count' => '{count} medarbejdere',
+    'organization.note' => 'Note: "medarbejdere" er personer uden systemlogin (se Medarbejdere). En leder uden login kan i dag ikke selv have medarbejdere under sig i dette diagram — kun systembrugere kan stå som leder.',
 ];

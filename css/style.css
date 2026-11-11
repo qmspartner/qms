@@ -739,3 +739,49 @@ button:hover { opacity: 0.9; }
 .qms-assistant-footer a { font-size: 11.5px; text-decoration: none; }
 .qms-assistant-snooze { color: var(--text-muted); text-decoration: underline; }
 .qms-assistant-cta { color: var(--accent); font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
+
+/* Indstillinger-menuens "Organisation"-flyout (Organisationsdiagram/Mennesker/Brugere) */
+.nav-dropdown-nested { position: relative; }
+.nav-dropdown-nested > summary {
+    cursor: pointer; list-style: none;
+    display: flex; align-items: center; gap: 8px; width: 100%;
+    padding: 8px 10px; border-radius: 6px; font-size: 14px; color: var(--text);
+}
+.nav-dropdown-nested > summary::-webkit-details-marker { display: none; }
+.nav-dropdown-nested > summary::marker { content: ''; }
+.nav-dropdown-nested > summary:hover { background: var(--page-bg); }
+.nav-dropdown-nested-chevron { margin-left: auto; color: var(--text-muted); }
+.nav-dropdown-submenu {
+    position: absolute; left: 100%; top: 0; margin-left: 4px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 6px; min-width: 190px;
+    display: flex; flex-direction: column; gap: 2px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    z-index: 60;
+}
+.nav-dropdown-submenu a { padding: 8px 10px; border-radius: 6px; color: var(--text) !important; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+.nav-dropdown-submenu a:hover { background: var(--page-bg); }
+
+/* Organisationsdiagram (Indstillinger → Organisation) */
+.orgchart-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 18px; font-size: 12.5px; color: var(--text-muted); margin-bottom: 18px; }
+.orgchart-legend-item { display: flex; align-items: center; gap: 6px; }
+.orgchart-legend-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
+.orgchart-legend-count { margin-left: auto; }
+.orgchart-scroll { overflow-x: auto; padding-bottom: 8px; }
+.orgchart-host { position: relative; }
+.orgchart-card {
+    position: absolute; box-sizing: border-box; padding: 14px 16px;
+    border-radius: 12px; background: var(--surface); border: 1px solid var(--border);
+    box-shadow: 0 1px 3px rgba(20,20,19,0.06);
+    display: flex; align-items: center; gap: 12px;
+}
+.orgchart-avatar {
+    display: inline-block; width: 40px; height: 40px; flex-shrink: 0;
+    border-radius: 50%; color: #ffffff; font-size: 13.5px; font-weight: 700;
+    text-align: center; line-height: 40px;
+}
+.orgchart-card-text { min-width: 0; }
+.orgchart-name { font-size: 14.5px; color: var(--text); }
+.orgchart-title { font-size: 12.5px; color: var(--text-muted); }
+.orgchart-role { font-size: 11.5px; font-weight: 600; }
+.orgchart-count-badge { display: inline-block; margin-top: 6px; font-size: 11px; font-weight: 600; border-radius: 999px; padding: 2px 9px; }

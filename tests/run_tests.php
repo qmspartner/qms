@@ -30,6 +30,7 @@ require_once __DIR__ . '/../includes/equipment.php';
 require_once __DIR__ . '/../includes/quality_objectives.php';
 require_once __DIR__ . '/../includes/action_items.php';
 require_once __DIR__ . '/../includes/assistant.php';
+require_once __DIR__ . '/../includes/organization.php';
 require_once __DIR__ . '/fake_pdo.php';
 
 $passed = 0;
@@ -724,6 +725,50 @@ $db->rowsQueue = [
 ];
 $db->statements = [];
 assert_equal([], assistant_observations($db, 1), 'assistant_observations() siger intet ved kun 1 sag af en type (ingen reel stigning at bemærke)');
+
+// --- organization.php: organisationsdiagram ---------------------------------------
+
+$orgUsers = [
+    ['id' => 1, 'name' => 'Lennart Juhl', 'title' => 'Direktør', 'role' => 'admin', 'manager_user_id' => null],
+    ['id' => 2, 'name' => 'Mette Sørensen', 'title' => 'Kvalitetschef', 'role' => 'approver', 'manager_user_id' => 1],
+    ['id' => 3, 'name' => 'Jonas Berg', 'title' => 'Produktionschef', 'role' => 'editor', 'manager_user_id' => 1],
+    ['id' => 4, 'name' => 'Anna Christensen', 'title' => null, 'role' => 'user', 'manager_user_id' => 2],
+    ['id' => 5, 'name' => 'Peter Holm', 'title' => null, 'role' => 'user', 'manager_user_id' => 2],
+    // Leder findes ikke (slettet/inaktiv) -> bliver selv en rod, ikke en fejl.
+    ['id' => 6, 'name' => 'Sofie Lund', 'title' => null, 'role' => 'user', 'manager_user_id' => 99],
+];
+$orgCounts = [2 => 4, 3 => 9, 5 => 2];
+
+$tree = organization_build_tree($orgUsers, $orgCounts);
+assert_equal(2, count($tree), 'organization_build_tree() giver to rødder: den rigtige rod og brugeren med en ikke-eksisterende leder');
+$root = $tree[0];
+assert_equal(1, $root['id'], 'organization_build_tree() beholder rod-brugeren først');
+assert_equal(2, count($root['children']), 'organization_build_tree() hægter Mette og Jonas på som børn af Lennart');
+assert_equal(4, $root['children'][0]['employee_count'], 'organization_build_tree() slår medarbejder-antal op pr. leder');
+assert_equal(0, $root['children'][0]['children'][0]['employee_count'] ?? -1, 'organization_build_tree() giver 0, ikke et manglende felt, når ingen medarbejdere rapporterer til en leder');
+assert_equal(6, $tree[1]['id'], 'organization_build_tree() gør en bruger med en ukendt leder til sin egen rod, i stedet for at fejle');
+
+assert_equal(240, organization_chart_subtree_width(['children' => []], 240, 32), 'organization_chart_subtree_width() for et blad er bare kortbredden');
+$twoChildren = ['children' => [['children' => []], ['children' => []]]];
+assert_equal(240 * 2 + 32, organization_chart_subtree_width($twoChildren, 240, 32), 'organization_chart_subtree_width() for to blade er to kortbredder plus ét mellemrum');
+
+$chart = organization_chart_layout($tree, ['cardWidth' => 240, 'cardHeight' => 112, 'hGap' => 32, 'vGap' => 96, 'rootGap' => 80]);
+assert_equal(6, count($chart['nodes']), 'organization_chart_layout() lægger alle 6 brugere ud (5 i hovedtræet + Sofies egen rod)');
+$byId = [];
+foreach ($chart['nodes'] as $n) {
+    $byId[$n['id']] = $n;
+}
+assert_equal(0, $byId[1]['y'], 'organization_chart_layout() placerer roden i dybde 0');
+assert_equal(112 + 96, $byId[2]['y'], 'organization_chart_layout() placerer næste niveau en kort-højde plus mellemrum nedenfor');
+$metteCenterX = $byId[2]['x'] + $byId[2]['w'] / 2;
+$annaCenterX = $byId[4]['x'] + $byId[4]['w'] / 2;
+$peterCenterX = $byId[5]['x'] + $byId[5]['w'] / 2;
+assert_equal($metteCenterX, ($annaCenterX + $peterCenterX) / 2, 'organization_chart_layout() centrerer en leder over sine egne børns midtpunkter');
+assert_true($byId[6]['x'] > ($byId[3]['x'] + $byId[3]['w']), 'organization_chart_layout() placerer en separat rod (Sofie) til højre for hovedtræet, ikke oven i det');
+
+$db->rowsToReturn = [['manager_user_id' => 2, 'antal' => 4], ['manager_user_id' => 3, 'antal' => 9]];
+$db->statements = [];
+assert_equal([2 => 4, 3 => 9], organization_employee_counts($db, 1), 'organization_employee_counts() returnerer [leder-id => antal]');
 
 // --- Resultat ------------------------------------------------------------------
 

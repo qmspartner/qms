@@ -366,6 +366,32 @@ forespørgsel).
   `functions.php` selv `tasks.php`, lige før den (for ikke-GQAR-brugere)
   kalder `render_assistant_widget()` — kun ved faktisk sidevisning, med
   databaseadgang allerede til rådighed, aldrig ved test-indlæsning.
+- **`includes/organization.php`** er det ellevte modul: organisationsdiagrammet
+  (Indstillinger → Organisation), bygget automatisk fra `users.manager_user_id` —
+  intet at sætte op, kun en side der altid er opdateret. Viser KUN systembrugere,
+  bevidst: `employees.manager_user_id` peger på `users.id`, ikke på en anden
+  `employees`-række, så en medarbejder uden login kan i dag ikke selv stå som leder
+  for andre medarbejdere i diagrammet (kendt, dokumenteret begrænsning, se
+  `organization.php`s note-tekst og `help.php`). `organization_build_tree(array
+  $users, array $employeeCounts): array` er en ren, DB-fri funktion der bygger et
+  (muligt) skov af træer af en flad brugerliste — en bruger hvis leder ikke findes i
+  listen (inaktiv/slettet) bliver bevidst sin egen rod i stedet for at fejle.
+  `organization_chart_subtree_width()`/`organization_chart_place_node()`/
+  `organization_chart_layout()` er en klassisk to-pas træ-layout-algoritme (bredde
+  bottom-up, position top-down, en leder centreres over sine børns midtpunkter) —
+  også ren og DB-fri, så hele layoutet testes uden database. Kun
+  `organization_users()` og `organization_employee_counts()` (begge enkle,
+  en-forespørgsel) rører PDO. `organization.php`-siden selv bygger forbindelses-
+  linjerne (SVG) ud fra layoutets x/y-koordinater, samme "en-til-mange"-tegne-mønster
+  som blev brugt i det godkendte mock-up. Admin-only (`require_role(['admin'])`,
+  samme som `users.php`/`competence.php`). Samtidig tilføjet: `users.title`
+  (migration `015_organisation_titel.sql`) — en jobtitel på systembrugere, der ikke
+  fandtes før (rollen admin/redaktør/godkender/bruger/GQAR/ledelse er en rettighed,
+  ikke en jobtitel), redigeres på `users.php`/`edit_user.php` som ethvert andet felt.
+  Navigationen samler samtidig "Organisation" (ny undermenu: Organisationsdiagram,
+  Medarbejdere, Brugere) under Indstillinger — det tidligere flade "Kompetence"-punkt
+  udgik, fordi kompetencer allerede hører til Mennesker-området (`competence.php`),
+  så "Medarbejdere" nu er den fælles indgang til begge.
 - Nye moduler følger samme mønster: en fil `includes/<modul>.php`, der
   requirer `includes/functions.php` selv (så den er selvstændig), og
   almindelige funktioner — ikke klasser, for at matche resten af kodebasens

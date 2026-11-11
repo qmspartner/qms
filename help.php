@@ -27,6 +27,7 @@ $showQualityObjectives = has_permission($user, 'quality_objectives');
 $showContractOverview = true;
 $showFai = organization_has_fai();
 $showReports = !$gqar;
+$showOrganization = $isAdmin;
 $showAccessControl = $isAdmin;
 $showImpersonation = $isAdmin;
 $showAqapGlossary = true;
@@ -78,6 +79,7 @@ if ($overviewItems) $groups[] = ['help.toc_group.overview_reports', $overviewIte
 
 $settingsItems = [];
 if ($showCustomers) $settingsItems[] = ['customers', 'help.section.customers'];
+if ($showOrganization) $settingsItems[] = ['organization', 'help.section.organization'];
 if ($showUsers) $settingsItems[] = ['users', 'help.section.users'];
 if ($showEmployees) $settingsItems[] = ['employees', 'help.section.employees'];
 if ($showAccessControl) $settingsItems[] = ['access-control', 'help.section.access_control'];
@@ -350,6 +352,15 @@ render_header(t('help.title'));
         <?php endif; ?>
 
         <?php if ($showUsers): ?>
+        <?php if ($showOrganization): ?>
+        <h2 id="organization"><?= h(t('help.section.organization')) ?></h2>
+        <div class="card" style="margin-bottom:1.5rem;">
+            <p style="margin:0 0 8px;"><?= h(t('help.organization.step1')) ?></p>
+            <p style="margin:0 0 8px;"><?= h(t('help.organization.step2')) ?></p>
+            <p style="margin:0;"><?= h(t('help.organization.step3')) ?></p>
+        </div>
+        <?php endif; ?>
+
         <h2 id="users"><?= h(t('help.section.users')) ?></h2>
         <div class="card" style="margin-bottom:1.5rem;">
             <p style="margin:0 0 8px;"><?= h(t('help.users.step1')) ?></p>

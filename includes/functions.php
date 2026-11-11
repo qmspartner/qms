@@ -1280,6 +1280,7 @@ function nav_icon(string $key): string {
         'templates' => '<rect x="4" y="3" width="13" height="13" rx="1.5"/><path d="M20 8v11a2 2 0 0 1-2 2H7"/>',
         'users' => '<circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6"/>',
         'competence' => '<path d="M12 3 2 8l10 5 10-5-10-5Z"/><path d="M6 10.5V15c0 1.5 3 3 6 3s6-1.5 6-3v-4.5"/>',
+        'organization' => '<circle cx="12" cy="5" r="2.5"/><circle cx="5" cy="19" r="2.5"/><circle cx="19" cy="19" r="2.5"/><path d="M12 7.5v4M5 16.5v-3h14v3M12 11.5H5m7 0h7"/>',
         'lists' => '<path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r="1.3"/><circle cx="3.5" cy="12" r="1.3"/><circle cx="3.5" cy="18" r="1.3"/>',
         'permissions' => '<path d="M12 2 4 5v6c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10V5l-8-3Z"/><circle cx="12" cy="11" r="2"/><path d="M12 13v3"/>',
         'system_settings' => '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/>',
@@ -1302,7 +1303,7 @@ function render_header(string $title): void {
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title><?= h($title) ?> - <?= h(t('brand.name')) ?></title>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
-        <link rel="stylesheet" href="css/style.css?v=54">
+        <link rel="stylesheet" href="css/style.css?v=55">
     </head>
     <body>
     <?php if (is_impersonating()): ?>
@@ -1374,8 +1375,14 @@ function render_header(string $title): void {
                         <?php if ($showCustomers): ?><a href="customers.php"><?= nav_icon('customers') ?><span><?= h(t('nav.customers')) ?></span></a><?php endif; ?>
                         <?php if ($showTemplates): ?><a href="templates.php"><?= nav_icon('templates') ?><span><?= h(t('nav.templates')) ?></span></a><?php endif; ?>
                         <?php if ($isAdmin): ?>
-                            <a href="users.php"><?= nav_icon('users') ?><span><?= h(t('nav.users')) ?></span></a>
-                            <a href="competence.php"><?= nav_icon('competence') ?><span><?= h(t('nav.competence')) ?></span></a>
+                            <details class="nav-dropdown-nested">
+                                <summary><?= nav_icon('organization') ?><span><?= h(t('nav.organization')) ?></span><i class="ti ti-chevron-right nav-dropdown-nested-chevron"></i></summary>
+                                <div class="nav-dropdown-submenu">
+                                    <a href="organisation.php"><?= nav_icon('organization') ?><span><?= h(t('organization.tab.chart')) ?></span></a>
+                                    <a href="competence.php"><?= nav_icon('competence') ?><span><?= h(t('nav.competence')) ?></span></a>
+                                    <a href="users.php"><?= nav_icon('users') ?><span><?= h(t('nav.users')) ?></span></a>
+                                </div>
+                            </details>
                             <a href="lists.php"><?= nav_icon('lists') ?><span><?= h(t('nav.lists')) ?></span></a>
                             <a href="permissions.php"><?= nav_icon('permissions') ?><span><?= h(t('nav.permissions')) ?></span></a>
                             <a href="system_settings.php"><?= nav_icon('system_settings') ?><span><?= h(t('nav.system_settings')) ?></span></a>

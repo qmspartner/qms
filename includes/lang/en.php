@@ -410,10 +410,12 @@ return [
     'users.title' => 'Users',
     'users.create_title' => 'Create new user',
     'users.field.name_ph' => 'Name',
+    'users.field.title_ph' => 'Title (optional)',
     'users.field.email_ph' => 'Email',
     'users.field.password_ph' => 'Password (min. 8 characters)',
     'users.create' => 'Create',
     'users.table.name' => 'Name',
+    'users.table.title' => 'Title',
     'users.table.email' => 'Email',
     'users.table.role' => 'Role',
     'users.table.status' => 'Status',
@@ -440,6 +442,7 @@ return [
 
     'edituser.title' => 'Edit user',
     'edituser.field.name' => 'Name',
+    'edituser.field.title' => 'Title',
     'edituser.field.email' => 'Email',
     'edituser.field.password' => 'New password (leave blank to keep the current one)',
     'edituser.field.role' => 'Role',
@@ -1003,6 +1006,11 @@ return [
 
     'help.section.reports' => 'Reports',
     'help.reports.text' => 'Reports shows trends over time not visible elsewhere in the system: average document approval time, average time to quality event closure, share of quality events and audits completed on time, and quality events per month. Choose a period at the top of the page.',
+
+    'help.section.organization' => 'Organization chart',
+    'help.organization.step1' => 'Under Settings → Organization, an organization chart is shown, built automatically from each user\'s "Line manager" field under Settings → Users — there is nothing to set up, just a chart that is always up to date.',
+    'help.organization.step2' => 'The chart only shows system users. The number under each person is how many employees (without a system login, see Settings → Organization → Employees) report directly to them.',
+    'help.organization.step3' => 'A manager without a system login cannot themselves have employees under them in the chart today — only system users can appear as a manager.',
 
     'help.section.users' => 'How Users work',
     'help.users.step1' => 'A user is an account with a login and a role (e.g. Administrator, Editor, Approver or GQAR). Users are created and edited under Settings → Users, by Administrator only. Unlike an employee, a user can actually log in to the system.',
@@ -1682,4 +1690,13 @@ return [
     'assistant.observation.volume_spike_with_avg' => '{count} cases of type "{type}" have been logged in the last 7 days — against an average of {avg} a week over the last 8 weeks.',
     'assistant.observation.volume_spike_new' => '{count} cases of type "{type}" have been logged in the last 7 days — this type has not appeared in the preceding 8 weeks.',
     'assistant.observation.reporter_concentration' => '{count} cases have been reported by {name} in the last 7 days.',
+
+    'nav.organization' => 'Organization',
+    'organization.title' => 'Organization chart',
+    'organization.description' => 'The leadership structure among system users, built automatically from each user\'s "Nearest manager". The number under each person is how many employees report directly to them.',
+    'organization.tab.chart' => 'Organization chart',
+    'organization.empty' => 'No active users to show yet.',
+    'organization.user_count' => '{count} system users',
+    'organization.employee_count' => '{count} employees',
+    'organization.note' => 'Note: "employees" here means people without a system login (see Employees). A manager without a login cannot themselves have employees under them in this chart today — only system users can appear as a manager.',
 ];

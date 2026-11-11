@@ -45,6 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = t('offboard.error.locked');
     } elseif ($action === 'update') {
         $name = trim($_POST['name'] ?? '');
+        $title = trim($_POST['title'] ?? '') ?: null;
         $email = trim($_POST['email'] ?? '');
         $role = $_POST['role'] ?? 'user';
         $active = isset($_POST['active']) ? 1 : 0;
@@ -77,6 +78,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($email !== $editUser['email']) {
                 $changes[] = ['E-mail ændret', $editUser['email'] . ' → ' . $email];
             }
+            if ($title !== ($editUser['title'] ?? null)) {
+                $changes[] = ['Titel ændret', ($editUser['title'] ?: '—') . ' → ' . ($title ?: '—')];
+            }
             if ($role !== $editUser['role']) {
                 $changes[] = ['Rolle ændret', role_label($editUser['role']) . ' → ' . role_label($role)];
             }
@@ -94,11 +98,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($editUser['deactivation_requested_at']) {
                     // Under fratrædelse-gennemgang styres aktiv-status fra offboard_user.php, ikke herfra.
                     if ($newPassword !== '') {
-                        $stmt = $db->prepare('UPDATE users SET name = ?, email = ?, role = ?, manager_user_id = ?, password_hash = ? WHERE id = ? AND organization_id = ?');
-                        $stmt->execute([$name, $email, $role, $managerUserId, password_hash($newPassword, PASSWORD_DEFAULT), $editUser['id'], $user['organization_id']]);
+                        $stmt = $db->prepare('UPDATE users SET name = ?, title = ?, email = ?, role = ?, manager_user_id = ?, password_hash = ? WHERE id = ? AND organization_id = ?');
+                        $stmt->execute([$name, $title, $email, $role, $managerUserId, password_hash($newPassword, PASSWORD_DEFAULT), $editUser['id'], $user['organization_id']]);
                     } else {
-                        $stmt = $db->prepare('UPDATE users SET name = ?, email = ?, role = ?, manager_user_id = ? WHERE id = ? AND organization_id = ?');
-                        $stmt->execute([$name, $email, $role, $managerUserId, $editUser['id'], $user['organization_id']]);
+                        $stmt = $db->prepare('UPDATE users SET name = ?, title = ?, email = ?, role = ?, manager_user_id = ? WHERE id = ? AND organization_id = ?');
+                        $stmt->execute([$name, $title, $email, $role, $managerUserId, $editUser['id'], $user['organization_id']]);
                     }
                     save_entity_contracts('gqar_contracts', 'user_id', (int) $editUser['id'], $role === 'gqar' ? $gqarContracts : []);
                     foreach ($changes as [$changeAction, $changeDetails]) {
@@ -112,11 +116,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $openItems = get_user_open_items($db, $editUser);
                     if ($openItems) {
                         if ($newPassword !== '') {
-                            $stmt = $db->prepare('UPDATE users SET name = ?, email = ?, role = ?, manager_user_id = ?, password_hash = ?, deactivation_requested_at = NOW(), deactivation_requested_by = ? WHERE id = ? AND organization_id = ?');
-                            $stmt->execute([$name, $email, $role, $managerUserId, password_hash($newPassword, PASSWORD_DEFAULT), $user['id'], $editUser['id'], $user['organization_id']]);
+                            $stmt = $db->prepare('UPDATE users SET name = ?, title = ?, email = ?, role = ?, manager_user_id = ?, password_hash = ?, deactivation_requested_at = NOW(), deactivation_requested_by = ? WHERE id = ? AND organization_id = ?');
+                            $stmt->execute([$name, $title, $email, $role, $managerUserId, password_hash($newPassword, PASSWORD_DEFAULT), $user['id'], $editUser['id'], $user['organization_id']]);
                         } else {
-                            $stmt = $db->prepare('UPDATE users SET name = ?, email = ?, role = ?, manager_user_id = ?, deactivation_requested_at = NOW(), deactivation_requested_by = ? WHERE id = ? AND organization_id = ?');
-                            $stmt->execute([$name, $email, $role, $managerUserId, $user['id'], $editUser['id'], $user['organization_id']]);
+                            $stmt = $db->prepare('UPDATE users SET name = ?, title = ?, email = ?, role = ?, manager_user_id = ?, deactivation_requested_at = NOW(), deactivation_requested_by = ? WHERE id = ? AND organization_id = ?');
+                            $stmt->execute([$name, $title, $email, $role, $managerUserId, $user['id'], $editUser['id'], $user['organization_id']]);
                         }
                         save_entity_contracts('gqar_contracts', 'user_id', (int) $editUser['id'], $role === 'gqar' ? $gqarContracts : []);
                         foreach ($changes as [$changeAction, $changeDetails]) {
@@ -129,11 +133,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
 
                 if ($newPassword !== '') {
-                    $stmt = $db->prepare('UPDATE users SET name = ?, email = ?, role = ?, manager_user_id = ?, active = ?, password_hash = ? WHERE id = ? AND organization_id = ?');
-                    $stmt->execute([$name, $email, $role, $managerUserId, $active, password_hash($newPassword, PASSWORD_DEFAULT), $editUser['id'], $user['organization_id']]);
+                    $stmt = $db->prepare('UPDATE users SET name = ?, title = ?, email = ?, role = ?, manager_user_id = ?, active = ?, password_hash = ? WHERE id = ? AND organization_id = ?');
+                    $stmt->execute([$name, $title, $email, $role, $managerUserId, $active, password_hash($newPassword, PASSWORD_DEFAULT), $editUser['id'], $user['organization_id']]);
                 } else {
-                    $stmt = $db->prepare('UPDATE users SET name = ?, email = ?, role = ?, manager_user_id = ?, active = ? WHERE id = ? AND organization_id = ?');
-                    $stmt->execute([$name, $email, $role, $managerUserId, $active, $editUser['id'], $user['organization_id']]);
+                    $stmt = $db->prepare('UPDATE users SET name = ?, title = ?, email = ?, role = ?, manager_user_id = ?, active = ? WHERE id = ? AND organization_id = ?');
+                    $stmt->execute([$name, $title, $email, $role, $managerUserId, $active, $editUser['id'], $user['organization_id']]);
                 }
                 save_entity_contracts('gqar_contracts', 'user_id', (int) $editUser['id'], $role === 'gqar' ? $gqarContracts : []);
                 foreach ($changes as [$changeAction, $changeDetails]) {
@@ -219,6 +223,9 @@ render_header(t('edituser.title'));
         <input type="hidden" name="action" value="update">
         <label><?= h(t('edituser.field.name')) ?>
             <input type="text" name="name" value="<?= h($editUser['name']) ?>" <?= $isLocked ? 'disabled' : '' ?> required>
+        </label>
+        <label><?= h(t('edituser.field.title')) ?>
+            <input type="text" name="title" value="<?= h($editUser['title'] ?? '') ?>" <?= $isLocked ? 'disabled' : '' ?>>
         </label>
         <label><?= h(t('edituser.field.email')) ?>
             <input type="email" name="email" value="<?= h($editUser['email']) ?>" <?= $isLocked ? 'disabled' : '' ?> required>
