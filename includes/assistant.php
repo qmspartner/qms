@@ -257,8 +257,13 @@ function render_assistant_widget(array $user): void {
         }
 
         // Dukker automatisk op højst én gang pr. dag pr. browser, kun hvis der
-        // rent faktisk er noget at bemærke, og kun hvis ikke allerede fravalgt i dag.
+        // rent faktisk er noget at bemærke, og kun hvis ikke allerede fravalgt
+        // (eller allerede auto-vist) i dag. Uden dette ville panelet poppe op
+        // igen og igen ved hver ny sidevisning, så længe der er noget at
+        // bemærke — markér derfor "set i dag" med det samme, ikke kun når
+        // brugeren selv klikker "Vis ikke igen i dag".
         if (hasSomething && !isSnoozedToday()) {
+            try { localStorage.setItem(snoozeKey, new Date().toISOString().slice(0, 10)); } catch (err) {}
             openPanel();
         }
     })();
