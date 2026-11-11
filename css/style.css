@@ -227,6 +227,7 @@ h2 { font-size: 17px; font-weight: 600; margin: 24px 0 8px; }
 .stat-value { font-size: 24px; font-weight: 600; margin: 0; }
 .stat-warning { color: var(--warning); }
 .stat-danger { color: var(--danger); }
+.stat-success { color: var(--success); }
 
 .filter-bar { display: flex; gap: 8px; margin-bottom: 16px; }
 .tab-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }

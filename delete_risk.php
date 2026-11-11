@@ -12,15 +12,16 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $riskId = (int) ($_POST['risk_id'] ?? 0);
 
-$stmt = $db->prepare('SELECT id FROM risks WHERE id = ? AND organization_id = ?');
+$stmt = $db->prepare('SELECT id, type FROM risks WHERE id = ? AND organization_id = ?');
 $stmt->execute([$riskId, $user['organization_id']]);
-if (!$stmt->fetch()) {
+$row = $stmt->fetch();
+if (!$row) {
     http_response_code(404);
-    exit('Risikoen blev ikke fundet.');
+    exit('Risikoen/muligheden blev ikke fundet.');
 }
 
 $stmt = $db->prepare('DELETE FROM risks WHERE id = ? AND organization_id = ?');
 $stmt->execute([$riskId, $user['organization_id']]);
 
-header('Location: risks.php');
+header('Location: risks.php' . ($row['type'] === 'Mulighed' ? '?type=mulighed' : ''));
 exit;

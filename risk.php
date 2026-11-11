@@ -25,6 +25,7 @@ if (!$risk) {
 }
 
 $canManage = can_manage_risks($user);
+$isOpportunity = $risk['type'] === 'Mulighed';
 $error = '';
 
 if ($canManage && $_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -32,8 +33,10 @@ if ($canManage && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $probability = max(1, min(5, (int) ($_POST['probability'] ?? $risk['probability'])));
     $consequence = max(1, min(5, (int) ($_POST['consequence'] ?? $risk['consequence'])));
     $treatmentPlan = trim($_POST['treatment_plan'] ?? '');
-    $residualProbability = $_POST['residual_probability'] !== '' ? max(1, min(5, (int) $_POST['residual_probability'])) : null;
-    $residualConsequence = $_POST['residual_consequence'] !== '' ? max(1, min(5, (int) $_POST['residual_consequence'])) : null;
+    // Muligheder har bevidst ingen restvurdering (simpelt Høj/Mellem/Lav, ingen matrix) - se
+    // CLAUDE.md. Formularen viser ikke felterne for en mulighed, så gem altid null for dem.
+    $residualProbability = (!$isOpportunity && ($_POST['residual_probability'] ?? '') !== '') ? max(1, min(5, (int) $_POST['residual_probability'])) : null;
+    $residualConsequence = (!$isOpportunity && ($_POST['residual_consequence'] ?? '') !== '') ? max(1, min(5, (int) $_POST['residual_consequence'])) : null;
     $nextReviewDate = trim($_POST['next_review_date'] ?? '');
     $contractReference = trim($_POST['contract_reference'] ?? '');
     $allowedStatuses = ['Identificeret', 'Under behandling', 'Lukket'];
@@ -76,10 +79,10 @@ if ($canManage && $_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if ($changes) {
-            log_risk_action($id, 'Risiko opdateret', implode(' | ', $changes));
+            log_risk_action($id, $isOpportunity ? 'Mulighed opdateret' : 'Risiko opdateret', implode(' | ', $changes));
         }
 
-        header('Location: risks.php');
+        header('Location: risks.php' . ($isOpportunity ? '?type=mulighed' : ''));
         exit;
     }
 }
@@ -94,15 +97,21 @@ $stmt = $db->prepare('
 $stmt->execute([$id]);
 $logEntries = $stmt->fetchAll();
 
-$grossScore = risk_score((int) $risk['probability'], (int) $risk['consequence']);
-$grossBand = risk_band($grossScore);
-$hasResidual = $risk['residual_probability'] !== null && $risk['residual_consequence'] !== null;
-$residualScore = $hasResidual ? risk_score((int) $risk['residual_probability'], (int) $risk['residual_consequence']) : null;
-$residualBand = $hasResidual ? risk_band($residualScore) : null;
+$categoryLabelFn = $isOpportunity ? 'opportunity_category_label' : 'risk_category_label';
+if ($isOpportunity) {
+    $priorityScore = opportunity_score((int) $risk['probability'], (int) $risk['consequence']);
+    $priorityBand = opportunity_band($priorityScore);
+} else {
+    $grossScore = risk_score((int) $risk['probability'], (int) $risk['consequence']);
+    $grossBand = risk_band($grossScore);
+    $hasResidual = $risk['residual_probability'] !== null && $risk['residual_consequence'] !== null;
+    $residualScore = $hasResidual ? risk_score((int) $risk['residual_probability'], (int) $risk['residual_consequence']) : null;
+    $residualBand = $hasResidual ? risk_band($residualScore) : null;
+}
 
 render_header($risk['title']);
 ?>
-<p class="breadcrumb"><a href="risks.php"><?= h(t('risks.title')) ?></a> &raquo; <?= h(risk_category_label($risk['category'])) ?></p>
+<p class="breadcrumb"><a href="risks.php<?= $isOpportunity ? '?type=mulighed' : '' ?>"><?= h(t('risks.combined_title')) ?></a> &raquo; <?= h($categoryLabelFn($risk['category'])) ?></p>
 
 <?php if ($error): ?><p class="alert alert-danger"><?= h($error) ?></p><?php endif; ?>
 
@@ -116,15 +125,19 @@ render_header($risk['title']);
 
     <div class="meta-grid">
         <div><p class="meta-label"><?= h(t('risk.owner')) ?></p><p><?= h($risk['owner_name']) ?></p></div>
-        <div><p class="meta-label"><?= h(t('risk.category')) ?></p><p><?= h(risk_category_label($risk['category'])) ?></p></div>
-        <div><p class="meta-label"><?= h(t('risk.score')) ?></p><p><span class="<?= risk_band_class($grossBand) ?>"><?= $grossScore ?> — <?= h(risk_band_label($grossBand)) ?></span></p></div>
-        <div><p class="meta-label"><?= h(t('risk.residual_score')) ?></p><p>
-            <?php if ($hasResidual): ?>
-                <span class="<?= risk_band_class($residualBand) ?>"><?= $residualScore ?> — <?= h(risk_band_label($residualBand)) ?></span>
-            <?php else: ?>
-                <?= h(t('risk.no_residual')) ?>
-            <?php endif; ?>
-        </p></div>
+        <div><p class="meta-label"><?= h(t('risk.category')) ?></p><p><?= h($categoryLabelFn($risk['category'])) ?></p></div>
+        <?php if ($isOpportunity): ?>
+            <div><p class="meta-label"><?= h(t('opportunity.priority')) ?></p><p><span class="<?= opportunity_band_class($priorityBand) ?>"><?= h(opportunity_band_label($priorityBand)) ?></span></p></div>
+        <?php else: ?>
+            <div><p class="meta-label"><?= h(t('risk.score')) ?></p><p><span class="<?= risk_band_class($grossBand) ?>"><?= $grossScore ?> — <?= h(risk_band_label($grossBand)) ?></span></p></div>
+            <div><p class="meta-label"><?= h(t('risk.residual_score')) ?></p><p>
+                <?php if ($hasResidual): ?>
+                    <span class="<?= risk_band_class($residualBand) ?>"><?= $residualScore ?> — <?= h(risk_band_label($residualBand)) ?></span>
+                <?php else: ?>
+                    <?= h(t('risk.no_residual')) ?>
+                <?php endif; ?>
+            </p></div>
+        <?php endif; ?>
         <?php if ($risk['contract_reference']): ?>
             <div><p class="meta-label"><?= h(t('risk.field.contract_reference')) ?></p><p><?= h($risk['contract_reference']) ?></p></div>
         <?php endif; ?>
@@ -139,7 +152,7 @@ render_header($risk['title']);
 
     <?php if ($risk['treatment_plan']): ?>
         <div style="border-top:0.5px solid var(--border); padding-top:1rem; margin-top:1rem;">
-            <p class="meta-label"><?= h(t('risk.treatment_plan')) ?></p>
+            <p class="meta-label"><?= h($isOpportunity ? t('opportunity.treatment_plan') : t('risk.treatment_plan')) ?></p>
             <p style="margin:0;"><?= nl2br(h($risk['treatment_plan'])) ?></p>
         </div>
     <?php endif; ?>
@@ -155,18 +168,18 @@ render_header($risk['title']);
     <?php if ($user['role'] === 'admin'): ?>
         <div class="button-row">
             <form method="post" action="delete_risk.php" class="inline-form"
-                  onsubmit="return confirm('<?= h(t('risk.delete_confirm')) ?>
+                  onsubmit="return confirm('<?= $isOpportunity ? h(t('opportunity.delete_confirm')) : h(t('risk.delete_confirm')) ?>
 ');">
     <?= csrf_field() ?>
                 <input type="hidden" name="risk_id" value="<?= (int)$risk['id'] ?>">
-                <button type="submit" class="button-secondary button-danger"><?= h(t('risk.delete')) ?></button>
+                <button type="submit" class="button-secondary button-danger"><?= h($isOpportunity ? t('opportunity.delete') : t('risk.delete')) ?></button>
             </form>
         </div>
     <?php endif; ?>
 </div>
 
 <?php if ($canManage): ?>
-<h2><?= h(t('risk.update_title')) ?></h2>
+<h2><?= h($isOpportunity ? t('opportunity.update_title') : t('risk.update_title')) ?></h2>
 <div class="card">
     <form method="post">
     <?= csrf_field() ?>
@@ -184,16 +197,17 @@ render_header($risk['title']);
                 <?php endfor; ?>
             </select>
         </label>
-        <label><?= h(t('newrisk.field.consequence')) ?>
+        <label><?= h($isOpportunity ? t('newopportunity.field.gain') : t('newrisk.field.consequence')) ?>
             <select name="consequence">
                 <?php for ($i = 1; $i <= 5; $i++): ?>
                     <option value="<?= $i ?>" <?= (int)$risk['consequence'] === $i ? 'selected' : '' ?>><?= $i ?></option>
                 <?php endfor; ?>
             </select>
         </label>
-        <label><?= h(t('risk.field.treatment_plan')) ?>
+        <label><?= h($isOpportunity ? t('opportunity.field.treatment_plan') : t('risk.field.treatment_plan')) ?>
             <textarea name="treatment_plan" rows="3"><?= h($risk['treatment_plan'] ?? '') ?></textarea>
         </label>
+        <?php if (!$isOpportunity): ?>
         <label><?= h(t('risk.field.residual_probability')) ?>
             <select name="residual_probability">
                 <option value="">—</option>
@@ -210,6 +224,7 @@ render_header($risk['title']);
                 <?php endfor; ?>
             </select>
         </label>
+        <?php endif; ?>
         <label><?= h(t('risk.field.next_review')) ?>
             <input type="date" name="next_review_date" value="<?= h($risk['next_review_date'] ?? '') ?>">
         </label>

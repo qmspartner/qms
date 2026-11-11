@@ -321,7 +321,8 @@ render_header(t('help.title'));
         <div class="card" style="margin-bottom:1.5rem;">
             <p style="margin:0 0 8px;"><?= h(t('help.risks.step1')) ?></p>
             <p style="margin:0 0 8px;"><?= h(t('help.risks.step2')) ?></p>
-            <p style="margin:0;"><?= h(t('help.risks.step3')) ?></p>
+            <p style="margin:0 0 8px;"><?= h(t('help.risks.step3')) ?></p>
+            <p style="margin:0;"><?= h(t('help.risks.step4')) ?></p>
         </div>
         <?php endif; ?>
 

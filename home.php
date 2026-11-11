@@ -99,7 +99,7 @@ if (!$gqar) {
         SELECT
             COUNT(*) AS total,
             SUM((probability * consequence) >= 10 AND status != 'Lukket') AS high_critical
-        FROM risks WHERE organization_id = ?
+        FROM risks WHERE organization_id = ? AND type = 'Risiko'
     ");
     $stmt->execute([$user['organization_id']]);
     $riskStats = $stmt->fetch();

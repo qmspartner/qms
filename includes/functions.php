@@ -515,6 +515,13 @@ function seed_default_lists(int $organizationId): void {
             ['IT', 'IT'],
             ['Andet', 'Other'],
         ],
+        'opportunity_category' => [
+            ['Nyt marked', 'New market'],
+            ['Procesforbedring', 'Process improvement'],
+            ['Partnerskab', 'Partnership'],
+            ['Produktudvikling', 'Product development'],
+            ['Andet', 'Other'],
+        ],
         'supplier_category' => [
             ['Vare', 'Goods'],
             ['Service', 'Service'],
@@ -744,6 +751,41 @@ function risk_band_class(string $band): string {
 
 function risk_category_label(string $category): string {
     return list_value_label('risk_category', $category);
+}
+
+function opportunity_score(int $probability, int $gain): int {
+    return $probability * $gain;
+}
+
+// Muligheder får bevidst kun tre, enkle niveauer - ingen sandsynlighed/konsekvens-matrix som
+// for risici (besluttet: "simpelt høj, mellem, lav"). Samme grænseværdier som risk_band(),
+// men Kritisk/Høj slås sammen til ét "Høj"-niveau - en attraktiv mulighed har ikke brug for
+// en ekstra, alarmerende "kritisk"-gradering.
+function opportunity_band(int $score): string {
+    return match (true) {
+        $score >= 10 => 'Høj',
+        $score >= 5 => 'Mellem',
+        default => 'Lav',
+    };
+}
+
+function opportunity_band_label(string $band): string {
+    // Genbruger risk_band.*-teksterne (Lav/Mellem/Høj) - samme ord, samme betydning.
+    return t('risk_band.' . $band);
+}
+
+function opportunity_band_class(string $band): string {
+    // Modsat farvelogik af risk_band_class(): en høj-prioriteret mulighed er attraktiv
+    // (grøn), ikke alarmerende (rød) som en høj risiko.
+    return match ($band) {
+        'Høj' => 'badge badge-success',
+        'Mellem' => 'badge badge-warning',
+        default => 'badge badge-neutral',
+    };
+}
+
+function opportunity_category_label(string $category): string {
+    return list_value_label('opportunity_category', $category);
 }
 
 function risk_status_label(string $status): string {

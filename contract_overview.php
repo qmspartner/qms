@@ -67,7 +67,7 @@ if ($selectedContract !== '') {
     $faiTemplate = ($isAdmin && organization_has_fai()) ? get_latest_template_document(FAI_CATEGORY) : null;
 
     if (!$isGqar) {
-        $stmt = $db->prepare('SELECT * FROM risks WHERE organization_id = ? AND contract_reference = ? ORDER BY (probability * consequence) DESC');
+        $stmt = $db->prepare("SELECT * FROM risks WHERE organization_id = ? AND contract_reference = ? AND type = 'Risiko' ORDER BY (probability * consequence) DESC");
         $stmt->execute([$user['organization_id'], $selectedContract]);
         $risks = $stmt->fetchAll();
 

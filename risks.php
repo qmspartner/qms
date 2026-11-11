@@ -7,6 +7,13 @@ $user = require_permission('risks', 'view');
 $myTasks = get_my_tasks($user);
 $db = get_db();
 
+// Samme register som risici (risks-tabellen, type-kolonnen), to faner - se CLAUDE.md.
+// Muligheder har bevidst ingen matrix/heatmap, kun en simpel Høj/Mellem/Lav-prioritet.
+$type = (($_GET['type'] ?? '') === 'mulighed') ? 'Mulighed' : 'Risiko';
+$isOpportunity = $type === 'Mulighed';
+$categoryListType = $isOpportunity ? 'opportunity_category' : 'risk_category';
+$categoryLabelFn = $isOpportunity ? 'opportunity_category_label' : 'risk_category_label';
+
 $selectedStatuses = array_values(array_filter((array) ($_GET['status'] ?? [])));
 $selectedCategories = array_values(array_filter((array) ($_GET['category'] ?? [])));
 
@@ -27,9 +34,9 @@ $sql = '
     SELECT r.*, u.name AS owner_name
     FROM risks r
     JOIN users u ON u.id = r.owner_id
-    WHERE r.organization_id = ?
+    WHERE r.organization_id = ? AND r.type = ?
 ';
-$params = [$user['organization_id']];
+$params = [$user['organization_id'], $type];
 
 if ($selectedStatuses) {
     $sql .= ' AND r.status IN (' . implode(',', array_fill(0, count($selectedStatuses), '?')) . ')';
@@ -45,15 +52,27 @@ $stmt = $db->prepare($sql);
 $stmt->execute($params);
 $risks = $stmt->fetchAll();
 
-$stmt = $db->prepare("
-    SELECT
-        COUNT(*) AS total,
-        SUM((probability * consequence) >= 10 AND status != 'Lukket') AS high_critical,
-        SUM(next_review_date IS NOT NULL AND next_review_date <= CURDATE() + INTERVAL 60 DAY AND status != 'Lukket') AS due_soon
-    FROM risks WHERE organization_id = ?
-");
-$stmt->execute([$user['organization_id']]);
-$stats = $stmt->fetch();
+if ($isOpportunity) {
+    $stmt = $db->prepare("
+        SELECT
+            COUNT(*) AS total,
+            SUM((probability * consequence) >= 10 AND status != 'Lukket') AS high_priority,
+            SUM(next_review_date IS NOT NULL AND next_review_date <= CURDATE() + INTERVAL 60 DAY AND status != 'Lukket') AS due_soon
+        FROM risks WHERE organization_id = ? AND type = 'Mulighed'
+    ");
+    $stmt->execute([$user['organization_id']]);
+    $stats = $stmt->fetch();
+} else {
+    $stmt = $db->prepare("
+        SELECT
+            COUNT(*) AS total,
+            SUM((probability * consequence) >= 10 AND status != 'Lukket') AS high_critical,
+            SUM(next_review_date IS NOT NULL AND next_review_date <= CURDATE() + INTERVAL 60 DAY AND status != 'Lukket') AS due_soon
+        FROM risks WHERE organization_id = ? AND type = 'Risiko'
+    ");
+    $stmt->execute([$user['organization_id']]);
+    $stats = $stmt->fetch();
+}
 
 $view = ($_GET['view'] ?? 'gross') === 'residual' ? 'residual' : 'gross';
 
@@ -76,7 +95,7 @@ foreach ($risks as $r) {
     $matrix[$key] = ($matrix[$key] ?? 0) + 1;
 }
 
-$categories = list_active_values('risk_category');
+$categories = list_active_values($categoryListType);
 $statuses = ['Identificeret', 'Under behandling', 'Lukket'];
 
 $activeChips = [];
@@ -84,23 +103,36 @@ foreach ($selectedStatuses as $val) {
     $activeChips[] = ['label' => t('risks.table.status') . ': ' . risk_status_label($val), 'href' => remove_array_filter_href('status', $selectedStatuses, $val)];
 }
 foreach ($selectedCategories as $val) {
-    $activeChips[] = ['label' => t('risks.table.category') . ': ' . risk_category_label($val), 'href' => remove_array_filter_href('category', $selectedCategories, $val)];
+    $activeChips[] = ['label' => t('risks.table.category') . ': ' . $categoryLabelFn($val), 'href' => remove_array_filter_href('category', $selectedCategories, $val)];
 }
 
-render_header(t('risks.title'));
+render_header(t('risks.combined_title'));
 ?>
 <div class="page-heading-row">
 <div class="page-heading">
-    <h1><?= h(t('risks.title')) ?></h1>
+    <h1><?= h(t('risks.combined_title')) ?></h1>
     <?php if (can_manage_risks($user)): ?>
-        <a class="button" href="new_risk.php"><?= h(t('risks.new')) ?></a>
+        <a class="button" href="<?= $isOpportunity ? 'new_opportunity.php' : 'new_risk.php' ?>"><?= h($isOpportunity ? t('risks.new_opportunity') : t('risks.new')) ?></a>
     <?php endif; ?>
 </div>
 <div></div>
 </div>
+<p class="muted" style="margin:-8px 0 20px; max-width:640px;"><?= h(t('risks.combined_description')) ?></p>
 
 <div class="page-layout">
 <div>
+<div class="tab-bar">
+    <a href="risks.php" class="tab <?= !$isOpportunity ? 'tab-active' : '' ?>"><?= h(t('risks.tab.risks')) ?></a>
+    <a href="risks.php?type=mulighed" class="tab <?= $isOpportunity ? 'tab-active' : '' ?>"><?= h(t('risks.tab.opportunities')) ?></a>
+</div>
+
+<?php if ($isOpportunity): ?>
+<div class="stat-grid">
+    <div class="stat-card"><p class="stat-label"><?= h(t('risks.stat.opportunity_total')) ?></p><p class="stat-value"><?= (int)($stats['total'] ?? 0) ?></p></div>
+    <div class="stat-card"><p class="stat-label"><?= h(t('risks.stat.opportunity_high')) ?></p><p class="stat-value stat-success"><?= (int)($stats['high_priority'] ?? 0) ?></p></div>
+    <div class="stat-card"><p class="stat-label"><?= h(t('risks.stat.due_soon')) ?></p><p class="stat-value stat-warning"><?= (int)($stats['due_soon'] ?? 0) ?></p></div>
+</div>
+<?php else: ?>
 <div class="stat-grid">
     <div class="stat-card"><p class="stat-label"><?= h(t('risks.stat.total')) ?></p><p class="stat-value"><?= (int)($stats['total'] ?? 0) ?></p></div>
     <div class="stat-card"><p class="stat-label"><?= h(t('risks.stat.high_critical')) ?></p><p class="stat-value stat-danger"><?= (int)($stats['high_critical'] ?? 0) ?></p></div>
@@ -159,6 +191,7 @@ render_header(t('risks.title'));
     <p class="muted" style="margin:0.75rem 0 0;"><?= h($notAssessedCount === 1 ? t('risks.view.not_assessed_one') : t('risks.view.not_assessed_many', ['count' => $notAssessedCount])) ?></p>
 <?php endif; ?>
 <div style="margin-bottom:1.5rem;"></div>
+<?php endif; ?>
 
 <?php render_active_filters($activeChips, clear_all_filters_href(['status', 'category'])); ?>
 
@@ -166,25 +199,36 @@ render_header(t('risks.title'));
     <thead>
     <tr>
         <th><?php render_th_controls(t('risks.table.title'), 'title', $sortCol, $sortDir === 'DESC' ? 'desc' : 'asc'); ?></th>
-        <th><?php render_th_controls(t('risks.table.category'), 'category', $sortCol, $sortDir === 'DESC' ? 'desc' : 'asc', 'category', $categories, $selectedCategories, 'risk_category_label', t('risks.table.category')); ?></th>
+        <th><?php render_th_controls(t('risks.table.category'), 'category', $sortCol, $sortDir === 'DESC' ? 'desc' : 'asc', 'category', $categories, $selectedCategories, $categoryLabelFn, t('risks.table.category')); ?></th>
         <th><?php render_th_controls(t('risks.table.owner'), 'owner', $sortCol, $sortDir === 'DESC' ? 'desc' : 'asc'); ?></th>
-        <th><?php render_th_controls(t('risks.table.score'), 'score', $sortCol, $sortDir === 'DESC' ? 'desc' : 'asc'); ?></th>
+        <th><?php render_th_controls($isOpportunity ? t('risks.table.priority') : t('risks.table.score'), 'score', $sortCol, $sortDir === 'DESC' ? 'desc' : 'asc'); ?></th>
         <th><?php render_th_controls(t('risks.table.status'), 'status', $sortCol, $sortDir === 'DESC' ? 'desc' : 'asc', 'status', $statuses, $selectedStatuses, 'risk_status_label', t('risks.table.status')); ?></th>
     </tr>
     </thead>
     <tbody>
     <?php foreach ($risks as $r): ?>
-        <?php $score = risk_score((int)$r['probability'], (int)$r['consequence']); $band = risk_band($score); ?>
-        <tr onclick="window.location='risk.php?id=<?= (int)$r['id'] ?>'">
-            <td><?= h($r['title']) ?></td>
-            <td><?= h(risk_category_label($r['category'])) ?></td>
-            <td><?= h($r['owner_name']) ?></td>
-            <td><span class="<?= risk_band_class($band) ?>"><?= (int) $score ?> — <?= h(risk_band_label($band)) ?></span></td>
-            <td><span class="<?= risk_status_class($r['status']) ?>"><?= h(risk_status_label($r['status'])) ?></span></td>
-        </tr>
+        <?php if ($isOpportunity): ?>
+            <?php $score = opportunity_score((int)$r['probability'], (int)$r['consequence']); $band = opportunity_band($score); ?>
+            <tr onclick="window.location='risk.php?id=<?= (int)$r['id'] ?>'">
+                <td><?= h($r['title']) ?></td>
+                <td><?= h(opportunity_category_label($r['category'])) ?></td>
+                <td><?= h($r['owner_name']) ?></td>
+                <td><span class="<?= opportunity_band_class($band) ?>"><?= h(opportunity_band_label($band)) ?></span></td>
+                <td><span class="<?= risk_status_class($r['status']) ?>"><?= h(risk_status_label($r['status'])) ?></span></td>
+            </tr>
+        <?php else: ?>
+            <?php $score = risk_score((int)$r['probability'], (int)$r['consequence']); $band = risk_band($score); ?>
+            <tr onclick="window.location='risk.php?id=<?= (int)$r['id'] ?>'">
+                <td><?= h($r['title']) ?></td>
+                <td><?= h(risk_category_label($r['category'])) ?></td>
+                <td><?= h($r['owner_name']) ?></td>
+                <td><span class="<?= risk_band_class($band) ?>"><?= (int) $score ?> — <?= h(risk_band_label($band)) ?></span></td>
+                <td><span class="<?= risk_status_class($r['status']) ?>"><?= h(risk_status_label($r['status'])) ?></span></td>
+            </tr>
+        <?php endif; ?>
     <?php endforeach; ?>
     <?php if (!$risks): ?>
-        <tr><td colspan="5" class="muted"><?= h(t('risks.empty')) ?></td></tr>
+        <tr><td colspan="5" class="muted"><?= h($isOpportunity ? t('risks.empty_opportunities') : t('risks.empty')) ?></td></tr>
     <?php endif; ?>
     </tbody>
 </table>

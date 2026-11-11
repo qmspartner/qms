@@ -392,6 +392,25 @@ forespørgsel).
   Medarbejdere, Brugere) under Indstillinger — det tidligere flade "Kompetence"-punkt
   udgik, fordi kompetencer allerede hører til Mennesker-området (`competence.php`),
   så "Medarbejdere" nu er den fælles indgang til begge.
+- **Risikomodulet dækker nu også muligheder** (ISO 9001 §6.1 kræver begge) — ikke et
+  nyt modul, men en udvidelse af det eksisterende: `risks.type` enum
+  (`Risiko`/`Mulighed`, DEFAULT `Risiko`, migration `016_muligheder.sql`) på samme
+  `risks`-tabel. `risks.php` har en fane til hver type (`?type=mulighed` for
+  muligheder); kun Risici-fanen viser sandsynlighed/konsekvens-matrixen — muligheder
+  har bevidst kun en enkel Høj/Mellem/Lav-prioritet (`opportunity_band()` i
+  `functions.php`, samme grænseværdier som `risk_band()`, men med Kritisk/Høj slået
+  sammen til ét niveau og OMVENDT farvelogik: høj prioritet er attraktiv, altså grøn,
+  ikke alarmerende rød). `consequence`-kolonnen genbruges som "gevinst" for en
+  mulighed — intet nyt felt, kun anden label i UI'et afhængig af `type`. Egen liste
+  `opportunity_category` (samme `list_items`-mekanisme som `risk_category`,
+  administrerbar under Indstillinger → Lister). Oprettelse sker via en separat
+  formular, `new_opportunity.php` (parallel til `new_risk.php`), men rediger-/
+  detaljesiden er fælles (`risk.php`, fuldt type-bevidst: viser ikke
+  restrisiko-felterne for en mulighed). Tælles **sammen** i ledelsens evaluering
+  (`new_management_review.php`s risiko-optælling har bevidst intet `type`-filter -
+  tæller alt i `risks`-tabellen), men holdes **adskilt** alle andre steder
+  (`home.php`, `contract_overview.php` fik eksplicit `AND type = 'Risiko'` tilføjet,
+  så de ikke stille begynder at tælle muligheder med som risici).
 - Nye moduler følger samme mønster: en fil `includes/<modul>.php`, der
   requirer `includes/functions.php` selv (så den er selvstændig), og
   almindelige funktioner — ikke klasser, for at matche resten af kodebasens

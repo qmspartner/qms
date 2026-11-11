@@ -5,7 +5,7 @@ require_once __DIR__ . '/includes/functions.php';
 $user = require_role(['admin']);
 $db = get_db();
 
-$listTypes = ['document_category', 'record_type', 'risk_category', 'supplier_category', 'contract_reference'];
+$listTypes = ['document_category', 'record_type', 'risk_category', 'opportunity_category', 'supplier_category', 'contract_reference'];
 
 $stmt = $db->prepare('SELECT list_type, COUNT(*) AS cnt FROM list_items WHERE organization_id = ? AND active = 1 GROUP BY list_type');
 $stmt->execute([$user['organization_id']]);
