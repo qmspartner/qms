@@ -221,46 +221,62 @@ render_header(t('edituser.title'));
     <?= csrf_field() ?>
         <input type="hidden" name="id" value="<?= (int) $editUser['id'] ?>">
         <input type="hidden" name="action" value="update">
-        <label><?= h(t('edituser.field.name')) ?>
-            <input type="text" name="name" value="<?= h($editUser['name']) ?>" <?= $isLocked ? 'disabled' : '' ?> required>
-        </label>
-        <label><?= h(t('edituser.field.title')) ?>
-            <input type="text" name="title" value="<?= h($editUser['title'] ?? '') ?>" <?= $isLocked ? 'disabled' : '' ?>>
-        </label>
-        <label><?= h(t('edituser.field.email')) ?>
-            <input type="email" name="email" value="<?= h($editUser['email']) ?>" <?= $isLocked ? 'disabled' : '' ?> required>
-        </label>
-        <label><?= h(t('edituser.field.password')) ?>
-            <input type="password" name="password" minlength="8" <?= $isLocked ? 'disabled' : '' ?>>
-        </label>
-        <label><?= h(t('edituser.field.role')) ?>
-            <select name="role" id="edit-user-role" <?= $isLocked ? 'disabled' : '' ?>>
-                <option value="user" <?= $editUser['role'] === 'user' ? 'selected' : '' ?>><?= h(role_label('user')) ?></option>
-                <option value="editor" <?= $editUser['role'] === 'editor' ? 'selected' : '' ?>><?= h(role_label('editor')) ?></option>
-                <option value="approver" <?= $editUser['role'] === 'approver' ? 'selected' : '' ?>><?= h(role_label('approver')) ?></option>
-                <option value="admin" <?= $editUser['role'] === 'admin' ? 'selected' : '' ?>><?= h(role_label('admin')) ?></option>
-                <option value="gqar" <?= $editUser['role'] === 'gqar' ? 'selected' : '' ?>><?= h(role_label('gqar')) ?></option>
-                <option value="ledelse" <?= $editUser['role'] === 'ledelse' ? 'selected' : '' ?>><?= h(role_label('ledelse')) ?></option>
-            </select>
-        </label>
-        <?php $currentGqarContracts = get_entity_contracts('gqar_contracts', 'user_id', (int) $editUser['id']); ?>
-        <div id="edit-user-gqar-contracts" class="checkbox-group" style="display:none;">
-            <span class="muted" style="font-size:12px; display:block; margin-bottom:4px;"><?= h(t('users.field.contract_reference')) ?></span>
-            <?php foreach (list_active_values('contract_reference') as $ref): ?>
-                <label style="display:flex; align-items:center; gap:6px; font-weight:normal; font-size:13px; margin-bottom:2px;">
-                    <input type="checkbox" name="gqar_contracts[]" value="<?= h($ref) ?>" <?= in_array($ref, $currentGqarContracts, true) ? 'checked' : '' ?> <?= $isLocked ? 'disabled' : '' ?> style="width:auto;">
-                    <?= h($ref) ?>
+        <div class="form-section">
+            <p class="form-section-label"><?= h(t('users.section.basics')) ?></p>
+            <div class="form-grid-2col">
+                <label><?= h(t('edituser.field.name')) ?>
+                    <input type="text" name="name" value="<?= h($editUser['name']) ?>" <?= $isLocked ? 'disabled' : '' ?> required>
                 </label>
-            <?php endforeach; ?>
+                <label><?= h(t('edituser.field.title')) ?>
+                    <input type="text" name="title" value="<?= h($editUser['title'] ?? '') ?>" <?= $isLocked ? 'disabled' : '' ?>>
+                </label>
+            </div>
         </div>
-        <label><?= h(t('users.field.manager')) ?>
-            <select name="manager_user_id" <?= $isLocked ? 'disabled' : '' ?>>
-                <option value=""><?= h(t('users.field.manager_choose')) ?></option>
-                <?php foreach ($managerOptions as $m): ?>
-                    <option value="<?= (int) $m['id'] ?>" <?= (int) ($editUser['manager_user_id'] ?? 0) === (int) $m['id'] ? 'selected' : '' ?>><?= h($m['name']) ?></option>
+        <div class="form-section">
+            <p class="form-section-label"><?= h(t('users.section.access')) ?></p>
+            <div class="form-grid-2col">
+                <label><?= h(t('edituser.field.email')) ?>
+                    <input type="email" name="email" value="<?= h($editUser['email']) ?>" <?= $isLocked ? 'disabled' : '' ?> required>
+                </label>
+                <label><?= h(t('edituser.field.password')) ?>
+                    <input type="password" name="password" minlength="8" <?= $isLocked ? 'disabled' : '' ?>>
+                </label>
+            </div>
+        </div>
+        <div class="form-section">
+            <p class="form-section-label"><?= h(t('users.section.role_org')) ?></p>
+            <div class="form-grid-2col">
+                <label><?= h(t('edituser.field.role')) ?>
+                    <select name="role" id="edit-user-role" <?= $isLocked ? 'disabled' : '' ?>>
+                        <option value="user" <?= $editUser['role'] === 'user' ? 'selected' : '' ?>><?= h(role_label('user')) ?></option>
+                        <option value="editor" <?= $editUser['role'] === 'editor' ? 'selected' : '' ?>><?= h(role_label('editor')) ?></option>
+                        <option value="approver" <?= $editUser['role'] === 'approver' ? 'selected' : '' ?>><?= h(role_label('approver')) ?></option>
+                        <option value="admin" <?= $editUser['role'] === 'admin' ? 'selected' : '' ?>><?= h(role_label('admin')) ?></option>
+                        <option value="gqar" <?= $editUser['role'] === 'gqar' ? 'selected' : '' ?>><?= h(role_label('gqar')) ?></option>
+                        <option value="ledelse" <?= $editUser['role'] === 'ledelse' ? 'selected' : '' ?>><?= h(role_label('ledelse')) ?></option>
+                    </select>
+                </label>
+                <label><?= h(t('users.field.manager')) ?>
+                    <select name="manager_user_id" <?= $isLocked ? 'disabled' : '' ?>>
+                        <option value=""><?= h(t('users.field.manager_choose')) ?></option>
+                        <?php foreach ($managerOptions as $m): ?>
+                            <option value="<?= (int) $m['id'] ?>" <?= (int) ($editUser['manager_user_id'] ?? 0) === (int) $m['id'] ? 'selected' : '' ?>><?= h($m['name']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <span class="field-hint"><?= h(t('users.field.manager_hint')) ?></span>
+                </label>
+            </div>
+            <?php $currentGqarContracts = get_entity_contracts('gqar_contracts', 'user_id', (int) $editUser['id']); ?>
+            <div id="edit-user-gqar-contracts" class="checkbox-group" style="display:none; margin-top:14px;">
+                <span class="muted" style="font-size:12px; display:block; margin-bottom:4px;"><?= h(t('users.field.contract_reference')) ?></span>
+                <?php foreach (list_active_values('contract_reference') as $ref): ?>
+                    <label style="display:flex; align-items:center; gap:6px; font-weight:normal; font-size:13px; margin-bottom:2px;">
+                        <input type="checkbox" name="gqar_contracts[]" value="<?= h($ref) ?>" <?= in_array($ref, $currentGqarContracts, true) ? 'checked' : '' ?> <?= $isLocked ? 'disabled' : '' ?> style="width:auto;">
+                        <?= h($ref) ?>
+                    </label>
                 <?php endforeach; ?>
-            </select>
-        </label>
+            </div>
+        </div>
         <label style="display:flex; align-items:center; gap:8px; flex-direction:row;">
             <input type="checkbox" name="active" value="1" style="width:auto;" <?= $editUser['active'] ? 'checked' : '' ?> <?= ($editUser['deactivation_requested_at'] || $isLocked) ? 'disabled' : '' ?>>
             <?= h(t('edituser.field.active')) ?>

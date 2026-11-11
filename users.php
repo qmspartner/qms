@@ -77,36 +77,66 @@ render_header(t('users.title'));
 
 <div class="card">
     <h2><?= h(t('users.create_title')) ?></h2>
-    <form method="post" class="inline-grid-form" data-preserve="newuser">
+    <form method="post" class="user-create-form" data-preserve="newuser">
     <?= csrf_field() ?>
-        <input type="text" name="name" placeholder="<?= h(t('users.field.name_ph')) ?>" required>
-        <input type="text" name="title" placeholder="<?= h(t('users.field.title_ph')) ?>">
-        <input type="email" name="email" placeholder="<?= h(t('users.field.email_ph')) ?>" required>
-        <input type="password" name="password" placeholder="<?= h(t('users.field.password_ph')) ?>" required minlength="8">
-        <select name="role" id="new-user-role">
-            <option value="user"><?= h(role_label('user')) ?></option>
-            <option value="editor"><?= h(role_label('editor')) ?></option>
-            <option value="approver"><?= h(role_label('approver')) ?></option>
-            <option value="admin"><?= h(role_label('admin')) ?></option>
-            <option value="gqar"><?= h(role_label('gqar')) ?></option>
-            <option value="ledelse"><?= h(role_label('ledelse')) ?></option>
-        </select>
-        <select name="manager_user_id" title="<?= h(t('users.field.manager')) ?>">
-            <option value=""><?= h(t('users.field.manager_choose')) ?></option>
-            <?php foreach ($managerOptions as $m): ?>
-                <option value="<?= (int) $m['id'] ?>"><?= h($m['name']) ?></option>
-            <?php endforeach; ?>
-        </select>
-        <div id="new-user-gqar-contracts" class="checkbox-group" style="display:none;">
-            <span class="muted" style="font-size:12px; display:block; margin-bottom:4px;"><?= h(t('users.field.contract_reference')) ?></span>
-            <?php foreach (list_active_values('contract_reference') as $ref): ?>
-                <label style="display:flex; align-items:center; gap:6px; font-weight:normal; font-size:13px; margin-bottom:2px;">
-                    <input type="checkbox" name="gqar_contracts[]" value="<?= h($ref) ?>" style="width:auto;">
-                    <?= h($ref) ?>
+        <div class="form-section">
+            <p class="form-section-label"><?= h(t('users.section.basics')) ?></p>
+            <div class="form-grid-2col">
+                <label><?= h(t('edituser.field.name')) ?>
+                    <input type="text" name="name" placeholder="<?= h(t('users.field.name_ph')) ?>" required>
                 </label>
-            <?php endforeach; ?>
+                <label><?= h(t('edituser.field.title')) ?>
+                    <input type="text" name="title" placeholder="<?= h(t('users.field.title_ph')) ?>">
+                </label>
+            </div>
         </div>
-        <button type="submit"><?= h(t('users.create')) ?></button>
+        <div class="form-section">
+            <p class="form-section-label"><?= h(t('users.section.access')) ?></p>
+            <div class="form-grid-2col">
+                <label><?= h(t('edituser.field.email')) ?>
+                    <input type="email" name="email" placeholder="<?= h(t('users.field.email_ph')) ?>" required>
+                </label>
+                <label><?= h(t('users.field.password_label')) ?>
+                    <input type="password" name="password" placeholder="<?= h(t('users.field.password_ph')) ?>" required minlength="8">
+                </label>
+            </div>
+        </div>
+        <div class="form-section">
+            <p class="form-section-label"><?= h(t('users.section.role_org')) ?></p>
+            <div class="form-grid-2col">
+                <label><?= h(t('edituser.field.role')) ?>
+                    <select name="role" id="new-user-role">
+                        <option value="user"><?= h(role_label('user')) ?></option>
+                        <option value="editor"><?= h(role_label('editor')) ?></option>
+                        <option value="approver"><?= h(role_label('approver')) ?></option>
+                        <option value="admin"><?= h(role_label('admin')) ?></option>
+                        <option value="gqar"><?= h(role_label('gqar')) ?></option>
+                        <option value="ledelse"><?= h(role_label('ledelse')) ?></option>
+                    </select>
+                </label>
+                <label><?= h(t('users.field.manager')) ?>
+                    <select name="manager_user_id">
+                        <option value=""><?= h(t('users.field.manager_choose')) ?></option>
+                        <?php foreach ($managerOptions as $m): ?>
+                            <option value="<?= (int) $m['id'] ?>"><?= h($m['name']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <span class="field-hint"><?= h(t('users.field.manager_hint')) ?></span>
+                </label>
+            </div>
+            <div id="new-user-gqar-contracts" class="checkbox-group" style="display:none; margin-top:14px;">
+                <span class="muted" style="font-size:12px; display:block; margin-bottom:4px;"><?= h(t('users.field.contract_reference')) ?></span>
+                <?php foreach (list_active_values('contract_reference') as $ref): ?>
+                    <label style="display:flex; align-items:center; gap:6px; font-weight:normal; font-size:13px; margin-bottom:2px;">
+                        <input type="checkbox" name="gqar_contracts[]" value="<?= h($ref) ?>" style="width:auto;">
+                        <?= h($ref) ?>
+                    </label>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <div class="button-row">
+            <button type="submit"><?= h(t('users.create')) ?></button>
+        </div>
     </form>
 </div>
 
