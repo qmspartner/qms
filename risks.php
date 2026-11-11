@@ -56,7 +56,7 @@ if ($isOpportunity) {
     $stmt = $db->prepare("
         SELECT
             COUNT(*) AS total,
-            SUM((probability * consequence) >= 10 AND status != 'Lukket') AS high_priority,
+            SUM((probability * consequence) >= 10 AND status != 'Lukket') AS high_priority_count,
             SUM(next_review_date IS NOT NULL AND next_review_date <= CURDATE() + INTERVAL 60 DAY AND status != 'Lukket') AS due_soon
         FROM risks WHERE organization_id = ? AND type = 'Mulighed'
     ");
@@ -129,7 +129,7 @@ render_header(t('risks.combined_title'));
 <?php if ($isOpportunity): ?>
 <div class="stat-grid">
     <div class="stat-card"><p class="stat-label"><?= h(t('risks.stat.opportunity_total')) ?></p><p class="stat-value"><?= (int)($stats['total'] ?? 0) ?></p></div>
-    <div class="stat-card"><p class="stat-label"><?= h(t('risks.stat.opportunity_high')) ?></p><p class="stat-value stat-success"><?= (int)($stats['high_priority'] ?? 0) ?></p></div>
+    <div class="stat-card"><p class="stat-label"><?= h(t('risks.stat.opportunity_high')) ?></p><p class="stat-value stat-success"><?= (int)($stats['high_priority_count'] ?? 0) ?></p></div>
     <div class="stat-card"><p class="stat-label"><?= h(t('risks.stat.due_soon')) ?></p><p class="stat-value stat-warning"><?= (int)($stats['due_soon'] ?? 0) ?></p></div>
 </div>
 <?php else: ?>
