@@ -34,7 +34,7 @@ if ($validUser && $_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-render_header(t('resetpw.title'));
+render_header(t('resetpw.title'), true);
 ?>
 <div class="card login-card">
     <h1><?= h(t('resetpw.title')) ?></h1>

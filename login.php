@@ -24,9 +24,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-render_header(t('login.title'));
+render_header(t('login.title'), true);
 ?>
 <div class="card login-card">
+    <p class="login-company"><a href="https://qmspartner.dk">QMSPartner</a> — <?= h(t('brand.name')) ?></p>
     <h1><?= h(t('login.title')) ?></h1>
     <?php if ($error): ?>
         <p class="alert alert-danger"><?= h($error) ?></p>
@@ -42,5 +43,6 @@ render_header(t('login.title'));
         <button type="submit"><?= h(t('login.submit')) ?></button>
     </form>
     <p style="margin-top:14px;"><a href="forgot_password.php"><?= h(t('login.forgot_password')) ?></a></p>
+    <p style="margin-top:14px;"><a href="https://qmspartner.dk"><?= h(t('login.back_to_site')) ?></a></p>
 </div>
 <?php render_footer(); ?>

@@ -41,6 +41,7 @@ return [
     'login.error.invalid' => 'Forkert e-mail eller adgangskode.',
     'login.error.locked' => 'For mange forgæves loginforsøg. Vent 15 minutter og forsøg igen.',
     'login.forgot_password' => 'Glemt adgangskode?',
+    'login.back_to_site' => 'Til qmspartner.dk',
 
     'forgotpw.title' => 'Nulstil adgangskode',
     'forgotpw.intro' => 'Indtast din e-mail, så sender vi et link til at vælge en ny adgangskode.',

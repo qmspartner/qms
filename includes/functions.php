@@ -1333,7 +1333,7 @@ function nav_icon(string $key): string {
     return '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' . $path . '</svg>';
 }
 
-function render_header(string $title): void {
+function render_header(string $title, bool $noindex = false): void {
     $user = current_user();
     $currentScript = basename((string) ($_SERVER['SCRIPT_NAME'] ?? ''));
     $isCurrent = fn (string $script): string => $currentScript === $script ? ' sidebar-link-active' : '';
@@ -1343,9 +1343,12 @@ function render_header(string $title): void {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <?php if ($noindex): ?>
+            <meta name="robots" content="noindex, nofollow">
+        <?php endif; ?>
         <title><?= h($title) ?> - <?= h(t('brand.name')) ?></title>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
-        <link rel="stylesheet" href="css/style.css?v=57">
+        <link rel="stylesheet" href="css/style.css?v=58">
     </head>
     <body>
     <?php if (is_impersonating()): ?>

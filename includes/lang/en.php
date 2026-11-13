@@ -41,6 +41,7 @@ return [
     'login.error.invalid' => 'Incorrect email or password.',
     'login.error.locked' => 'Too many failed login attempts. Wait 15 minutes and try again.',
     'login.forgot_password' => 'Forgot password?',
+    'login.back_to_site' => 'Back to qmspartner.dk',
 
     'forgotpw.title' => 'Reset password',
     'forgotpw.intro' => 'Enter your email and we will send you a link to choose a new password.',

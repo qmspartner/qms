@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $sent = true;
 }
 
-render_header(t('forgotpw.title'));
+render_header(t('forgotpw.title'), true);
 ?>
 <div class="card login-card">
     <h1><?= h(t('forgotpw.title')) ?></h1>
