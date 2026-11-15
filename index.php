@@ -100,7 +100,11 @@ render_header(t('documents.title'));
     <span id="doc-search-status" class="muted" style="display:none; font-size:13px;"><?= h(t('documents.search.searching')) ?></span>
 </form>
 
-<p style="margin:4px 0 0; display:flex; justify-content:space-between; align-items:center;">
+<!-- div, ikke p: <details> er et blok-element og er ikke lovligt indhold i et
+     <p> — browseren lukker ellers <p> automatisk lige før <details>, så
+     flex-opsætningen kun får ét barn, og eksport-knappen falder ned på sin
+     egen linje i stedet for at stå ved siden af "Vis også skabeloner". -->
+<div style="margin:4px 0 0; display:flex; justify-content:space-between; align-items:center;">
     <a href="<?= h(basename($_SERVER['PHP_SELF']) . '?' . query_merge(['show_templates' => $showTemplates ? null : '1'])) ?>" style="font-size:13px; text-decoration:none;">
         <?= $showTemplates ? h(t('documents.hide_templates')) : h(t('documents.show_templates')) ?>
     </a>
@@ -122,7 +126,7 @@ render_header(t('documents.title'));
             </a>
         </div>
     </details>
-</p>
+</div>
 
 <div id="doc-results">
 <?php require __DIR__ . '/includes/partials/document_results.php'; ?>
