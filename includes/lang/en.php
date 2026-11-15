@@ -42,6 +42,11 @@ return [
     'login.error.locked' => 'Too many failed login attempts. Wait 15 minutes and try again.',
     'login.forgot_password' => 'Forgot password?',
     'login.back_to_site' => 'Back to qmspartner.dk',
+    'login.hero.headline' => 'Documented quality, from draft to approval.',
+    'login.hero.subtitle' => 'One register for procedures, nonconformities, audits and risks — traceable from creation to sign-off.',
+    'login.hero.standard' => 'ISO 9001 · AQAP 2310',
+    'login.hero.stamp' => 'APPROVED',
+    'login.hero.stamp_rev' => 'REV 1.0',
 
     'forgotpw.title' => 'Reset password',
     'forgotpw.intro' => 'Enter your email and we will send you a link to choose a new password.',

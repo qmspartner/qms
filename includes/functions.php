@@ -1348,7 +1348,7 @@ function render_header(string $title, bool $noindex = false): void {
         <?php endif; ?>
         <title><?= h($title) ?> - <?= h(t('brand.name')) ?></title>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
-        <link rel="stylesheet" href="css/style.css?v=58">
+        <link rel="stylesheet" href="css/style.css?v=59">
     </head>
     <body>
     <?php if (is_impersonating()): ?>

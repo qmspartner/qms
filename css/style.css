@@ -174,8 +174,69 @@ body {
 }
 
 .login-card { max-width: 420px; margin: 40px auto; }
-.login-company { margin: 0 0 16px; font-size: 13px; color: var(--text-muted); }
-.login-company a { color: inherit; font-weight: 600; }
+
+/* Login-siden (Retning A, sitets eget system-font) — bryder ud af
+   .container's 960px-bredde for at fylde hele viewportet, som i den
+   godkendte mock-up. Se CLAUDE.md om Google Safe Browsing-rettelsen:
+   "qmspartner.dk"-linket i .login-links-row er den krævede synlige,
+   crawl-bare firmaangivelse+link, ikke kun titelblokkens tekst. */
+.login-wrap { position: relative; left: 50%; right: 50%; width: 100vw; margin-left: -50vw; margin-right: -50vw; display: flex; flex-wrap: wrap; min-height: 600px; }
+.login-hero {
+    flex: 1 1 560px; min-width: 360px; box-sizing: border-box;
+    background: #1C2B39; color: #EDEAE2; padding: 64px;
+    display: flex; flex-direction: column; justify-content: space-between;
+}
+.login-hero h1 { font-weight: 700; font-size: 36px; line-height: 1.22; margin: 0 0 18px; letter-spacing: -0.01em; max-width: 440px; color: #fff; }
+.login-hero p { font-size: 15.5px; line-height: 1.6; color: #B9C4C8; margin: 0; max-width: 440px; }
+.login-hero-tag { font-size: 12px; color: #7E929A; margin: 0; }
+
+.login-stamp-block { position: relative; width: 176px; height: 176px; margin-bottom: 40px; }
+.login-stamp-doc { position: absolute; inset: 0; border: 1.5px solid #5B7983; border-radius: 2px; }
+.login-stamp-line { position: absolute; left: 22px; height: 7px; background: #3C565F; }
+.login-stamp-line1 { top: 34px; right: 70px; }
+.login-stamp-line2 { top: 50px; right: 50px; }
+.login-stamp-line3 { top: 66px; right: 90px; }
+.login-stamp-badge {
+    position: absolute; width: 118px; height: 118px; right: -18px; bottom: -14px;
+    transform: rotate(-9deg); border: 3px solid #9C6B2E; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; text-align: center;
+}
+.login-stamp-badge span { font-size: 12.5px; font-weight: 600; color: #9C6B2E; line-height: 1.35; letter-spacing: 0.02em; }
+.login-stamp-badge small { font-size: 10.5px; font-weight: 500; opacity: 0.85; }
+
+.login-formside { flex: 1 1 420px; min-width: 340px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; padding: 48px; }
+.login-formside-inner { width: 100%; max-width: 380px; }
+.login-titleblock { border: 1px solid var(--border); border-radius: 3px; overflow: hidden; }
+.login-titleblock-head {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 20px; border-bottom: 1px solid var(--border); background: #FBFAF7;
+}
+.login-titleblock-head span:first-child { font-size: 12.5px; color: #5C6670; }
+.login-titleblock-head span:last-child { font-size: 12.5px; color: #9A9484; }
+.login-titleblock form { padding: 28px 24px 24px; }
+.login-titleblock .alert { margin-bottom: 18px; }
+.login-titleblock label { display: block; font-size: 13px; color: #5C6670; margin-bottom: 6px; }
+.login-titleblock input {
+    width: 100%; box-sizing: border-box; padding: 11px 12px; margin-bottom: 18px;
+    border: 1px solid var(--border); border-radius: 2px; font-size: 14.5px;
+    background: #fff; color: var(--text);
+}
+.login-titleblock input:last-of-type { margin-bottom: 24px; }
+.login-titleblock button {
+    width: 100%; padding: 12px; background: #2B5F74; color: #fff; border: none;
+    border-radius: 2px; font-size: 14.5px; font-weight: 600; cursor: pointer;
+}
+.login-titleblock button:hover { background: #244e60; }
+.login-links-row { display: flex; justify-content: space-between; margin-top: 16px; }
+.login-links-row a { font-size: 13.5px; color: #2B5F74; text-decoration: none; }
+.login-links-row a:hover { text-decoration: underline; }
+.login-links-row a.login-back { color: #5C6670; }
+
+@media (max-width: 760px) {
+    .login-wrap { min-height: 0; }
+    .login-hero { padding: 40px 28px; }
+    .login-formside { padding: 32px 24px; }
+}
 
 h1 { font-size: 22px; font-weight: 600; margin: 0 0 4px; }
 h2 { font-size: 17px; font-weight: 600; margin: 24px 0 8px; }
