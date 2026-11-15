@@ -258,6 +258,50 @@ function render_active_filters(array $chips, string $clearAllHref): void {
     <?php
 }
 
+/**
+ * Fælles markup for CSV-eksport-knappen/dropdown'en over en tabeloversigt (se
+ * CLAUDE.md "Vaner og stil" for den stående konvention: enhver ny liste-/
+ * oversigtsside skal have denne). Genbruges af alle moduler i stedet for at
+ * duplikere disclosure-markup'en i hver side-fil (indført ved documents.php,
+ * derefter rullet ud til de øvrige lister).
+ *
+ * $allHref/$filteredHref skal være allerede færdigbyggede URL'er mod modulets
+ * export_<modul>_csv.php?scope=all / ?scope=filtered. Et modul uden egentlige
+ * filtre (fx kunder, der kun kan sorteres) har intet "filtreret liste"-valg,
+ * fordi det altid ville være identisk med "hele listen" — sæt $filteredHref
+ * til null i så fald, og der vises ét enkelt eksport-link uden dropdown.
+ */
+function render_csv_export_dropdown(string $allHref, int $allCount, ?string $filteredHref = null, int $filteredCount = 0): void {
+    if ($filteredHref === null) {
+        ?>
+        <a class="export-csv-trigger" href="<?= h($allHref) ?>">
+            <?= nav_icon('export_csv') ?>
+            <span><?= h(t('export.csv.button')) ?></span>
+        </a>
+        <?php
+        return;
+    }
+    ?>
+    <details class="nav-dropdown">
+        <summary class="export-csv-trigger">
+            <?= nav_icon('export_csv') ?>
+            <span><?= h(t('export.csv.button')) ?></span>
+            <i class="ti ti-chevron-down" aria-hidden="true"></i>
+        </summary>
+        <div class="nav-dropdown-menu nav-dropdown-menu-end">
+            <a class="export-csv-option" href="<?= h($allHref) ?>">
+                <span><?= h(t('export.csv.all')) ?></span>
+                <span class="muted"><?= h(t('export.csv.count', ['count' => $allCount])) ?></span>
+            </a>
+            <a class="export-csv-option" href="<?= h($filteredHref) ?>">
+                <span><?= h(t('export.csv.filtered')) ?></span>
+                <span class="muted"><?= h(t('export.csv.count', ['count' => $filteredCount])) ?></span>
+            </a>
+        </div>
+    </details>
+    <?php
+}
+
 function hidden_inputs_for_query(array $exclude = []): void {
     foreach ($_GET as $key => $value) {
         if (in_array($key, $exclude, true)) {

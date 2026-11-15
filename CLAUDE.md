@@ -190,6 +190,19 @@ forespørgsel).
   "forældet version"-advarslen kun gælder for `download.php` og ikke for
   skabeloner. `stream_file_download()` erstatter den ordret kopierede
   HTTP-header/`readfile()`-blok, der fandtes i begge de samme to filer.
+  **CSV-eksport** (`export_documents_csv.php`, se "Vaner og stil" om det
+  stående mønster og `render_csv_export_dropdown()` i `includes/functions.php`
+  for selve dropdown-markup'en, der er fælles for alle moduler): genbruger
+  `document_list()` med enten index.php's egne filterparametre
+  (`scope=filtered`) eller uden søgning/kategori-/status-filtre, men med
+  brugerens aktuelle skabelon-valg bevaret (`scope=all`, default) —
+  `document_list()` håndhæver altid `document_visibility_sql($user)`, så
+  eksporten aldrig kan vise mere end selve listen. Dette var det første
+  modul der fik mønstret (lang-nøglerne hed oprindeligt `documents.export.*`,
+  men blev generaliseret til `export.csv.*` da mønstret blev rullet ud til
+  `cases.php`, `audits.php`, `suppliers.php`, `equipment.php`,
+  `quality_objectives.php` og `customers.php` — se deres respektive
+  `export_<modul>_csv.php`).
 - **`includes/cases.php`** er det andet modul: et sags-repository for
   `cases`, der kapsler de forespørgsler der var genskrevet i `cases.php` og
   `case.php`: `case_find()`, `case_list()`, `case_stats()`, samt den
@@ -450,6 +463,33 @@ kategoriens eget præfiks.
   spørgsmål/svar) før noget bygges — vent på et eksplicit "værsgo, byg det"
   (eller lignende) ved større, irreversible designvalg; mindre,
   entydige ting kan bygges direkte.
+- **CSV-eksport er standard på enhver ny liste-/oversigtsside** (en side hvor
+  hovedindholdet er en `.doc-table` over organisationens egne data — altså
+  ikke en indlejret tabel på en detalje-/redigeringsside, en indstillings-
+  /tilladelses-matrix, eller en importforhåndsvisning): samme mønster som
+  dokumentoversigten (se "CSV-eksport"-afsnittet under
+  `includes/documents.php` nedenfor, og rullet ud til `cases.php`,
+  `audits.php`, `suppliers.php`, `equipment.php`, `quality_objectives.php`
+  og `customers.php`) — en diskret dropdown-knap lige over tabellen med
+  valg mellem "Hele listen" og "Filtreret liste", der kalder et
+  `export_<modul>_csv.php`-endpoint som genbruger modulets egen
+  `_list()`-funktion (så synligheds-/rettighedsregler automatisk stemmer
+  overens med selve listen). **Genbrug `render_csv_export_dropdown()`**
+  (i `includes/functions.php`, bruger lang-nøglerne `export.csv.*` og
+  CSS-klasserne `.nav-dropdown`/`.nav-dropdown-menu-end`/
+  `.export-csv-trigger`) i stedet for at håndskrive disclosure-markup'en
+  igen — den tager `$allHref`/`$allCount` og valgfrit `$filteredHref`/
+  `$filteredCount`. Har modulets `_list()`-funktion slet ingen filtre (kun
+  sortering, som `customer_list()`), udelad `$filteredHref` (lad den være
+  `null`): "hele" og "filtreret" ville være identiske, så funktionen viser
+  da ét enkelt eksport-link uden dropdown i stedet. Placér knappen/linket i
+  en højrestillet række lige over `<table class="doc-table">` — enten i
+  samme række som en eksisterende sekundær kontrol (som "Vis også
+  skabeloner" på dokumentoversigten) eller, hvis siden ikke har en, i en ny
+  `<div style="display:flex; justify-content:flex-end; ...">`-række for sig
+  selv (som `cases.php`/`audits.php`/`equipment.php`/
+  `quality_objectives.php`). Indfør dette proaktivt, uden at skulle bedes
+  om det, når en ny liste-/oversigtsside bygges.
 
 ## Kendte, bevidst udskudte punkter
 

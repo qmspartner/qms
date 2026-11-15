@@ -36,6 +36,10 @@ $audits = audit_list($db, $user, [
 
 $auditStats = audit_stats($db, $user['organization_id']);
 
+// Tælletal til CSV-eksport-menuen (ikke selve eksporten): "hele listen" tæller uden
+// status-/audittype-filtre — samme tanke som documents.php/cases.php.
+$allAuditsCount = count(audit_list($db, $user, []));
+
 $statuses = ['Planlagt', 'Gennemført', 'Aflyst'];
 $auditTypes = ['Internt', 'Eksternt'];
 
@@ -67,6 +71,15 @@ render_header(t('audits.title'));
 </div>
 
 <?php render_active_filters($activeChips, clear_all_filters_href(['status', 'audit_type'])); ?>
+
+<div style="display:flex; justify-content:flex-end; margin:4px 0 10px;">
+    <?php render_csv_export_dropdown(
+        'export_audits_csv.php?' . query_merge(['scope' => 'all', 'status' => null, 'audit_type' => null, 'sort' => null, 'dir' => null]),
+        $allAuditsCount,
+        'export_audits_csv.php?' . query_merge(['scope' => 'filtered']),
+        count($audits)
+    ); ?>
+</div>
 
 <table class="doc-table">
     <thead>

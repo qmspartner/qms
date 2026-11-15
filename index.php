@@ -109,23 +109,12 @@ render_header(t('documents.title'));
         <?= $showTemplates ? h(t('documents.hide_templates')) : h(t('documents.show_templates')) ?>
     </a>
 
-    <details class="nav-dropdown">
-        <summary class="export-csv-trigger">
-            <?= nav_icon('export_csv') ?>
-            <span><?= h(t('documents.export.button')) ?></span>
-            <i class="ti ti-chevron-down" aria-hidden="true"></i>
-        </summary>
-        <div class="nav-dropdown-menu nav-dropdown-menu-end">
-            <a class="export-csv-option" href="export_documents_csv.php?<?= h(query_merge(['scope' => 'all', 'q' => null, 'category' => null, 'status' => null, 'sort' => null, 'dir' => null, 'partial' => null])) ?>">
-                <span><?= h(t('documents.export.all')) ?></span>
-                <span class="muted"><?= h(t('documents.export.count', ['count' => $allDocumentsCount])) ?></span>
-            </a>
-            <a class="export-csv-option" href="export_documents_csv.php?<?= h(query_merge(['scope' => 'filtered', 'partial' => null])) ?>">
-                <span><?= h(t('documents.export.filtered')) ?></span>
-                <span class="muted"><?= h(t('documents.export.count', ['count' => count($documents)])) ?></span>
-            </a>
-        </div>
-    </details>
+    <?php render_csv_export_dropdown(
+        'export_documents_csv.php?' . query_merge(['scope' => 'all', 'q' => null, 'category' => null, 'status' => null, 'sort' => null, 'dir' => null, 'partial' => null]),
+        $allDocumentsCount,
+        'export_documents_csv.php?' . query_merge(['scope' => 'filtered', 'partial' => null]),
+        count($documents)
+    ); ?>
 </div>
 
 <div id="doc-results">

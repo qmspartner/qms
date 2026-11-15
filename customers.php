@@ -27,7 +27,6 @@ render_header(t('customers.title'));
 <div class="page-heading">
     <h1><?= h(t('customers.title')) ?></h1>
     <div class="button-row" style="margin:0;">
-        <a class="button button-secondary" href="export_customers_csv.php"><?= h(t('customers.export')) ?></a>
         <?php if (can_manage_customers($user)): ?>
             <a class="button button-secondary" href="import_customers_csv.php"><?= h(t('customers.import')) ?></a>
             <a class="button" href="new_customer.php"><?= h(t('customers.new')) ?></a>
@@ -37,6 +36,13 @@ render_header(t('customers.title'));
 
 <div class="stat-grid">
     <div class="stat-card"><p class="stat-label"><?= h(t('customers.stat.total')) ?></p><p class="stat-value"><?= (int)($stats['total'] ?? 0) ?></p></div>
+</div>
+
+<!-- Kundelisten har ingen filtre (kun sortering), så "hele listen" og "filtreret
+     liste" ville altid være identiske — render_csv_export_dropdown() viser derfor
+     ét enkelt eksport-link uden dropdown/valg, når der ikke gives et $filteredHref. -->
+<div style="display:flex; justify-content:flex-end; margin:4px 0 10px;">
+    <?php render_csv_export_dropdown('export_customers_csv.php', count($customers)); ?>
 </div>
 
 <table class="doc-table">

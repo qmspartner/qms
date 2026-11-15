@@ -280,7 +280,8 @@ render_header(t('help.title'));
             <p style="margin:0 0 8px;"><?= h(t('help.cases.step1')) ?></p>
             <p style="margin:0 0 8px;"><?= h(t('help.cases.step2')) ?></p>
             <p style="margin:0 0 8px;"><?= h(t('help.cases.step3')) ?></p>
-            <p style="margin:0;"><?= h(t('help.cases.step4')) ?></p>
+            <p style="margin:0 0 8px;"><?= h(t('help.cases.step4')) ?></p>
+            <p style="margin:0;"><?= h(t('help.cases.export')) ?></p>
         </div>
         <?php endif; ?>
 
@@ -303,7 +304,8 @@ render_header(t('help.title'));
             </div>
             <p style="margin:0 0 8px;"><?= h(t('help.audits.step1')) ?></p>
             <p style="margin:0 0 8px;"><?= h(t('help.audits.step2')) ?></p>
-            <p style="margin:0;"><?= h(t('help.audits.step3')) ?></p>
+            <p style="margin:0 0 8px;"><?= h(t('help.audits.step3')) ?></p>
+            <p style="margin:0;"><?= h(t('help.audits.export')) ?></p>
         </div>
         <?php endif; ?>
 
@@ -313,7 +315,8 @@ render_header(t('help.title'));
             <p style="margin:0 0 8px;"><?= h(t('help.equipment.step1')) ?></p>
             <p style="margin:0 0 8px;"><?= h(t('help.equipment.step2')) ?></p>
             <p style="margin:0 0 8px;"><?= h(t('help.equipment.step3')) ?></p>
-            <p style="margin:0;"><?= h(t('help.equipment.step4')) ?></p>
+            <p style="margin:0 0 8px;"><?= h(t('help.equipment.step4')) ?></p>
+            <p style="margin:0;"><?= h(t('help.equipment.export')) ?></p>
         </div>
         <?php endif; ?>
 
@@ -332,7 +335,8 @@ render_header(t('help.title'));
         <div class="card" style="margin-bottom:1.5rem;">
             <p style="margin:0 0 8px;"><?= h(t('help.suppliers.step1')) ?></p>
             <p style="margin:0 0 8px;"><?= h(t('help.suppliers.step2')) ?></p>
-            <p style="margin:0;"><?= h(t('help.suppliers.step3')) ?></p>
+            <p style="margin:0 0 8px;"><?= h(t('help.suppliers.step3')) ?></p>
+            <p style="margin:0;"><?= h(t('help.suppliers.export')) ?></p>
         </div>
         <?php endif; ?>
 
@@ -342,14 +346,16 @@ render_header(t('help.title'));
             <p style="margin:0 0 8px;"><?= h(t('help.qualityobjectives.step1')) ?></p>
             <p style="margin:0 0 8px;"><?= h(t('help.qualityobjectives.step2')) ?></p>
             <p style="margin:0 0 8px;"><?= h(t('help.qualityobjectives.step3')) ?></p>
-            <p style="margin:0;"><?= h(t('help.qualityobjectives.step4')) ?></p>
+            <p style="margin:0 0 8px;"><?= h(t('help.qualityobjectives.step4')) ?></p>
+            <p style="margin:0;"><?= h(t('help.qualityobjectives.export')) ?></p>
         </div>
         <?php endif; ?>
 
         <?php if ($showCustomers): ?>
         <h2 id="customers"><?= h(t('help.section.customers')) ?></h2>
         <div class="card" style="margin-bottom:1.5rem;">
-            <p style="margin:0;"><?= h(t('help.customers.text')) ?></p>
+            <p style="margin:0 0 8px;"><?= h(t('help.customers.text')) ?></p>
+            <p style="margin:0;"><?= h(t('help.customers.export')) ?></p>
         </div>
         <?php endif; ?>
 

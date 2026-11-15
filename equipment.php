@@ -35,6 +35,10 @@ $equipmentStats = equipment_stats($db, $user['organization_id']);
 $stats = $equipmentStats;
 $failedStats = ['failed_count' => $equipmentStats['failed_count']];
 
+// Tælletal til CSV-eksport-menuen (ikke selve eksporten): "hele listen" tæller uden
+// kritikalitets-/status-filtre.
+$allEquipmentCount = count(equipment_list($db, $user, []));
+
 $criticalities = ['Kritisk', 'Ikke-kritisk'];
 $statuses = ['Aktiv', 'Ikke aktiv'];
 
@@ -67,6 +71,15 @@ render_header(t('equipment.title'));
 </div>
 
 <?php render_active_filters($activeChips, clear_all_filters_href(['criticality', 'status'])); ?>
+
+<div style="display:flex; justify-content:flex-end; margin:4px 0 10px;">
+    <?php render_csv_export_dropdown(
+        'export_equipment_csv.php?' . query_merge(['scope' => 'all', 'criticality' => null, 'status' => null, 'sort' => null, 'dir' => null]),
+        $allEquipmentCount,
+        'export_equipment_csv.php?' . query_merge(['scope' => 'filtered']),
+        count($equipmentList)
+    ); ?>
+</div>
 
 <table class="doc-table">
     <thead>

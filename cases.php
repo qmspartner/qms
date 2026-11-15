@@ -41,6 +41,10 @@ $cases = case_list($db, $user, [
 
 $stats = case_stats($db, $user['organization_id']);
 
+// Tælletal til CSV-eksport-menuen (ikke selve eksporten): "hele listen" tæller uden
+// type-/sværhedsgrads-/status-/leverandør-filtre — samme tanke som documents.php.
+$allCasesCount = count(case_list($db, $user, []));
+
 $types = ['Afvigelse', 'Forslag', 'Observation', 'Audit fund', 'Kundeklage', 'Mistænkt forfalsket del', 'Leverandør reklamation'];
 $severities = ['Høj', 'Mellem', 'Lav'];
 $caseStatuses = ['Registreret', 'Under undersøgelse', 'Handling igangsat', 'Lukket'];
@@ -84,6 +88,15 @@ render_header(t('cases.title'));
 </div>
 
 <?php render_active_filters($activeChips, clear_all_filters_href(['type', 'severity', 'status'])); ?>
+
+<div style="display:flex; justify-content:flex-end; margin:4px 0 10px;">
+    <?php render_csv_export_dropdown(
+        'export_cases_csv.php?' . query_merge(['scope' => 'all', 'type' => null, 'severity' => null, 'status' => null, 'supplier_id' => null, 'sort' => null, 'dir' => null]),
+        $allCasesCount,
+        'export_cases_csv.php?' . query_merge(['scope' => 'filtered']),
+        count($cases)
+    ); ?>
+</div>
 
 <table class="doc-table">
     <thead>

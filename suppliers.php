@@ -37,6 +37,10 @@ $suppliers = supplier_list($db, $user, [
 
 $stats = supplier_stats($db, $user['organization_id']);
 
+// Tælletal til CSV-eksport-menuen (ikke selve eksporten): "hele listen" tæller uden
+// kategori-/kritikalitets-/status-filtre.
+$allSuppliersCount = count(supplier_list($db, $user, []));
+
 $categories = supplier_category_options();
 $criticalities = ['Kritisk', 'Ikke-kritisk'];
 $statuses = ['Godkendt', 'Under vurdering', 'Afvist', 'Udfaset'];
@@ -58,7 +62,6 @@ render_header(t('suppliers.title'));
 <div class="page-heading">
     <h1><?= h(t('suppliers.title')) ?></h1>
     <div class="button-row" style="margin:0;">
-        <a class="button button-secondary" href="export_suppliers_csv.php"><?= h(t('suppliers.export')) ?></a>
         <?php if (can_manage_suppliers($user)): ?>
             <a class="button button-secondary" href="import_suppliers_csv.php"><?= h(t('suppliers.import')) ?></a>
             <a class="button" href="new_supplier.php"><?= h(t('suppliers.new')) ?></a>
@@ -76,6 +79,15 @@ render_header(t('suppliers.title'));
 </div>
 
 <?php render_active_filters($activeChips, clear_all_filters_href(['category', 'criticality', 'status'])); ?>
+
+<div style="display:flex; justify-content:flex-end; margin:4px 0 10px;">
+    <?php render_csv_export_dropdown(
+        'export_suppliers_csv.php?' . query_merge(['scope' => 'all', 'category' => null, 'criticality' => null, 'status' => null, 'sort' => null, 'dir' => null]),
+        $allSuppliersCount,
+        'export_suppliers_csv.php?' . query_merge(['scope' => 'filtered']),
+        count($suppliers)
+    ); ?>
+</div>
 
 <table class="doc-table">
     <thead>

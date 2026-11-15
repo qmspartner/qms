@@ -169,10 +169,10 @@ return [
     'documents.empty' => 'Ingen dokumenter fundet.',
     'documents.show_templates' => 'Vis også skabeloner',
     'documents.hide_templates' => 'Skjul skabeloner',
-    'documents.export.button' => 'Eksportér CSV',
-    'documents.export.all' => 'Hele listen',
-    'documents.export.filtered' => 'Filtreret liste',
-    'documents.export.count' => '{count} dokumenter',
+    'export.csv.button' => 'Eksportér CSV',
+    'export.csv.all' => 'Hele listen',
+    'export.csv.filtered' => 'Filtreret liste',
+    'export.csv.count' => '{count} rækker',
     'filter.apply' => 'Anvend',
     'filter.clear' => 'Ryd',
     'filter.clear_all' => 'Ryd alle filtre',
@@ -533,6 +533,7 @@ return [
     'help.cases.step2' => 'En Administrator eller Redaktør tildeler en ansvarlig, sætter en frist, og beskriver rodårsag og korrigerende handling.',
     'help.cases.step3' => 'Status opdateres løbende, indtil kvalitetshændelsen lukkes.',
     'help.cases.step4' => 'Korrigerende og forebyggende handling er underaktioner — ikke fritekstfelter: hver delhandling har sin egen ejer, frist og et vedhæftet bevis for udførelsen. En åben underaktion dukker op under "Mine opgaver" hos sin ejer. For Afvigelse, Audit fund, Kundeklage og Leverandør reklamation kan kvalitetshændelsen ikke lukkes, før der findes mindst én korrigerende og én forebyggende underaktion, alle afsluttet med bevis eller markeret N/A med en logget begrundelse. For Forslag, Observation og Mistænkt forfalsket del er underaktioner et valgfrit værktøj uden lukke-krav.',
+    'help.cases.export' => '"Eksportér CSV" lige over sagslisten lader dig vælge mellem at eksportere hele listen eller kun den aktuelt filtrerede liste. Eksporten viser altid kun de sager, du selv har adgang til at se.',
 
     'help.section.meetings' => 'Sådan fungerer Møder',
     'help.meetings.step1' => 'Mødereferater og Ledelsens evaluering samles under Møder, med dagsordenpunkter og referater direkte i systemet frem for som vedhæftede filer.',
@@ -557,6 +558,7 @@ return [
     'help.audits.step1' => 'En Administrator eller Redaktør opretter et audit med titel, auditor og planlagt dato.',
     'help.audits.step2' => 'Fra audittets side kan auditor registrere fund direkte — de bliver almindelige kvalitetshændelser, automatisk koblet til audittet.',
     'help.audits.step3' => 'Audittet markeres "Gennemført" med en konklusion, når det er afholdt. Konklusionen er obligatorisk, før status kan ændres.',
+    'help.audits.export' => '"Eksportér CSV" lige over auditlisten lader dig vælge mellem at eksportere hele listen eller kun den aktuelt filtrerede liste. Eksporten viser altid kun de audits, du selv har adgang til at se.',
 
     'home.audits.title' => 'Audits',
     'home.audits.desc' => 'Planlæg og gennemfør interne audits, og registrer fund direkte som kvalitetshændelser.',
@@ -610,6 +612,7 @@ return [
     'help.equipment.step2' => 'For udstyr der kræver kalibrering sættes et interval — næste kalibreringsdato beregnes automatisk, men kan altid rettes manuelt.',
     'help.equipment.step3' => 'Ved registrering af en ny kalibrering opdateres datoerne automatisk, og et certifikat kan vedhæftes.',
     'help.equipment.step4' => 'Udstyr markeret "Ikke aktiv" indgår ikke i "snart til kalibrering".',
+    'help.equipment.export' => '"Eksportér CSV" lige over udstyrslisten lader dig vælge mellem at eksportere hele listen eller kun den aktuelt filtrerede liste.',
 
     'home.equipment.title' => 'Udstyr',
     'home.equipment.desc' => 'Udstyrsregister med kritikalitet og automatiske kalibreringspåmindelser.',
@@ -809,6 +812,7 @@ return [
     'help.suppliers.step1' => 'Kritikaliteten styrer standard-evalueringsintervallet — kritiske leverandører evalueres hver 6. måned, ikke-kritiske hvert år. Begge kan altid justeres.',
     'help.suppliers.step2' => 'En kvalitetshændelse (fx en afvigelse på en leverance) kan kobles direkte til leverandøren, så historikken samles ét sted.',
     'help.suppliers.step3' => 'Leverandørlisten kan eksporteres og importeres som CSV, så den kan synkroniseres med andre systemer.',
+    'help.suppliers.export' => '"Eksportér CSV" lige over leverandørlisten lader dig vælge mellem at eksportere hele listen eller kun den aktuelt filtrerede liste.',
 
     'home.suppliers.title' => 'Leverandører',
     'home.suppliers.desc' => 'Leverandørregister med evaluering, kritikalitet og CSV-synkronisering.',
@@ -817,7 +821,6 @@ return [
 
     'suppliers.title' => 'Leverandører',
     'suppliers.new' => 'Ny leverandør',
-    'suppliers.export' => 'Eksporter CSV',
     'suppliers.import' => 'Importer CSV',
     'suppliers.stat.total' => 'Leverandører i alt',
     'suppliers.stat.due_soon' => 'Snart til evaluering',
@@ -1028,6 +1031,7 @@ return [
     'help.customers.title' => 'Kunder',
     'help.customers.desc' => 'Register til kundeklager',
     'help.customers.text' => 'Kunder er et let register over kontaktoplysninger, brugt til at koble kundeklager til en bestemt kunde. Understøtter CSV-import og -eksport.',
+    'help.customers.export' => '"Eksportér CSV" lige over kundelisten eksporterer hele listen — kundelisten har ingen filtre at vælge mellem.',
 
     'help.section.contract_overview' => 'Kontraktoversigt',
     'help.contract_overview.text' => 'Kontraktoversigt samler alt, der er koblet til én bestemt kontrakt, på tværs af moduler: konfigurationsstyrede dokumenter, eksterne audits, kundeunderrettede kvalitetshændelser, risici, leverandører og udstyr. Den opdateres automatisk — intet skal udfyldes manuelt.',
@@ -1241,7 +1245,6 @@ return [
 
     'customers.title' => 'Kunder',
     'customers.new' => 'Ny kunde',
-    'customers.export' => 'Eksporter CSV',
     'customers.import' => 'Importer CSV',
     'customers.stat.total' => 'Kunder i alt',
     'customers.table.name' => 'Navn',
@@ -1634,6 +1637,7 @@ return [
     'help.qualityobjectives.step2' => 'Et kvalitetsmål har en målefrekvens (ugentligt, månedligt eller kvartalsvist), en målsætning (fx "≤ 5%") og en ejer. Ejeren indberetter målinger for hver afsluttet periode.',
     'help.qualityobjectives.step3' => 'Ejeren bestemmer selv, hvor mange dage før en periode skal indberettes, der skal vises en påmindelse (på detaljesiden). Påmindelsen kommer som en opgave på "Mine opgaver".',
     'help.qualityobjectives.step4' => 'Et kvalitetsmål kan have status Ny, På kurs, Ikke på kurs, Opnået eller Opgivet. Ledelsens evaluering viser automatisk et opsummeret udsnit af de aktuelle kvalitetsmål.',
+    'help.qualityobjectives.export' => '"Eksportér CSV" lige over kvalitetsmål-listen lader dig vælge mellem at eksportere hele listen eller kun den aktuelt filtrerede liste.',
     'help.tip.qualityobjective_reminder' => 'Antal dage før en periode skal indberettes, hvor der vises en opgave på "Mine opgaver" for målets ejer.',
 
     'quality_objective_status.Ny' => 'Ny',

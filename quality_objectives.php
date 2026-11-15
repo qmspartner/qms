@@ -30,6 +30,10 @@ $objectives = quality_objective_list($db, $user, [
 
 $stats = quality_objective_stats($db, $user['organization_id']);
 
+// Tælletal til CSV-eksport-menuen (ikke selve eksporten): "hele listen" tæller uden
+// status-filter.
+$allObjectivesCount = count(quality_objective_list($db, $user, []));
+
 $statuses = ['Ny', 'På kurs', 'Ikke på kurs', 'Opnået', 'Opgivet'];
 $activeChips = [];
 foreach ($selectedStatuses as $val) {
@@ -60,6 +64,15 @@ render_header(t('qualityobjectives.title'));
 </div>
 
 <?php render_active_filters($activeChips, clear_all_filters_href(['status'])); ?>
+
+<div style="display:flex; justify-content:flex-end; margin:4px 0 10px;">
+    <?php render_csv_export_dropdown(
+        'export_quality_objectives_csv.php?' . query_merge(['scope' => 'all', 'status' => null, 'sort' => null, 'dir' => null]),
+        $allObjectivesCount,
+        'export_quality_objectives_csv.php?' . query_merge(['scope' => 'filtered']),
+        count($objectives)
+    ); ?>
+</div>
 
 <table class="doc-table">
     <thead>

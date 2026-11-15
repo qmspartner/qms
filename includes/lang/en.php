@@ -169,10 +169,10 @@ return [
     'documents.empty' => 'No documents found.',
     'documents.show_templates' => 'Show templates too',
     'documents.hide_templates' => 'Hide templates',
-    'documents.export.button' => 'Export CSV',
-    'documents.export.all' => 'Entire list',
-    'documents.export.filtered' => 'Filtered list',
-    'documents.export.count' => '{count} documents',
+    'export.csv.button' => 'Export CSV',
+    'export.csv.all' => 'Entire list',
+    'export.csv.filtered' => 'Filtered list',
+    'export.csv.count' => '{count} rows',
     'filter.apply' => 'Apply',
     'filter.clear' => 'Clear',
     'filter.clear_all' => 'Clear all filters',
@@ -533,6 +533,7 @@ return [
     'help.cases.step2' => 'An Administrator or Editor assigns someone responsible, sets a deadline, and describes the root cause and corrective action.',
     'help.cases.step3' => 'Status is updated as work progresses, until the quality event is closed.',
     'help.cases.step4' => 'Corrective and preventive action are sub-actions — not free-text fields: each sub-action has its own owner, deadline and attached evidence of completion. An open sub-action appears under "My tasks" for its owner. For Internal deviation, Audit finding, Customer complaint and Supplier complaint, the quality event cannot be closed until there is at least one corrective and one preventive sub-action, all either completed with evidence or marked N/A with a logged reason. For Suggestion, Observation and Suspected counterfeit part, sub-actions are an optional tool with no closure requirement.',
+    'help.cases.export' => '"Export CSV" just above the case list lets you choose between exporting the entire list or only the currently filtered list. The export always only includes the cases you are allowed to see.',
 
     'help.section.meetings' => 'How Meetings work',
     'help.meetings.step1' => 'Meeting minutes and Management review are gathered under Meetings, with agenda items and minutes directly in the system instead of as attached files.',
@@ -557,6 +558,7 @@ return [
     'help.audits.step1' => 'An Administrator or Editor creates an audit with a title, auditor and planned date.',
     'help.audits.step2' => 'From the audit page, the auditor can register findings directly — they become ordinary quality events, automatically linked to the audit.',
     'help.audits.step3' => 'The audit is marked "Completed" with a conclusion once it has taken place. The conclusion is required before the status can be changed.',
+    'help.audits.export' => '"Export CSV" just above the audit list lets you choose between exporting the entire list or only the currently filtered list. The export always only includes the audits you are allowed to see.',
 
     'home.audits.title' => 'Audits',
     'home.audits.desc' => 'Plan and carry out internal audits, and register findings directly as quality events.',
@@ -610,6 +612,7 @@ return [
     'help.equipment.step2' => 'For equipment that requires calibration, an interval is set — the next calibration date is calculated automatically, but can always be corrected manually.',
     'help.equipment.step3' => 'Registering a new calibration updates the dates automatically, and a certificate can be attached.',
     'help.equipment.step4' => 'Equipment marked "Inactive" is excluded from "due for calibration soon".',
+    'help.equipment.export' => '"Export CSV" just above the equipment list lets you choose between exporting the entire list or only the currently filtered list.',
 
     'home.equipment.title' => 'Equipment',
     'home.equipment.desc' => 'Equipment register with criticality and automatic calibration reminders.',
@@ -809,6 +812,7 @@ return [
     'help.suppliers.step1' => 'Criticality drives the default evaluation interval — critical suppliers are evaluated every 6 months, non-critical ones yearly. Both can always be adjusted.',
     'help.suppliers.step2' => 'A quality event (e.g. a delivery deviation) can be linked directly to the supplier, keeping the history in one place.',
     'help.suppliers.step3' => 'The supplier list can be exported and imported as CSV, so it can be synced with other systems.',
+    'help.suppliers.export' => '"Export CSV" just above the supplier list lets you choose between exporting the entire list or only the currently filtered list.',
 
     'home.suppliers.title' => 'Suppliers',
     'home.suppliers.desc' => 'Supplier register with evaluation, criticality and CSV sync.',
@@ -817,7 +821,6 @@ return [
 
     'suppliers.title' => 'Suppliers',
     'suppliers.new' => 'New supplier',
-    'suppliers.export' => 'Export CSV',
     'suppliers.import' => 'Import CSV',
     'suppliers.stat.total' => 'Total suppliers',
     'suppliers.stat.due_soon' => 'Due for evaluation soon',
@@ -1028,6 +1031,7 @@ return [
     'help.customers.title' => 'Customers',
     'help.customers.desc' => 'Register for customer complaints',
     'help.customers.text' => 'Customers is a lightweight register of contact details, used to link customer complaints to a specific customer. Supports CSV import and export.',
+    'help.customers.export' => '"Export CSV" just above the customer list exports the entire list — the customer list has no filters to choose between.',
 
     'help.section.contract_overview' => 'Contract overview',
     'help.contract_overview.text' => 'Contract overview gathers everything linked to one specific contract, across modules: configuration-controlled documents, external audits, customer-notified quality events, risks, suppliers, and equipment. It updates automatically — nothing needs to be filled in manually.',
@@ -1241,7 +1245,6 @@ return [
 
     'customers.title' => 'Customers',
     'customers.new' => 'New customer',
-    'customers.export' => 'Export CSV',
     'customers.import' => 'Import CSV',
     'customers.stat.total' => 'Total customers',
     'customers.table.name' => 'Name',
@@ -1634,6 +1637,7 @@ return [
     'help.qualityobjectives.step2' => 'A quality objective has a measurement frequency (weekly, monthly, or quarterly), a target (e.g. "≤ 5%") and an owner. The owner records measurements for each completed period.',
     'help.qualityobjectives.step3' => 'The owner decides how many days before a period is due a reminder should appear (on the detail page). The reminder appears as a task on "My tasks".',
     'help.qualityobjectives.step4' => 'A quality objective can have the status New, On track, Off track, Achieved, or Abandoned. The management review automatically shows a summary of the current quality objectives.',
+    'help.qualityobjectives.export' => '"Export CSV" just above the quality objectives list lets you choose between exporting the entire list or only the currently filtered list.',
     'help.tip.qualityobjective_reminder' => 'Number of days before a period is due, at which a task appears on "My tasks" for the objective\'s owner.',
 
     'quality_objective_status.Ny' => 'New',

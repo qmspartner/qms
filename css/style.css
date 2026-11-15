@@ -160,10 +160,12 @@ body {
    .export-csv-trigger) for at vinde over .nav-dropdown summary's egen
    color:var(--accent) på specificitet — ellers vinder den generiske regel og
    knappen ser ud som et blåt link i stedet for en diskret, grå værktøjsknap. */
-.nav-dropdown summary.export-csv-trigger {
+.nav-dropdown summary.export-csv-trigger,
+a.export-csv-trigger {
     display: flex; align-items: center; gap: 6px;
     padding: 5px 10px; border-radius: 6px;
     color: var(--text-muted); font-size: 12.5px; font-weight: 500;
+    text-decoration: none;
 }
 .export-csv-trigger:hover { background: var(--page-bg); }
 .nav-dropdown-menu a.export-csv-option { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
