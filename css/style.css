@@ -15,6 +15,11 @@
     --risk-high: #9a4a0b;
     --risk-high-bg: #fbe2c7;
     --sidebar-w: 236px;
+    /* Faktisk renderet højde af .content-topbar (målt, ikke gættet) — den er selv
+       sticky i toppen af viewportet, så en tabeloverskrift der også klæber til
+       top:0 ville blive skjult bagved/under den. .doc-table th klæber derfor til
+       DENNE højde i stedet for til 0, se nedenfor. */
+    --content-topbar-h: 52px;
     /* Klare signalfarver til kompetencematricens prikker. De almindelige --success/
        --warning/--danger er dæmpede (designet som tekstfarve oven på en bleg baggrund i
        badges) og ligger for tæt på hinanden som små ensfarvede prikker, så matricen får
@@ -120,6 +125,10 @@ body {
     .sidebar-group-label { display: none; }
     .content-topbar { flex-wrap: wrap; justify-content: flex-start; row-gap: 6px; position: static; }
     .content-topbar-item span { display: none; }
+    /* .content-topbar er ikke længere sticky her (den kan nu blive flere linjer
+       høj pga. row-gap/wrap), så tabeloverskriften skal klæbe til selve top:0
+       igen i stedet for til den faste desktop-højde. */
+    .doc-table th { top: 0; }
 }
 
 .nav-dropdown { position: relative; }
@@ -351,14 +360,24 @@ button:hover { opacity: 0.9; }
 .button-small { padding: 5px 10px; font-size: 13px; }
 .button-danger { background: var(--danger); color: #fff; border-color: var(--danger); }
 
-.doc-table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; }
+/* border-collapse:separate (ikke collapse) + border-spacing:0, af samme grund som
+   .matrix-table nedenfor: position:sticky på en <th> i en border-collapse:collapse-
+   tabel giver uforudsigelig rendering i flere browsere (overskriften holder op med
+   at klæbe, eller tegnes forkert), når man scroller langt ned ad en lang liste.
+   Ingen visuel forskel her, da cellerne kun har border-bottom (ingen side-borders,
+   der ville give dobbelte streger ved separate). */
+.doc-table { width: 100%; border-collapse: separate; border-spacing: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; }
 .nowrap { white-space: nowrap; }
 .doc-table th, .doc-table td { padding: 10px 14px; text-align: left; font-size: 14px; border-bottom: 1px solid var(--border); }
 .doc-table tbody tr:hover { background: var(--page-bg); cursor: pointer; }
 .doc-table th {
     color: var(--text-muted); font-weight: 500; font-size: 13px;
     background: var(--surface);
-    position: sticky; top: 0; z-index: 2;
+    /* top: var(--content-topbar-h), ikke 0 — .content-topbar er selv sticky i
+       toppen af siden, så en overskriftsrække der klæbede til top:0 ville blive
+       gemt bagved den i stedet for at ses lige under den, når man scroller langt
+       ned ad en lang liste. */
+    position: sticky; top: var(--content-topbar-h); z-index: 2;
 }
 .doc-table th { background: var(--page-bg); }
 
