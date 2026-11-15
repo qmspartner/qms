@@ -163,7 +163,11 @@ body {
 .lang-switch a.lang-active { color: var(--accent); background: var(--accent-bg); }
 .user-tag { font-size: 13px; color: var(--text-muted); }
 
-.container { max-width: 960px; margin: 0 auto; padding: 24px; }
+/* Loftet er bevidst fluidt (min(…, vw)), ikke en fast pixel-bredde: på en bred
+   skærm må indholdet (fx dokumenttabellen i .page-layout's 1fr-kolonne) gerne
+   fylde mere, så der kan stå mere på hver linje, i stedet for at blive
+   klemt ind i en fast 960px-boks midt på skærmen. */
+.container { max-width: min(1400px, 94vw); margin: 0 auto; padding: 24px; }
 
 .card {
     background: var(--surface);
