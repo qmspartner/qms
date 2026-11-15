@@ -42,6 +42,11 @@ $documents = document_list($db, $user, [
 $canSeeWorkflowStats = can_view_all_document_statuses($user) && !is_gqar($user);
 $stats = document_stats($db, $user['organization_id']);
 
+// Tælletal til CSV-eksport-menuen (ikke selve eksporten): "hele listen" tæller
+// uden søgning/kategori-/status-filtre, men respekterer brugerens aktuelle
+// valg af om skabeloner skal med — samme tanke som en "ryd alle filtre"-visning.
+$allDocumentsCount = count(document_list($db, $user, ['showTemplates' => $showTemplates]));
+
 $categories = list_active_values('document_category');
 // Almindelige brugere kan kun filtrere på den ene status, de overhovedet kan se.
 $statuses = $canSeeWorkflowStats ? ['Kladde', 'Til godkendelse', 'Godkendt', 'Udgået'] : ['Godkendt'];
@@ -95,10 +100,28 @@ render_header(t('documents.title'));
     <span id="doc-search-status" class="muted" style="display:none; font-size:13px;"><?= h(t('documents.search.searching')) ?></span>
 </form>
 
-<p style="margin:4px 0 0;">
+<p style="margin:4px 0 0; display:flex; justify-content:space-between; align-items:center;">
     <a href="<?= h(basename($_SERVER['PHP_SELF']) . '?' . query_merge(['show_templates' => $showTemplates ? null : '1'])) ?>" style="font-size:13px; text-decoration:none;">
         <?= $showTemplates ? h(t('documents.hide_templates')) : h(t('documents.show_templates')) ?>
     </a>
+
+    <details class="nav-dropdown">
+        <summary class="export-csv-trigger">
+            <?= nav_icon('export_csv') ?>
+            <span><?= h(t('documents.export.button')) ?></span>
+            <i class="ti ti-chevron-down" aria-hidden="true"></i>
+        </summary>
+        <div class="nav-dropdown-menu nav-dropdown-menu-end">
+            <a class="export-csv-option" href="export_documents_csv.php?<?= h(query_merge(['scope' => 'all', 'q' => null, 'category' => null, 'status' => null, 'sort' => null, 'dir' => null, 'partial' => null])) ?>">
+                <span><?= h(t('documents.export.all')) ?></span>
+                <span class="muted"><?= h(t('documents.export.count', ['count' => $allDocumentsCount])) ?></span>
+            </a>
+            <a class="export-csv-option" href="export_documents_csv.php?<?= h(query_merge(['scope' => 'filtered', 'partial' => null])) ?>">
+                <span><?= h(t('documents.export.filtered')) ?></span>
+                <span class="muted"><?= h(t('documents.export.count', ['count' => count($documents)])) ?></span>
+            </a>
+        </div>
+    </details>
 </p>
 
 <div id="doc-results">
