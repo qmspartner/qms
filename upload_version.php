@@ -16,6 +16,17 @@ if ($documentId) {
         http_response_code(404);
         exit(t('doc.not_found'));
     }
+    // Dokument-reservation: kun den der reserverede dokumentet (eller admin) må uploade en
+    // ny version, mens en ANDEN har det reserveret. Dette er samme regel som styrer
+    // "Upload ny version"-knappens synlighed på document.php - håndhævet her igen, da
+    // denne side også kan tilgås direkte via URL.
+    if (document_checkout_blocks_user($existingDoc, $user)) {
+        http_response_code(403);
+        render_header(t('error.forbidden'));
+        echo '<div class="card"><p>' . h(t('doc.checkout.upload_blocked')) . '</p></div>';
+        render_footer();
+        exit;
+    }
 }
 
 $stmt = $db->prepare("SELECT id, name FROM users WHERE organization_id = ? AND role = 'approver' AND active = 1 ORDER BY name");
@@ -213,6 +224,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     if (!$isDraftCreate) {
                         $stmt = $db->prepare("UPDATE documents SET status = 'Til godkendelse' WHERE id = ?");
+                        $stmt->execute([$docId]);
+                    }
+
+                    // En eventuel reservation er nu indfriet - den nye version er uploadet og
+                    // sendt til godkendelse, så der er ikke længere noget at beskytte mod en
+                    // konkurrerende opdatering. Frigiv den automatisk (uanset om det var
+                    // reserveringen selv eller admin, der uploadede).
+                    if ($existingDoc && $existingDoc['checked_out_by']) {
+                        $stmt = $db->prepare('UPDATE documents SET checked_out_by = NULL, checked_out_at = NULL WHERE id = ?');
                         $stmt->execute([$docId]);
                     }
 

@@ -29,7 +29,13 @@ require_once __DIR__ . '/functions.php';
  * et "findes ikke" (404) og et "må ikke ses" (403) er to forskellige svar til brugeren.
  */
 function document_find(PDO $db, int $id, int $organizationId): ?array {
-    $stmt = $db->prepare('SELECT d.*, u.name AS owner_name FROM documents d JOIN users u ON u.id = d.owner_id WHERE d.id = ? AND d.organization_id = ?');
+    $stmt = $db->prepare('
+        SELECT d.*, u.name AS owner_name, co.name AS checked_out_by_name
+        FROM documents d
+        JOIN users u ON u.id = d.owner_id
+        LEFT JOIN users co ON co.id = d.checked_out_by
+        WHERE d.id = ? AND d.organization_id = ?
+    ');
     $stmt->execute([$id, $organizationId]);
     $doc = $stmt->fetch();
     return $doc ?: null;
@@ -50,9 +56,12 @@ function document_find(PDO $db, int $id, int $organizationId): ?array {
  *   sortDirection (string)  'ASC' eller 'DESC'
  */
 function document_list(PDO $db, array $user, array $filters = []): array {
-    $sql = "SELECT d.*, u.name AS owner_name,
+    $sql = "SELECT d.*, u.name AS owner_name, co.name AS checked_out_by_name,
         NOT EXISTS (SELECT 1 FROM document_versions v WHERE v.document_id = d.id AND v.stored_filename IS NOT NULL) AS no_file
-        FROM documents d JOIN users u ON u.id = d.owner_id WHERE d.organization_id = ?";
+        FROM documents d
+        JOIN users u ON u.id = d.owner_id
+        LEFT JOIN users co ON co.id = d.checked_out_by
+        WHERE d.organization_id = ?";
     $params = [$user['organization_id']];
 
     $search = trim($filters['search'] ?? '');

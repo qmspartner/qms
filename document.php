@@ -105,6 +105,13 @@ $logEntries = $stmt->fetchAll();
 $canApprove = can_approve_documents($user) && (!$doc['is_configuration_item'] || $user['role'] === 'admin');
 $canEdit = can_edit_documents($user);
 
+// Dokument-reservation (se includes/functions.php): forhindrer at to personer uafhængigt
+// af hinanden begynder at opdatere samme dokument. $checkoutBlocksMe afgør om "Upload ny
+// version"-knappen skal skjules for DENNE bruger (reserveret af en ANDEN, og ikke admin).
+$isCheckedOut = document_is_checked_out($doc);
+$checkedOutByMe = $isCheckedOut && (int) $doc['checked_out_by'] === (int) $user['id'];
+$checkoutBlocksMe = document_checkout_blocks_user($doc, $user);
+
 $myAcknowledgment = null;
 $ackOverview = null;
 if ($doc['requires_acknowledgment'] && $doc['current_version_id']) {
@@ -163,6 +170,30 @@ render_header($doc['title']);
             <strong><?= h(t('doc.skeleton.title')) ?></strong>
             <p style="margin:4px 0 0;"><?= h(t('doc.skeleton.intro')) ?></p>
         </div>
+    </div>
+<?php endif; ?>
+
+<?php if ($isCheckedOut): ?>
+    <div class="alert <?= $checkedOutByMe ? 'alert-success' : 'alert-warning' ?>" style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+        <span>
+            <?= $checkedOutByMe
+                ? h(t('doc.checkout.badge_you', ['date' => format_date($doc['checked_out_at'])]))
+                : h(t('doc.checkout.badge_other', ['name' => $doc['checked_out_by_name'], 'date' => format_date($doc['checked_out_at'])])) ?>
+        </span>
+        <?php if ($checkedOutByMe): ?>
+            <form method="post" action="cancel_checkout.php" class="inline-form">
+    <?= csrf_field() ?>
+                <input type="hidden" name="document_id" value="<?= (int)$doc['id'] ?>">
+                <button type="submit" class="button-small button-secondary"><?= h(t('doc.checkout.cancel')) ?></button>
+            </form>
+        <?php elseif ($user['role'] === 'admin'): ?>
+            <form method="post" action="force_release_checkout.php" class="inline-form" onsubmit="return confirm('<?= h(t('doc.checkout.force_release_confirm')) ?>
+');">
+    <?= csrf_field() ?>
+                <input type="hidden" name="document_id" value="<?= (int)$doc['id'] ?>">
+                <button type="submit" class="button-small button-danger"><?= h(t('doc.checkout.force_release')) ?></button>
+            </form>
+        <?php endif; ?>
     </div>
 <?php endif; ?>
 
@@ -232,8 +263,15 @@ render_header($doc['title']);
         <?php if ($canEdit && $isDraftReadyToSend && !$isSkeleton): ?>
             <a class="button" href="send_for_approval.php?id=<?= (int)$doc['id'] ?>"><?= h(t('sendforapproval.action')) ?></a>
         <?php endif; ?>
-        <?php if ($canEdit): ?>
+        <?php if ($canEdit && !$checkoutBlocksMe): ?>
             <a class="button button-secondary" href="<?= $isQualityPlan ? 'new_quality_plan.php' : 'upload_version.php' ?>?document_id=<?= (int)$doc['id'] ?>"><?= h(t('doc.upload_new_version')) ?></a>
+        <?php endif; ?>
+        <?php if ($canEdit && !$isCheckedOut): ?>
+            <form method="post" action="checkout_document.php" class="inline-form">
+    <?= csrf_field() ?>
+                <input type="hidden" name="document_id" value="<?= (int)$doc['id'] ?>">
+                <button type="submit" class="button button-secondary"><?= h(t('doc.checkout.reserve')) ?></button>
+            </form>
         <?php endif; ?>
         <?php if ($user['role'] === 'admin'): ?>
             <form method="post" action="delete_document.php" class="inline-form"

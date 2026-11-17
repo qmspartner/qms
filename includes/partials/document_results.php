@@ -32,7 +32,7 @@
             <td><?= h($doc['doc_number']) ?></td>
             <td><?= h(category_label($doc['category'])) ?></td>
             <td><?= h($doc['owner_name']) ?></td>
-            <td><span class="<?= status_badge_class($doc['status']) ?>"><?= h(status_label($doc['status'])) ?></span> <?php if ($doc['no_file']): ?><span class="badge badge-neutral"><?= h(t('doc.skeleton.badge')) ?></span><?php endif; ?></td>
+            <td><span class="<?= status_badge_class($doc['status']) ?>"><?= h(status_label($doc['status'])) ?></span> <?php if ($doc['no_file']): ?><span class="badge badge-neutral"><?= h(t('doc.skeleton.badge')) ?></span><?php endif; ?> <?php if (!empty($doc['checked_out_by'])): ?><span class="badge badge-warning" title="<?= h(t('doc.checkout.badge_other', ['name' => $doc['checked_out_by_name'], 'date' => format_date($doc['checked_out_at'])])) ?>"><?= h(t('doc.checkout.badge_short')) ?></span><?php endif; ?></td>
             <td><?= format_date($doc['next_review_date']) ?></td>
         </tr>
     <?php endforeach; ?>

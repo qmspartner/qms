@@ -145,6 +145,20 @@ assert_true(!document_is_visible($gqarNoContract, $approvedDoc), 'gqar uden den 
 // Felter, der helt mangler i $doc, må aldrig give en PHP-fejl eller falsk "synlig".
 assert_true(!document_is_visible($user, []), 'et tomt dokument-array behandles som ikke-synligt, ikke som en fejl');
 
+// --- document_is_checked_out() / document_checkout_blocks_user() (reservation, ACMP-2100 pkt. 2) ---
+
+$notCheckedOut = ['checked_out_by' => null];
+$checkedOutByUser1 = ['checked_out_by' => 1];
+$checkedOutByOther = ['checked_out_by' => 99];
+
+assert_true(!document_is_checked_out($notCheckedOut), 'document_is_checked_out() er falsk uden reservation');
+assert_true(document_is_checked_out($checkedOutByUser1), 'document_is_checked_out() er sand med en reservation');
+
+assert_true(!document_checkout_blocks_user($notCheckedOut, $user), 'ingen reservation blokerer ikke nogen');
+assert_true(!document_checkout_blocks_user($checkedOutByUser1, $user), 'egen reservation (samme bruger-id) blokerer ikke brugeren selv');
+assert_true(document_checkout_blocks_user($checkedOutByOther, $user), 'en ANDENS reservation blokerer en almindelig bruger');
+assert_true(!document_checkout_blocks_user($checkedOutByOther, $admin), 'admin blokeres aldrig af en reservation, uanset hvem der har reserveret');
+
 // --- includes/documents.php: dokument-repository (via FakePdo, se fake_pdo.php) ----
 
 $db = new FakePdo();

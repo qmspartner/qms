@@ -123,6 +123,24 @@ function organization_has_fai(): bool {
     return $cache[$orgId];
 }
 
+// Dokument-reservation (konklusion fra ACMP-2100-diskussionens punkt 2, change control):
+// forhindrer at to personer uafhængigt af hinanden begynder at opdatere samme dokument.
+// Et selvstændigt felt-par (checked_out_by/checked_out_at), adskilt fra documents.status -
+// se migrations/019_dokument_reservation.sql. Gælder ALLE dokumenter, ikke kun
+// konfigurationsstyrede.
+function document_is_checked_out(array $doc): bool {
+    return !empty($doc['checked_out_by']);
+}
+
+// Sand hvis reservationen rent faktisk blokerer DENNE bruger fra at uploade en ny version -
+// dvs. dokumentet er reserveret af en ANDEN end brugeren selv, og brugeren ikke er admin.
+// Admin kan altid tvangsfrigive (og dermed uploade), se force_release_checkout.php.
+function document_checkout_blocks_user(array $doc, array $user): bool {
+    return document_is_checked_out($doc)
+        && (int) $doc['checked_out_by'] !== (int) $user['id']
+        && $user['role'] !== 'admin';
+}
+
 function organization_has_delivery_tracking(): bool {
     static $cache = [];
     $user = current_user();

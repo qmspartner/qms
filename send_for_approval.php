@@ -20,6 +20,17 @@ if ($doc['status'] !== 'Kladde') {
     exit;
 }
 
+// Samme dokument-reservationsregel som upload_version.php: kan dokumentet (fx en
+// endnu-ikke-godkendt kladde) være reserveret af en anden, blokeres denne side helt,
+// da den også kan udskifte filens indhold (se "attach_new_file" nedenfor).
+if (document_checkout_blocks_user($doc, $user)) {
+    http_response_code(403);
+    render_header(t('error.forbidden'));
+    echo '<div class="card"><p>' . h(t('doc.checkout.upload_blocked')) . '</p></div>';
+    render_footer();
+    exit;
+}
+
 $stmt = $db->prepare('SELECT * FROM document_versions WHERE document_id = ? ORDER BY uploaded_at DESC LIMIT 1');
 $stmt->execute([$id]);
 $version = $stmt->fetch();
@@ -87,6 +98,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $stmt = $db->prepare("UPDATE documents SET status = 'Til godkendelse' WHERE id = ?");
             $stmt->execute([$id]);
+
+            // Se upload_version.php for samme begrundelse: en eventuel reservation er nu
+            // indfriet, da dokumentet er sendt til godkendelse.
+            if ($doc['checked_out_by']) {
+                $stmt = $db->prepare('UPDATE documents SET checked_out_by = NULL, checked_out_at = NULL WHERE id = ?');
+                $stmt->execute([$id]);
+            }
 
             log_action($id, (int) $version['id'], 'Sendt til godkendelse', 'Sendt til godkendelse hos ' . $selectedApprover['name'] . ($attachNewFile ? ' (med opdateret fil)' : ''));
 
