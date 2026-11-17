@@ -54,29 +54,36 @@ function require_permission_allow_gqar(string $module, string $action = 'view'):
 
 const LOGIN_MAX_ATTEMPTS = 5;
 const LOGIN_LOCKOUT_MINUTES = 15;
+// Deler mekanisme (og tabel) med login-bremsen, men under sit eget 'action' - se
+// is_login_locked() m.fl. nedenfor og forgot_password.php.
+const PASSWORD_RESET_MAX_ATTEMPTS = 5;
+const PASSWORD_RESET_LOCKOUT_MINUTES = 15;
 
-// Simpel brute-force-bremse: tæller forgæves login pr. e-mail/IP inden for et tidsvindue.
-function is_login_locked(string $email, string $ip): bool {
+// Simpel brute-force-bremse: tæller forgæves login (eller adgangskode-nulstillings-
+// anmodninger, se $action) pr. e-mail/IP inden for et tidsvindue.
+function is_login_locked(string $email, string $ip, string $action = 'login'): bool {
+    $minutes = $action === 'password_reset' ? PASSWORD_RESET_LOCKOUT_MINUTES : LOGIN_LOCKOUT_MINUTES;
+    $max = $action === 'password_reset' ? PASSWORD_RESET_MAX_ATTEMPTS : LOGIN_MAX_ATTEMPTS;
     $db = get_db();
     $stmt = $db->prepare(
-        'SELECT COUNT(*) FROM login_attempts WHERE (email = ? OR ip_address = ?) AND attempted_at > (NOW() - INTERVAL ' . LOGIN_LOCKOUT_MINUTES . ' MINUTE)'
+        'SELECT COUNT(*) FROM login_attempts WHERE (email = ? OR ip_address = ?) AND action = ? AND attempted_at > (NOW() - INTERVAL ' . $minutes . ' MINUTE)'
     );
-    $stmt->execute([$email, $ip]);
-    return (int) $stmt->fetchColumn() >= LOGIN_MAX_ATTEMPTS;
+    $stmt->execute([$email, $ip, $action]);
+    return (int) $stmt->fetchColumn() >= $max;
 }
 
-function record_failed_login(string $email, string $ip): void {
+function record_failed_login(string $email, string $ip, string $action = 'login'): void {
     $db = get_db();
-    $stmt = $db->prepare('INSERT INTO login_attempts (email, ip_address) VALUES (?, ?)');
-    $stmt->execute([$email, $ip]);
+    $stmt = $db->prepare('INSERT INTO login_attempts (email, ip_address, action) VALUES (?, ?, ?)');
+    $stmt->execute([$email, $ip, $action]);
     // Let housekeeping, så tabellen ikke vokser uendeligt.
     $db->exec('DELETE FROM login_attempts WHERE attempted_at < (NOW() - INTERVAL 1 DAY)');
 }
 
-function clear_login_attempts(string $email, string $ip): void {
+function clear_login_attempts(string $email, string $ip, string $action = 'login'): void {
     $db = get_db();
-    $stmt = $db->prepare('DELETE FROM login_attempts WHERE email = ? OR ip_address = ?');
-    $stmt->execute([$email, $ip]);
+    $stmt = $db->prepare('DELETE FROM login_attempts WHERE (email = ? OR ip_address = ?) AND action = ?');
+    $stmt->execute([$email, $ip, $action]);
 }
 
 function attempt_login(string $email, string $password): bool {
@@ -97,6 +104,10 @@ function attempt_login(string $email, string $password): bool {
 
     if ($user && password_verify($password, $user['password_hash'])) {
         clear_login_attempts($email, $ip);
+        // Session-fixation: udsted et nyt sessions-id ved login, så et id kendt/sat
+        // før login (fx via en delt computer eller et manipuleret link) ikke kan
+        // genbruges til at kapre den nu-autentificerede session.
+        session_regenerate_id(true);
         $_SESSION['user'] = build_session_user($user);
         if (!empty($user['language'])) {
             $_SESSION['lang'] = $user['language'];

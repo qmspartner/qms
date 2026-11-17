@@ -12,8 +12,16 @@ $sent = false;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
     $email = trim($_POST['email'] ?? '');
+    $ip = $_SERVER['REMOTE_ADDR'] ?? '';
 
-    if ($email !== '') {
+    // Hastighedsbegrænsning, samme mønster/tabel som login-bremsen (se includes/auth.php),
+    // blot under action 'password_reset'. Et forsøg tælles uanset om e-mailen findes,
+    // så bremsen i sig selv ikke kan bruges til at afsløre hvilke adresser er registreret.
+    // Når låst, springes selve udsendelsen bevidst over, men formularen viser stadig den
+    // samme "afsendt"-besked som ellers - ingen synlig forskel for den der spammer.
+    if ($email !== '' && !is_login_locked($email, $ip, 'password_reset')) {
+        record_failed_login($email, $ip, 'password_reset');
+
         $db = get_db();
         $stmt = $db->prepare('SELECT * FROM users WHERE email = ? AND active = 1');
         $stmt->execute([$email]);
@@ -33,8 +41,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // Samme besked uanset om e-mailen fandtes, så man ikke kan bruge formularen
-    // til at afsløre, hvilke e-mailadresser der er registreret i systemet.
+    // Samme besked uanset om e-mailen fandtes (eller bremsen slog til), så man ikke kan
+    // bruge formularen til at afsløre, hvilke e-mailadresser der er registreret i systemet.
     $sent = true;
 }
 
