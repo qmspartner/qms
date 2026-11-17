@@ -13,12 +13,16 @@ if ($selectedContract === '' || !in_array($selectedContract, $availableContracts
     $selectedContract = $availableContracts[0] ?? '';
 }
 
-$documents = $audits = $cases = $risks = $suppliers = $equipmentList = $softwareReleases = $faiRecords = [];
+$documents = $audits = $cases = $risks = $suppliers = $equipmentList = $softwareReleases = $faiRecords = $deliveries = [];
 $faiTemplate = null;
 $isAdmin = $user['role'] === 'admin';
 
 if ($selectedContract !== '') {
-    $docStatusClause = $isGqar ? "AND status = 'Godkendt'" : '';
+    // Samme synlighedsregel som alle andre steder i systemet (document_is_visible()/
+    // can_view_all_document_statuses()): kun admin/editor/approver ser alle statusser.
+    // Tidligere var det kun GQAR, der blev begrænset her — en almindelig bruger (og
+    // 'ledelse') kunne fejlagtigt se kladder/til godkendelse-dokumenter på denne side.
+    $docStatusClause = can_view_all_document_statuses($user) ? '' : "AND status = 'Godkendt'";
     $stmt = $db->prepare("
         SELECT * FROM documents
         WHERE organization_id = ? AND is_configuration_item = 1 AND baseline_reference = ? {$docStatusClause}
@@ -66,6 +70,19 @@ if ($selectedContract !== '') {
     }
     $faiTemplate = ($isAdmin && organization_has_fai()) ? get_latest_template_document(FAI_CATEGORY) : null;
 
+    if (organization_has_delivery_tracking()) {
+        $stmt = $db->prepare('
+            SELECT dl.*, dv.version_number, d.id AS linked_document_id, d.doc_number, d.title AS doc_title
+            FROM deliveries dl
+            LEFT JOIN document_versions dv ON dv.id = dl.linked_version_id
+            LEFT JOIN documents d ON d.id = dv.document_id
+            WHERE dl.organization_id = ? AND dl.contract_reference = ?
+            ORDER BY dl.delivery_date DESC, dl.id DESC
+        ');
+        $stmt->execute([$user['organization_id'], $selectedContract]);
+        $deliveries = $stmt->fetchAll();
+    }
+
     if (!$isGqar) {
         $stmt = $db->prepare("SELECT * FROM risks WHERE organization_id = ? AND contract_reference = ? AND type = 'Risiko' ORDER BY (probability * consequence) DESC");
         $stmt->execute([$user['organization_id'], $selectedContract]);
@@ -93,6 +110,7 @@ if ($selectedContract !== '') {
 
 $releaseError = $_GET['error'] ?? '';
 $faiError = $_GET['fai_error'] ?? '';
+$deliveryError = $_GET['delivery_error'] ?? '';
 
 render_header(t('contractoverview.title'));
 ?>
@@ -110,19 +128,34 @@ render_header(t('contractoverview.title'));
     <p class="alert alert-danger"><?= h(t('contractoverview.fai.error.' . $faiError)) ?></p>
 <?php endif; ?>
 
+<?php if ($deliveryError): ?>
+    <p class="alert alert-danger"><?= h(t('contractoverview.deliveries.error.' . $deliveryError)) ?></p>
+<?php endif; ?>
+
 <?php if (!$availableContracts): ?>
     <p class="alert alert-danger"><?= h(t('contractoverview.no_contracts')) ?></p>
 <?php else: ?>
-    <form method="get" class="inline-grid-form" style="margin-bottom:1.5rem;">
-        <select name="contract" <?= count($availableContracts) <= 1 ? 'disabled' : '' ?>>
-            <?php foreach ($availableContracts as $ref): ?>
-                <option value="<?= h($ref) ?>" <?= $selectedContract === $ref ? 'selected' : '' ?>><?= h($ref) ?></option>
-            <?php endforeach; ?>
-        </select>
-        <?php if (count($availableContracts) > 1): ?>
-            <button type="submit"><?= h(t('contractoverview.show')) ?></button>
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:1.5rem;">
+        <form method="get" class="inline-grid-form" style="margin:0;">
+            <select name="contract" <?= count($availableContracts) <= 1 ? 'disabled' : '' ?>>
+                <?php foreach ($availableContracts as $ref): ?>
+                    <option value="<?= h($ref) ?>" <?= $selectedContract === $ref ? 'selected' : '' ?>><?= h($ref) ?></option>
+                <?php endforeach; ?>
+            </select>
+            <?php if (count($availableContracts) > 1): ?>
+                <button type="submit"><?= h(t('contractoverview.show')) ?></button>
+            <?php endif; ?>
+        </form>
+        <?php if ($selectedContract !== ''): ?>
+            <?php
+            // Ingen filter-variant her, samme begrundelse som customers.php: siden har ikke
+            // søgning/filtre på selve indholdet, kun kontraktvalg — "hele" og "filtreret" ville
+            // altid være identiske. Tallet er summen af alle rækker på tværs af sidens sektioner.
+            $exportTotalCount = count($documents) + count($audits) + count($cases) + count($softwareReleases) + count($faiRecords) + count($deliveries) + count($risks) + count($suppliers) + count($equipmentList);
+            ?>
+            <?php render_csv_export_dropdown('export_contract_overview_csv.php?contract=' . urlencode($selectedContract), $exportTotalCount); ?>
         <?php endif; ?>
-    </form>
+    </div>
 
     <h2><?= h(t('contractoverview.section.documents')) ?></h2>
     <div class="card">
@@ -354,6 +387,81 @@ render_header(t('contractoverview.title'));
                     </label>
 
                     <button type="submit"><?= h(t('contractoverview.fai.save')) ?></button>
+                </form>
+            </details>
+        <?php endif; ?>
+    </div>
+    <?php endif; ?>
+
+    <?php if (organization_has_delivery_tracking()): ?>
+    <div style="display:flex; align-items:center; gap:8px; margin:24px 0 4px;">
+        <h2 style="margin:0;"><?= h(t('contractoverview.section.deliveries')) ?></h2>
+        <?php help_tip('help.tip.deliveries'); ?>
+    </div>
+    <p class="muted" style="margin:0 0 10px;"><?= h(t('contractoverview.deliveries.intro')) ?></p>
+    <div class="card" style="<?= $isAdmin ? 'border-color:var(--accent);' : '' ?>">
+        <?php if ($deliveries): ?>
+            <table class="doc-table">
+                <thead>
+                <tr>
+                    <th><?= h(t('contractoverview.deliveries.col.reference')) ?></th>
+                    <th><?= h(t('contractoverview.deliveries.col.delivery_date')) ?></th>
+                    <th><?= h(t('contractoverview.deliveries.col.document')) ?></th>
+                    <th><?= h(t('contractoverview.deliveries.col.notes')) ?></th>
+                    <?php if ($isAdmin): ?><th></th><?php endif; ?>
+                </tr>
+                </thead>
+                <tbody>
+                <?php foreach ($deliveries as $dl): ?>
+                    <tr>
+                        <td><strong><?= h($dl['reference']) ?></strong></td>
+                        <td><?= format_date($dl['delivery_date']) ?></td>
+                        <td><?php if ($dl['linked_document_id']): ?><a href="document.php?id=<?= (int)$dl['linked_document_id'] ?>"><?= h($dl['doc_number']) ?> v<?= h($dl['version_number']) ?></a><?php else: ?>—<?php endif; ?></td>
+                        <td><?= $dl['notes'] ? h($dl['notes']) : '—' ?></td>
+                        <?php if ($isAdmin): ?>
+                            <td>
+                                <form method="post" action="delete_delivery.php" class="inline-form" onsubmit="return confirm('<?= h(t('contractoverview.deliveries.delete_confirm')) ?>
+');">
+    <?= csrf_field() ?>
+                                    <input type="hidden" name="delivery_id" value="<?= (int)$dl['id'] ?>">
+                                    <button type="submit" class="button-secondary button-danger" style="padding:4px 10px; font-size:12px;">&times;</button>
+                                </form>
+                            </td>
+                        <?php endif; ?>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        <?php else: ?><p class="muted"><?= h(t('contractoverview.empty')) ?></p><?php endif; ?>
+
+        <?php if ($isAdmin): ?>
+            <details class="nav-dropdown" style="margin-top:14px;">
+                <summary style="display:inline-flex; align-items:center; gap:6px; cursor:pointer; color:var(--accent); font-size:13px; font-weight:600;">
+                    + <?= h(t('contractoverview.deliveries.add')) ?>
+                </summary>
+                <form method="post" action="new_delivery.php" style="margin-top:12px; max-width:480px;">
+    <?= csrf_field() ?>
+                    <input type="hidden" name="contract_reference" value="<?= h($selectedContract) ?>">
+                    <label><?= h(t('contractoverview.deliveries.field.reference')) ?>
+                        <input type="text" name="reference" placeholder="fx S/N 00042" required>
+                    </label>
+                    <label><?= h(t('contractoverview.deliveries.field.delivery_date')) ?>
+                        <input type="date" name="delivery_date">
+                    </label>
+                    <?php if ($documents): ?>
+                        <label><?= h(t('contractoverview.deliveries.field.document')) ?>
+                            <select name="linked_document_id">
+                                <option value=""><?= h(t('contractoverview.deliveries.field.document_none')) ?></option>
+                                <?php foreach ($documents as $d): ?>
+                                    <option value="<?= (int)$d['id'] ?>"><?= h($d['doc_number']) ?> — <?= h($d['title']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </label>
+                    <?php endif; ?>
+                    <label><?= h(t('contractoverview.deliveries.field.notes')) ?>
+                        <textarea name="notes" rows="2"></textarea>
+                    </label>
+                    <button type="submit"><?= h(t('contractoverview.deliveries.save')) ?></button>
                 </form>
             </details>
         <?php endif; ?>

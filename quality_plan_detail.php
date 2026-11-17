@@ -76,6 +76,10 @@ render_header($plan['doc_title']);
 
 <h2><?= h(t('qualityplan.section.approach')) ?></h2>
 <div class="card">
+    <?php qp_row(t('qualityplan.field.cm_scope'), $plan['cm_scope']); ?>
+    <?php qp_row(t('qualityplan.field.cm_baseline_approach'), $plan['cm_baseline_approach']); ?>
+    <?php qp_row(t('qualityplan.field.cm_change_process'), $plan['cm_change_process']); ?>
+    <?php // Ældre felt, kun fra planer oprettet før 2026-11-17 — nye planer udfylder det aldrig. ?>
     <?php qp_row(t('qualityplan.field.configuration_management_approach'), $plan['configuration_management_approach']); ?>
     <?php qp_row(t('qualityplan.field.risk_management_approach'), $plan['risk_management_approach']); ?>
     <?php qp_row(t('qualityplan.field.supplier_management_approach'), $plan['supplier_management_approach']); ?>

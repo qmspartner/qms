@@ -123,6 +123,23 @@ function organization_has_fai(): bool {
     return $cache[$orgId];
 }
 
+function organization_has_delivery_tracking(): bool {
+    static $cache = [];
+    $user = current_user();
+    $orgId = $user['organization_id'] ?? 0;
+    if (!isset($cache[$orgId])) {
+        $enabled = false;
+        if ($orgId) {
+            $db = get_db();
+            $stmt = $db->prepare('SELECT delivery_tracking_enabled FROM organizations WHERE id = ?');
+            $stmt->execute([$orgId]);
+            $enabled = (bool) $stmt->fetchColumn();
+        }
+        $cache[$orgId] = $enabled;
+    }
+    return $cache[$orgId];
+}
+
 function date_format_example(?string $fmt = null): string {
     return date($fmt ?? get_organization_date_format(), strtotime('2026-03-07'));
 }

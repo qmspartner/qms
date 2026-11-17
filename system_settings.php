@@ -29,15 +29,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $db->prepare('UPDATE organizations SET fai_enabled = ? WHERE id = ?');
         $stmt->execute([$enabled, $user['organization_id']]);
         $saved = true;
+    } elseif ($section === 'delivery_tracking') {
+        $enabled = isset($_POST['delivery_tracking_enabled']) ? 1 : 0;
+        $stmt = $db->prepare('UPDATE organizations SET delivery_tracking_enabled = ? WHERE id = ?');
+        $stmt->execute([$enabled, $user['organization_id']]);
+        $saved = true;
     }
 }
 
-$stmt = $db->prepare('SELECT date_format, aqap2210_enabled, fai_enabled FROM organizations WHERE id = ?');
+$stmt = $db->prepare('SELECT date_format, aqap2210_enabled, fai_enabled, delivery_tracking_enabled FROM organizations WHERE id = ?');
 $stmt->execute([$user['organization_id']]);
 $orgRow = $stmt->fetch();
 $currentFormat = $orgRow['date_format'] ?: 'd-m-Y';
 $aqap2210Enabled = (bool) ($orgRow['aqap2210_enabled'] ?? false);
 $faiEnabled = (bool) ($orgRow['fai_enabled'] ?? false);
+$deliveryTrackingEnabled = (bool) ($orgRow['delivery_tracking_enabled'] ?? false);
 
 render_header(t('systemsettings.title'));
 ?>
@@ -89,6 +95,21 @@ render_header(t('systemsettings.title'));
         <label style="display:flex; align-items:center; gap:10px; flex-direction:row; margin-bottom:10px;">
             <input type="checkbox" name="fai_enabled" value="1" style="width:auto;" <?= $faiEnabled ? 'checked' : '' ?>>
             <span><?= h(t('systemsettings.fai_label')) ?></span>
+        </label>
+        <button type="submit" style="margin-top:10px;"><?= h(t('systemsettings.save')) ?></button>
+    </form>
+</div>
+
+<div class="card login-card" style="max-width: 520px; margin-top:20px;">
+    <h2><?= h(t('systemsettings.delivery_tracking_title')) ?></h2>
+    <p class="muted"><?= h(t('systemsettings.delivery_tracking_desc')) ?></p>
+
+    <form method="post">
+    <?= csrf_field() ?>
+        <input type="hidden" name="section" value="delivery_tracking">
+        <label style="display:flex; align-items:center; gap:10px; flex-direction:row; margin-bottom:10px;">
+            <input type="checkbox" name="delivery_tracking_enabled" value="1" style="width:auto;" <?= $deliveryTrackingEnabled ? 'checked' : '' ?>>
+            <span><?= h(t('systemsettings.delivery_tracking_label')) ?></span>
         </label>
         <button type="submit" style="margin-top:10px;"><?= h(t('systemsettings.save')) ?></button>
     </form>

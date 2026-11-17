@@ -101,16 +101,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt = $db->prepare('
                     INSERT INTO quality_plan_details (
                         version_id, customer_id, scope, organization_responsibility, applicable_standards,
-                        configuration_management_approach, risk_management_approach, supplier_management_approach,
+                        cm_scope, cm_baseline_approach, cm_change_process, risk_management_approach, supplier_management_approach,
                         inspection_test_plan, gqar_involvement
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ');
                 $stmt->execute([
                     $versionId, $customerId ?: null,
                     trim($_POST['scope'] ?? '') ?: null,
                     trim($_POST['organization_responsibility'] ?? '') ?: null,
                     trim($_POST['applicable_standards'] ?? '') ?: null,
-                    trim($_POST['configuration_management_approach'] ?? '') ?: null,
+                    trim($_POST['cm_scope'] ?? '') ?: null,
+                    trim($_POST['cm_baseline_approach'] ?? '') ?: null,
+                    trim($_POST['cm_change_process'] ?? '') ?: null,
                     trim($_POST['risk_management_approach'] ?? '') ?: null,
                     trim($_POST['supplier_management_approach'] ?? '') ?: null,
                     trim($_POST['inspection_test_plan'] ?? '') ?: null,
@@ -182,7 +184,9 @@ render_header($existingDoc ? t('qualityplan.title_new_version') : t('qualityplan
             <label><?= h(t('qualityplan.field.applicable_standards')) ?><textarea name="applicable_standards" rows="2"></textarea></label>
 
             <h2><?= h(t('qualityplan.section.approach')) ?></h2>
-            <label><?= h(t('qualityplan.field.configuration_management_approach')) ?><textarea name="configuration_management_approach" rows="2"></textarea></label>
+            <label><?= h(t('qualityplan.field.cm_scope')) ?><textarea name="cm_scope" rows="2"></textarea></label>
+            <label><?= h(t('qualityplan.field.cm_baseline_approach')) ?><textarea name="cm_baseline_approach" rows="2"></textarea></label>
+            <label><?= h(t('qualityplan.field.cm_change_process')) ?><textarea name="cm_change_process" rows="2"></textarea></label>
             <label><?= h(t('qualityplan.field.risk_management_approach')) ?><textarea name="risk_management_approach" rows="2"></textarea></label>
             <label><?= h(t('qualityplan.field.supplier_management_approach')) ?><textarea name="supplier_management_approach" rows="2"></textarea></label>
             <label><?= h(t('qualityplan.field.inspection_test_plan')) ?><textarea name="inspection_test_plan" rows="2"></textarea></label>
