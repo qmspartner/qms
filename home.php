@@ -202,6 +202,93 @@ render_header(t('nav.documents'));
 <div class="page-layout">
 <div>
 
+<div class="value-chain">
+    <h2 class="value-chain-title"><?= h(t('home.value_chain.title')) ?></h2>
+    <p class="value-chain-subtitle"><?= h(t('home.value_chain.subtitle')) ?></p>
+
+    <div class="vc-band">
+        <p class="vc-band-label"><?= h(t('home.value_chain.management')) ?></p>
+        <div class="vc-row">
+            <div class="vc-card">
+                <p class="vc-card-title"><?= h(t('home.value_chain.strategy.title')) ?></p>
+                <p class="vc-card-desc"><?= h(t('home.value_chain.strategy.desc')) ?></p>
+            </div>
+            <div class="vc-card">
+                <p class="vc-card-title"><?= h(t('home.value_chain.risk.title')) ?></p>
+                <p class="vc-card-desc"><?= h(t('home.value_chain.risk.desc')) ?></p>
+            </div>
+            <div class="vc-card">
+                <p class="vc-card-title"><?= h(t('home.value_chain.review.title')) ?></p>
+                <p class="vc-card-desc"><?= h(t('home.value_chain.review.desc')) ?></p>
+            </div>
+            <div class="vc-card">
+                <p class="vc-card-title"><?= h(t('home.value_chain.org.title')) ?></p>
+                <p class="vc-card-desc"><?= h(t('home.value_chain.org.desc')) ?></p>
+            </div>
+        </div>
+    </div>
+
+    <div class="vc-band">
+        <p class="vc-band-label vc-band-label-accent"><?= h(t('home.value_chain.core')) ?></p>
+        <div class="vc-row">
+            <div class="vc-card vc-card-external">
+                <p class="vc-card-title"><?= h(t('home.value_chain.customers')) ?></p>
+            </div>
+            <span class="vc-arrow">→</span>
+            <div class="vc-card vc-card-core">
+                <p class="vc-card-title"><?= h(t('home.value_chain.sales.title')) ?></p>
+                <p class="vc-card-desc"><?= h(t('home.value_chain.sales.desc')) ?></p>
+            </div>
+            <span class="vc-arrow">→</span>
+            <div class="vc-card vc-card-core">
+                <p class="vc-card-title"><?= h(t('home.value_chain.design.title')) ?></p>
+                <p class="vc-card-desc"><?= h(t('home.value_chain.design.desc')) ?></p>
+            </div>
+            <span class="vc-arrow">→</span>
+            <div class="vc-card vc-card-core">
+                <p class="vc-card-title"><?= h(t('home.value_chain.purchasing.title')) ?></p>
+                <p class="vc-card-desc"><?= h(t('home.value_chain.purchasing.desc')) ?></p>
+            </div>
+            <span class="vc-arrow">→</span>
+            <div class="vc-card vc-card-core">
+                <p class="vc-card-title"><?= h(t('home.value_chain.production.title')) ?></p>
+                <p class="vc-card-desc"><?= h(t('home.value_chain.production.desc')) ?></p>
+            </div>
+            <span class="vc-arrow">→</span>
+            <div class="vc-card vc-card-core">
+                <p class="vc-card-title"><?= h(t('home.value_chain.delivery.title')) ?></p>
+                <p class="vc-card-desc"><?= h(t('home.value_chain.delivery.desc')) ?></p>
+            </div>
+            <span class="vc-arrow">→</span>
+            <div class="vc-card vc-card-external">
+                <p class="vc-card-title"><?= h(t('home.value_chain.customers')) ?></p>
+            </div>
+        </div>
+    </div>
+
+    <div class="vc-band">
+        <p class="vc-band-label"><?= h(t('home.value_chain.support')) ?></p>
+        <div class="vc-row">
+            <div class="vc-card">
+                <p class="vc-card-title"><?= h(t('home.value_chain.doc_mgmt.title')) ?></p>
+                <p class="vc-card-desc"><?= h(t('home.value_chain.doc_mgmt.desc')) ?></p>
+            </div>
+            <div class="vc-card">
+                <p class="vc-card-title"><?= h(t('home.value_chain.equip_mgmt.title')) ?></p>
+                <p class="vc-card-desc"><?= h(t('home.value_chain.equip_mgmt.desc')) ?></p>
+            </div>
+            <div class="vc-card">
+                <p class="vc-card-title"><?= h(t('home.value_chain.people_mgmt.title')) ?></p>
+                <p class="vc-card-desc"><?= h(t('home.value_chain.people_mgmt.desc')) ?></p>
+            </div>
+            <div class="vc-card">
+                <p class="vc-card-title"><?= h(t('home.value_chain.supplier_mgmt.title')) ?></p>
+                <p class="vc-card-desc"><?= h(t('home.value_chain.supplier_mgmt.desc')) ?></p>
+            </div>
+        </div>
+    </div>
+</div>
+
 <h2 class="section-heading"><?= h(t('home.outstanding.title')) ?></h2>
 <p class="section-subheading"><?= h(t('home.outstanding.subtitle')) ?></p>
 <?php if (!$outstanding): ?>
