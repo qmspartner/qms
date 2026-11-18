@@ -230,7 +230,7 @@ render_header(t('nav.documents'));
 
     <div class="vc-band">
         <p class="vc-band-label vc-band-label-accent"><?= h(t('home.value_chain.core')) ?></p>
-        <div class="vc-row">
+        <div class="vc-row vc-row-core">
             <div class="vc-card vc-card-external">
                 <p class="vc-card-title"><?= h(t('home.value_chain.customers')) ?></p>
             </div>
