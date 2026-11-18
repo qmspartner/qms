@@ -101,8 +101,6 @@ return [
     'home.outstanding.title' => 'Outstanding',
     'home.outstanding.subtitle' => 'Totals per area that are not yet closed',
     'home.outstanding.empty' => 'Nothing outstanding right now.',
-    'home.all_modules.title' => 'All modules',
-    'home.all_modules.subtitle' => 'Full overview of the figures per area',
     'home.documents.title' => 'Documents',
     'home.documents.desc' => 'Procedures, work instructions and policies with version control, approval and optional read acknowledgment.',
     'home.documents.approved' => 'Approved',

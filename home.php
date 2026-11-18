@@ -289,34 +289,25 @@ render_header(t('nav.documents'));
     </div>
 </div>
 
-<h2 class="section-heading"><?= h(t('home.outstanding.title')) ?></h2>
-<p class="section-subheading"><?= h(t('home.outstanding.subtitle')) ?></p>
-<?php if (!$outstanding): ?>
-    <p class="muted" style="margin:0 0 30px;"><?= h(t('home.outstanding.empty')) ?></p>
-<?php else: ?>
-    <div class="attn-list">
-        <?php foreach ($outstanding as $m): ?>
-            <a href="<?= h($m['href']) ?>" class="attn-row">
-                <?= nav_icon($m['icon']) ?>
-                <div style="flex:1; min-width:0;">
-                    <p class="attn-title"><?= h($m['title']) ?></p>
-                    <p class="attn-sub"><?= h($m['attn_label']) ?></p>
-                </div>
-                <span class="attn-badge attn-badge-<?= h($m['attn_severity']) ?>"><?= (int) $m['attn_value'] ?></span>
-            </a>
-        <?php endforeach; ?>
-    </div>
-<?php endif; ?>
-
-<h2 class="section-heading"><?= h(t('home.all_modules.title')) ?></h2>
-<p class="section-subheading"><?= h(t('home.all_modules.subtitle')) ?></p>
-<div class="mini-grid">
-    <?php foreach ($modules as $m): ?>
-        <a href="<?= h($m['href']) ?>" class="mini-card">
-            <p class="mini-label"><?= h($m['title']) ?> — <?= h($m['total_label']) ?></p>
-            <p class="mini-val"><?= (int) $m['total_value'] ?></p>
-        </a>
-    <?php endforeach; ?>
+<div class="outstanding-section">
+    <h2 class="section-heading"><?= h(t('home.outstanding.title')) ?></h2>
+    <p class="section-subheading"><?= h(t('home.outstanding.subtitle')) ?></p>
+    <?php if (!$outstanding): ?>
+        <p class="muted" style="margin:0;"><?= h(t('home.outstanding.empty')) ?></p>
+    <?php else: ?>
+        <div class="outstanding-grid">
+            <?php foreach ($outstanding as $m): ?>
+                <a href="<?= h($m['href']) ?>" class="outstanding-card">
+                    <span class="outstanding-icon attn-badge-<?= h($m['attn_severity']) ?>"><?= nav_icon($m['icon']) ?></span>
+                    <span class="outstanding-text">
+                        <span class="outstanding-title"><?= h($m['title']) ?></span>
+                        <span class="outstanding-sub"><?= h($m['attn_label']) ?></span>
+                    </span>
+                    <span class="attn-badge attn-badge-<?= h($m['attn_severity']) ?>"><?= (int) $m['attn_value'] ?></span>
+                </a>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
 </div>
 
 </div>
