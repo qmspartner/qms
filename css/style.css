@@ -713,28 +713,36 @@ button:hover { opacity: 0.9; }
 .outstanding-title { display: block; font-size: 12.5px; font-weight: 600; color: var(--text); }
 .outstanding-sub { display: block; font-size: 11px; color: var(--text-muted); margin-top: 1px; }
 
-.value-chain { margin: 0 0 36px; }
-.value-chain-title { font-size: 14px; font-weight: 700; margin: 0 0 3px; }
-.value-chain-subtitle { font-size: 12.5px; color: var(--text-muted); margin: 0 0 20px; }
-.vc-band { margin-bottom: 20px; }
-.vc-band:last-child { margin-bottom: 0; }
-.vc-band-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); margin: 0 0 8px; }
-.vc-band-label-accent { color: var(--accent); }
-.vc-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: stretch; }
-.vc-card { flex: 1 1 150px; min-width: 140px; box-sizing: border-box; padding: 10px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; }
-.vc-card-title { font-size: 12.5px; font-weight: 700; margin: 0 0 2px; }
-.vc-card-desc { font-size: 11px; color: var(--text-muted); margin: 0; line-height: 1.3; }
-.vc-card-core { background: color-mix(in srgb, var(--accent) 6%, white); border-color: color-mix(in srgb, var(--accent) 30%, white); }
-.vc-card-core .vc-card-title { color: var(--accent); }
-.vc-card-external { background: var(--page-bg); flex: 0 1 110px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-.vc-arrow { flex: 0 0 auto; align-self: center; color: var(--text-muted); font-size: 14px; }
-
-/* Hvert pil+kort-par i kerneprocesser-kæden er pakket i .vc-step, så pilen
-   altid ombrydes sammen med sit kort og aldrig ender alene på sin egen linje
-   — hele diagrammet forbliver synligt på alle skærmbredder, uden vandret
-   scrollbar, i stedet for at kæden blot blev skåret af eller krævede scroll. */
-.vc-step { display: flex; align-items: center; gap: 10px; flex: 1 1 170px; min-width: 160px; }
-.vc-step .vc-card { flex: 1 1 auto; min-width: 0; }
+/* Herobanner på forsiden: et foto med en hvid udtoning foroven (så det ikke
+   støder mod resten af sidens lyse stil) og et gitter af afdelingsnavne
+   forneden. Boksene er bevidst almindelige <span>, ikke links — se
+   kommentaren i home.php for hvorfor. */
+.home-hero { position: relative; width: 100%; height: 440px; border-radius: 14px; overflow: hidden; margin: 0 0 24px; }
+.home-hero-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.home-hero-fade {
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, #ffffff 0%, rgba(255,255,255,0.75) 22%, rgba(255,255,255,0.15) 48%, rgba(255,255,255,0) 62%);
+}
+.home-hero-caption { position: absolute; left: 32px; top: 28px; right: 32px; }
+.home-hero-caption p { font-size: 19px; font-weight: 700; margin: 0; color: var(--text); }
+.home-hero-panel {
+    position: absolute; left: 32px; right: 32px; bottom: 28px;
+    background: rgba(255,255,255,0.55); backdrop-filter: blur(6px);
+    border-radius: 14px; padding: 12px;
+}
+.home-hero-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.home-hero-dept {
+    background: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 70%, black);
+    color: #fff; font-size: 13.5px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; text-align: center;
+    border-radius: 9px; padding: 10px 4px;
+}
+@media (max-width: 760px) {
+    .home-hero { height: 320px; }
+    .home-hero-caption p { font-size: 15px; }
+    .home-hero-grid { grid-template-columns: repeat(2, 1fr); }
+    .home-hero-dept { font-size: 12px; padding: 8px 4px; }
+}
 
 .module-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
 .module-card {

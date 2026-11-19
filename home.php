@@ -186,6 +186,25 @@ if (!$gqar) {
 }
 $outstanding = array_values(array_filter($modules, fn ($m) => $m['attn_value'] > 0));
 
+// Herobanner på forsiden: et foto af virksomheden der samarbejder, med et
+// gitter af afdelingsnavne ovenpå. Boksene er bevidst ikke links endnu (se
+// Claudes hukommelsesfil/aftale med Lennart) — de fleste af disse afdelinger
+// (Salg, Produktion, Økonomi m.fl.) har ingen naturlig 1:1-side i selve QMS-
+// systemet, og skal først have rigtige mål, når det er besluttet hvor de skal
+// føre hen. Navnene er oversatte (home.hero.dept.*), så listen er nem at
+// udvide/ændre uden kodeændring andre steder.
+$heroDepartments = [
+    'home.hero.dept.management',
+    'home.hero.dept.sales',
+    'home.hero.dept.purchasing',
+    'home.hero.dept.production',
+    'home.hero.dept.quality',
+    'home.hero.dept.delivery',
+    'home.hero.dept.service',
+    'home.hero.dept.finance',
+    'home.hero.dept.hr',
+];
+
 render_header(t('nav.documents'));
 ?>
 <div class="welcome-header">
@@ -202,101 +221,17 @@ render_header(t('nav.documents'));
 <div class="page-layout">
 <div>
 
-<div class="value-chain">
-    <h2 class="value-chain-title"><?= h(t('home.value_chain.title')) ?></h2>
-    <p class="value-chain-subtitle"><?= h(t('home.value_chain.subtitle')) ?></p>
-
-    <div class="vc-band">
-        <p class="vc-band-label"><?= h(t('home.value_chain.management')) ?></p>
-        <div class="vc-row">
-            <div class="vc-card">
-                <p class="vc-card-title"><?= h(t('home.value_chain.strategy.title')) ?></p>
-                <p class="vc-card-desc"><?= h(t('home.value_chain.strategy.desc')) ?></p>
-            </div>
-            <div class="vc-card">
-                <p class="vc-card-title"><?= h(t('home.value_chain.risk.title')) ?></p>
-                <p class="vc-card-desc"><?= h(t('home.value_chain.risk.desc')) ?></p>
-            </div>
-            <div class="vc-card">
-                <p class="vc-card-title"><?= h(t('home.value_chain.review.title')) ?></p>
-                <p class="vc-card-desc"><?= h(t('home.value_chain.review.desc')) ?></p>
-            </div>
-            <div class="vc-card">
-                <p class="vc-card-title"><?= h(t('home.value_chain.org.title')) ?></p>
-                <p class="vc-card-desc"><?= h(t('home.value_chain.org.desc')) ?></p>
-            </div>
-        </div>
+<div class="home-hero">
+    <img src="css/home-hero.jpg?v=1" alt="" class="home-hero-img">
+    <div class="home-hero-fade"></div>
+    <div class="home-hero-caption">
+        <p><?= h(t('home.hero.caption')) ?></p>
     </div>
-
-    <div class="vc-band">
-        <p class="vc-band-label vc-band-label-accent"><?= h(t('home.value_chain.core')) ?></p>
-        <div class="vc-row">
-            <div class="vc-card vc-card-external">
-                <p class="vc-card-title"><?= h(t('home.value_chain.customers')) ?></p>
-            </div>
-            <div class="vc-step">
-                <span class="vc-arrow">→</span>
-                <div class="vc-card vc-card-core">
-                    <p class="vc-card-title"><?= h(t('home.value_chain.sales.title')) ?></p>
-                    <p class="vc-card-desc"><?= h(t('home.value_chain.sales.desc')) ?></p>
-                </div>
-            </div>
-            <div class="vc-step">
-                <span class="vc-arrow">→</span>
-                <div class="vc-card vc-card-core">
-                    <p class="vc-card-title"><?= h(t('home.value_chain.design.title')) ?></p>
-                    <p class="vc-card-desc"><?= h(t('home.value_chain.design.desc')) ?></p>
-                </div>
-            </div>
-            <div class="vc-step">
-                <span class="vc-arrow">→</span>
-                <div class="vc-card vc-card-core">
-                    <p class="vc-card-title"><?= h(t('home.value_chain.purchasing.title')) ?></p>
-                    <p class="vc-card-desc"><?= h(t('home.value_chain.purchasing.desc')) ?></p>
-                </div>
-            </div>
-            <div class="vc-step">
-                <span class="vc-arrow">→</span>
-                <div class="vc-card vc-card-core">
-                    <p class="vc-card-title"><?= h(t('home.value_chain.production.title')) ?></p>
-                    <p class="vc-card-desc"><?= h(t('home.value_chain.production.desc')) ?></p>
-                </div>
-            </div>
-            <div class="vc-step">
-                <span class="vc-arrow">→</span>
-                <div class="vc-card vc-card-core">
-                    <p class="vc-card-title"><?= h(t('home.value_chain.delivery.title')) ?></p>
-                    <p class="vc-card-desc"><?= h(t('home.value_chain.delivery.desc')) ?></p>
-                </div>
-            </div>
-            <div class="vc-step">
-                <span class="vc-arrow">→</span>
-                <div class="vc-card vc-card-external">
-                    <p class="vc-card-title"><?= h(t('home.value_chain.customers')) ?></p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="vc-band">
-        <p class="vc-band-label"><?= h(t('home.value_chain.support')) ?></p>
-        <div class="vc-row">
-            <div class="vc-card">
-                <p class="vc-card-title"><?= h(t('home.value_chain.doc_mgmt.title')) ?></p>
-                <p class="vc-card-desc"><?= h(t('home.value_chain.doc_mgmt.desc')) ?></p>
-            </div>
-            <div class="vc-card">
-                <p class="vc-card-title"><?= h(t('home.value_chain.equip_mgmt.title')) ?></p>
-                <p class="vc-card-desc"><?= h(t('home.value_chain.equip_mgmt.desc')) ?></p>
-            </div>
-            <div class="vc-card">
-                <p class="vc-card-title"><?= h(t('home.value_chain.people_mgmt.title')) ?></p>
-                <p class="vc-card-desc"><?= h(t('home.value_chain.people_mgmt.desc')) ?></p>
-            </div>
-            <div class="vc-card">
-                <p class="vc-card-title"><?= h(t('home.value_chain.supplier_mgmt.title')) ?></p>
-                <p class="vc-card-desc"><?= h(t('home.value_chain.supplier_mgmt.desc')) ?></p>
-            </div>
+    <div class="home-hero-panel">
+        <div class="home-hero-grid">
+            <?php foreach ($heroDepartments as $deptKey): ?>
+                <span class="home-hero-dept"><?= h(t($deptKey)) ?></span>
+            <?php endforeach; ?>
         </div>
     </div>
 </div>
