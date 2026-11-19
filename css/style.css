@@ -561,8 +561,12 @@ button:hover { opacity: 0.9; }
 .risk-matrix-wrap { display: flex; gap: 12px; align-items: flex-end; margin-bottom: 1rem; }
 .risk-axis-label { font-size: 11px; color: var(--text-muted); text-align: center; }
 
-.page-layout { display: grid; grid-template-columns: 1fr 280px; gap: 20px; align-items: start; }
-@media (max-width: 760px) { .page-layout, .page-heading-row { grid-template-columns: 1fr; } }
+/* minmax(0, 1fr) i stedet for bare 1fr: uden den nægter grid-kolonnen at krympe
+   under sit indholds naturlige min-bredde (klassisk CSS Grid-fælde), hvilket på
+   forsiden lod værdikæde-diagrammets vandret-rullende kerneprocesser-række
+   presse hele siden ud i bredden i stedet for selv at rulle. */
+.page-layout { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 20px; align-items: start; }
+@media (max-width: 760px) { .page-layout, .page-heading-row { grid-template-columns: minmax(0, 1fr); } }
 
 .task-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; position: sticky; top: 16px; }
 .task-panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; }
