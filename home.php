@@ -230,38 +230,50 @@ render_header(t('nav.documents'));
 
     <div class="vc-band">
         <p class="vc-band-label vc-band-label-accent"><?= h(t('home.value_chain.core')) ?></p>
-        <div class="vc-row vc-row-core">
+        <div class="vc-row">
             <div class="vc-card vc-card-external">
                 <p class="vc-card-title"><?= h(t('home.value_chain.customers')) ?></p>
             </div>
-            <span class="vc-arrow">→</span>
-            <div class="vc-card vc-card-core">
-                <p class="vc-card-title"><?= h(t('home.value_chain.sales.title')) ?></p>
-                <p class="vc-card-desc"><?= h(t('home.value_chain.sales.desc')) ?></p>
+            <div class="vc-step">
+                <span class="vc-arrow">→</span>
+                <div class="vc-card vc-card-core">
+                    <p class="vc-card-title"><?= h(t('home.value_chain.sales.title')) ?></p>
+                    <p class="vc-card-desc"><?= h(t('home.value_chain.sales.desc')) ?></p>
+                </div>
             </div>
-            <span class="vc-arrow">→</span>
-            <div class="vc-card vc-card-core">
-                <p class="vc-card-title"><?= h(t('home.value_chain.design.title')) ?></p>
-                <p class="vc-card-desc"><?= h(t('home.value_chain.design.desc')) ?></p>
+            <div class="vc-step">
+                <span class="vc-arrow">→</span>
+                <div class="vc-card vc-card-core">
+                    <p class="vc-card-title"><?= h(t('home.value_chain.design.title')) ?></p>
+                    <p class="vc-card-desc"><?= h(t('home.value_chain.design.desc')) ?></p>
+                </div>
             </div>
-            <span class="vc-arrow">→</span>
-            <div class="vc-card vc-card-core">
-                <p class="vc-card-title"><?= h(t('home.value_chain.purchasing.title')) ?></p>
-                <p class="vc-card-desc"><?= h(t('home.value_chain.purchasing.desc')) ?></p>
+            <div class="vc-step">
+                <span class="vc-arrow">→</span>
+                <div class="vc-card vc-card-core">
+                    <p class="vc-card-title"><?= h(t('home.value_chain.purchasing.title')) ?></p>
+                    <p class="vc-card-desc"><?= h(t('home.value_chain.purchasing.desc')) ?></p>
+                </div>
             </div>
-            <span class="vc-arrow">→</span>
-            <div class="vc-card vc-card-core">
-                <p class="vc-card-title"><?= h(t('home.value_chain.production.title')) ?></p>
-                <p class="vc-card-desc"><?= h(t('home.value_chain.production.desc')) ?></p>
+            <div class="vc-step">
+                <span class="vc-arrow">→</span>
+                <div class="vc-card vc-card-core">
+                    <p class="vc-card-title"><?= h(t('home.value_chain.production.title')) ?></p>
+                    <p class="vc-card-desc"><?= h(t('home.value_chain.production.desc')) ?></p>
+                </div>
             </div>
-            <span class="vc-arrow">→</span>
-            <div class="vc-card vc-card-core">
-                <p class="vc-card-title"><?= h(t('home.value_chain.delivery.title')) ?></p>
-                <p class="vc-card-desc"><?= h(t('home.value_chain.delivery.desc')) ?></p>
+            <div class="vc-step">
+                <span class="vc-arrow">→</span>
+                <div class="vc-card vc-card-core">
+                    <p class="vc-card-title"><?= h(t('home.value_chain.delivery.title')) ?></p>
+                    <p class="vc-card-desc"><?= h(t('home.value_chain.delivery.desc')) ?></p>
+                </div>
             </div>
-            <span class="vc-arrow">→</span>
-            <div class="vc-card vc-card-external">
-                <p class="vc-card-title"><?= h(t('home.value_chain.customers')) ?></p>
+            <div class="vc-step">
+                <span class="vc-arrow">→</span>
+                <div class="vc-card vc-card-external">
+                    <p class="vc-card-title"><?= h(t('home.value_chain.customers')) ?></p>
+                </div>
             </div>
         </div>
     </div>

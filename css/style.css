@@ -729,13 +729,12 @@ button:hover { opacity: 0.9; }
 .vc-card-external { background: var(--page-bg); flex: 0 1 110px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
 .vc-arrow { flex: 0 0 auto; align-self: center; color: var(--text-muted); font-size: 14px; }
 
-.vc-row-core { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 6px; }
-.vc-row-core .vc-card { flex: 0 0 150px; width: 150px; }
-.vc-row-core .vc-card-external { flex: 0 0 110px; width: 110px; }
-.vc-row-core .vc-arrow { flex: 0 0 auto; }
-@media (max-width: 760px) {
-    .vc-row-core { margin: 0 -4px; padding: 0 4px 6px; }
-}
+/* Hvert pil+kort-par i kerneprocesser-kæden er pakket i .vc-step, så pilen
+   altid ombrydes sammen med sit kort og aldrig ender alene på sin egen linje
+   — hele diagrammet forbliver synligt på alle skærmbredder, uden vandret
+   scrollbar, i stedet for at kæden blot blev skåret af eller krævede scroll. */
+.vc-step { display: flex; align-items: center; gap: 10px; flex: 1 1 170px; min-width: 160px; }
+.vc-step .vc-card { flex: 1 1 auto; min-width: 0; }
 
 .module-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
 .module-card {
