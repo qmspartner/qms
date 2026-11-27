@@ -44,7 +44,6 @@ return [
     'login.back_to_site' => 'Til qmspartner.dk',
     'login.hero.headline' => 'Dokumenteret kvalitet, fra kladde til godkendelse.',
     'login.hero.subtitle' => 'Ét register for procedurer, afvigelser, audits og risici — sporbart fra oprettelse til underskrift.',
-    'login.hero.standard' => 'ISO 9001 · AQAP 2310',
     'login.hero.stamp' => 'GODKENDT',
     'login.hero.stamp_rev' => 'REV 1.0',
 

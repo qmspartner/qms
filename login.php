@@ -45,7 +45,6 @@ render_header(t('login.title'), true);
             <h1><?= h(t('login.hero.headline')) ?></h1>
             <p><?= h(t('login.hero.subtitle')) ?></p>
         </div>
-        <p class="login-hero-tag"><?= h(t('login.hero.standard')) ?></p>
     </div>
 
     <!-- Højre: login-titelblok -->

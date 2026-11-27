@@ -212,10 +212,6 @@ render_header(t('nav.documents'));
         <h1 class="welcome-title"><?= h(greeting_for_time()) ?>, <?= h(explode(' ', $user['name'])[0]) ?></h1>
         <p class="welcome-subtitle"><?= h(role_label($user['role'])) ?> · <?= h(format_long_date()) ?></p>
     </div>
-    <div class="welcome-badges">
-        <span class="welcome-badge">ISO 9001</span>
-        <span class="welcome-badge">AQAP 2110</span>
-    </div>
 </div>
 
 <div class="page-layout">
